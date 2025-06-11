@@ -20,44 +20,13 @@ const config: Config = {
     },
     extend: {
       colors: {
-        border: "hsl(var(--border))", // slate-200 dark:slate-800
-        input: "hsl(var(--input))", // slate-300 dark:slate-700 (example)
-        ring: "hsl(var(--ring))", // maroon-700 (focus ring)
-        background: "hsl(var(--background))", // white dark:slate-950
-        foreground: "hsl(var(--foreground))", // slate-900 dark:slate-50
+        border: "hsl(var(--border))",
+        input: "hsl(var(--input))",
+        ring: "hsl(var(--ring))",
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
         primary: {
-          // Maroon based
-          DEFAULT: "#991b1b", // maroon-800
-          foreground: "#ffffff", // white
-        },
-        secondary: {
-          // Grey based
-          DEFAULT: "hsl(var(--secondary))", // slate-100 dark:slate-800
-          foreground: "hsl(var(--secondary-foreground))", // slate-900 dark:slate-50
-        },
-        destructive: {
-          DEFAULT: "hsl(var(--destructive))", // red-600
-          foreground: "hsl(var(--destructive-foreground))", // white
-        },
-        muted: {
-          DEFAULT: "hsl(var(--muted))", // slate-100 dark:slate-800
-          foreground: "hsl(var(--muted-foreground))", // slate-500 dark:slate-400
-        },
-        accent: {
-          // Subtle accent, can be a lighter maroon or grey
-          DEFAULT: "hsl(var(--accent))", // maroon-50 dark:maroon-900/30
-          foreground: "hsl(var(--accent-foreground))", // maroon-800 dark:maroon-300
-        },
-        popover: {
-          DEFAULT: "hsl(var(--popover))", // white dark:slate-900
-          foreground: "hsl(var(--popover-foreground))", // slate-900 dark:slate-50
-        },
-        card: {
-          DEFAULT: "hsl(var(--card))", // white dark:slate-900
-          foreground: "hsl(var(--card-foreground))", // slate-900 dark:slate-50
-        },
-        // Brand color: Deep earthy maroon
-        maroon: {
+          DEFAULT: "#8b0000",
           50: "#fef2f2",
           100: "#fee2e2",
           200: "#fecaca",
@@ -66,19 +35,64 @@ const config: Config = {
           500: "#ef4444",
           600: "#dc2626",
           700: "#b91c1c",
-          800: "#991b1b", // Primary Interactive Maroon
-          900: "#7f1d1d",
+          800: "#991b1b",
+          900: "#8b0000",
           950: "#450a0a",
+          foreground: "#ffffff",
         },
-        // Neutrals: slate will be used for grays
-        // Black and White are implicitly available
+        secondary: {
+          DEFAULT: "#f5f5dc",
+          foreground: "#8b0000",
+        },
+        gold: {
+          50: "#fffbeb",
+          100: "#fef3c7",
+          200: "#fde68a",
+          300: "#fcd34d",
+          400: "#fbbf24",
+          500: "#f59e0b",
+          600: "#d97706",
+          700: "#b45309",
+          800: "#92400e",
+          900: "#78350f",
+        },
+        beige: {
+          50: "#fefdfb",
+          100: "#fef9f0",
+          200: "#fdf2e1",
+          300: "#fbe8c8",
+          400: "#f7d9a3",
+          500: "#f2c574",
+          600: "#eaaa3f",
+          700: "#d4941a",
+          800: "#b07c15",
+          900: "#8f6718",
+        },
+        destructive: {
+          DEFAULT: "hsl(var(--destructive))",
+          foreground: "hsl(var(--destructive-foreground))",
+        },
+        muted: {
+          DEFAULT: "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))",
+        },
+        accent: {
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
+        },
+        popover: {
+          DEFAULT: "hsl(var(--popover))",
+          foreground: "hsl(var(--popover-foreground))",
+        },
+        card: {
+          DEFAULT: "hsl(var(--card))",
+          foreground: "hsl(var(--card-foreground))",
+        },
       },
       borderRadius: {
-        lg: "var(--radius)", // 0.5rem
-        md: "calc(var(--radius) - 2px)", // 0.375rem
-        sm: "calc(var(--radius) - 4px)", // 0.25rem
-        xl: "calc(var(--radius) + 4px)", // 0.75rem
-        "2xl": "calc(var(--radius) + 8px)", // 1rem
+        lg: "var(--radius)",
+        md: "calc(var(--radius) - 2px)",
+        sm: "calc(var(--radius) - 4px)",
       },
       keyframes: {
         "accordion-down": {
@@ -89,14 +103,28 @@ const config: Config = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+        "fade-in": {
+          "0%": { opacity: "0", transform: "translateY(20px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        float: {
+          "0%, 100%": { transform: "translateY(0px)" },
+          "50%": { transform: "translateY(-10px)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "fade-in": "fade-in 0.6s ease-out",
+        float: "float 3s ease-in-out infinite",
+      },
+      backgroundImage: {
+        "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
+        "spiritual-gradient": "linear-gradient(135deg, #8b0000 0%, #dc2626 50%, #f59e0b 100%)",
       },
     },
   },
   plugins: [require("tailwindcss-animate")],
-} satisfies Config
+}
 
 export default config
