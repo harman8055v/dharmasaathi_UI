@@ -13,13 +13,13 @@
     --popover: 0 0% 100%;
     --popover-foreground: 260 10% 15%;
 
-    --primary: 260 60% 55%;
-    --primary-foreground: 260 10% 98%;
+    --primary: 0 100% 27%;
+    --primary-foreground: 0 0% 98%;
 
-    --secondary: 180 40% 90%;
-    --secondary-foreground: 180 10% 15%;
+    --secondary: 340 20% 95%;
+    --secondary-foreground: 340 10% 15%;
 
-    --muted: 260 10% 92%;
+    --muted: 260 10% 95%;
     --muted-foreground: 260 5% 45%;
 
     --accent: 340 40% 90%;
@@ -28,15 +28,15 @@
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 260 20% 90%;
-    --input: 260 20% 90%;
-    --ring: 260 60% 55%;
+    --border: 260 20% 92%;
+    --input: 260 20% 92%;
+    --ring: 0 100% 27%;
 
     --radius: 0.75rem;
 
-    --chart-1: 260 60% 55%;
-    --chart-2: 180 40% 60%;
-    --chart-3: 340 40% 60%;
+    --chart-1: 0 100% 27%;
+    --chart-2: 340 40% 60%;
+    --chart-3: 260 40% 60%;
     --chart-4: 40 60% 60%;
   }
 
@@ -50,11 +50,11 @@
     --popover: 260 25% 12%;
     --popover-foreground: 260 10% 98%;
 
-    --primary: 260 50% 60%;
+    --primary: 0 100% 35%;
     --primary-foreground: 260 10% 98%;
 
-    --secondary: 180 30% 15%;
-    --secondary-foreground: 180 10% 98%;
+    --secondary: 340 30% 15%;
+    --secondary-foreground: 340 10% 98%;
 
     --muted: 260 20% 20%;
     --muted-foreground: 260 10% 70%;
@@ -67,7 +67,7 @@
 
     --border: 260 20% 25%;
     --input: 260 20% 25%;
-    --ring: 260 50% 60%;
+    --ring: 0 100% 35%;
   }
 }
 
@@ -77,5 +77,15 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer components {
+  .glass-effect {
+    @apply bg-white/80 backdrop-blur-md border border-white/20;
+  }
+
+  .premium-gradient {
+    background: linear-gradient(135deg, rgba(139, 0, 0, 0.1) 0%, rgba(255, 255, 255, 0.9) 100%);
   }
 }
