@@ -4,6 +4,8 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { ChevronLeft, ChevronRight, Quote } from "lucide-react"
+import FadeIn from "@/components/animated/fade-in"
+import ScaleIn from "@/components/animated/scale-in"
 
 const testimonials = [
   {
@@ -53,92 +55,102 @@ export default function Testimonials() {
   return (
     <section id="testimonials" className="py-12 md:py-16 lg:py-24 bg-gradient-to-b from-background/90 to-background/80">
       <div className="container px-4 md:px-6">
-        <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12 md:mb-16">
-          <h2 className="text-2xl md:text-3xl font-bold tracking-tighter sm:text-4xl lg:text-5xl">Soul Connections</h2>
-          <p className="max-w-[700px] text-muted-foreground text-base md:text-lg lg:text-xl leading-relaxed px-4">
-            Stories from spiritual partners who found each other
-          </p>
-        </div>
+        <FadeIn>
+          <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12 md:mb-16">
+            <h2 className="text-2xl md:text-3xl font-bold tracking-tighter sm:text-4xl lg:text-5xl">
+              Soul Connections
+            </h2>
+            <p className="max-w-[700px] text-muted-foreground text-base md:text-lg lg:text-xl leading-relaxed px-4">
+              Stories from spiritual partners who found each other
+            </p>
+          </div>
+        </FadeIn>
 
         <div className="mx-auto max-w-4xl relative">
-          <div className="overflow-hidden">
-            <div
-              className="flex transition-transform duration-500 ease-in-out"
-              style={{ transform: `translateX(-${current * 100}%)` }}
-            >
-              {testimonials.map((testimonial, index) => (
-                <div key={index} className="w-full flex-shrink-0 px-2 md:px-4">
-                  <Card className="border-none bg-gradient-to-b from-white/80 to-white shadow-sm">
-                    <CardContent className="p-6 md:p-8">
-                      <div className="flex flex-col items-center text-center">
-                        <div className="relative mb-4 md:mb-6">
-                          <div className="absolute -inset-1 rounded-full bg-primary/10 blur-md" />
-                          <div className="relative h-16 md:h-20 w-16 md:w-20 overflow-hidden rounded-full border-2 border-background bg-background">
-                            <img
-                              src={testimonial.avatar || "/placeholder.svg"}
-                              alt={testimonial.name}
-                              className="h-full w-full object-cover"
-                            />
+          <ScaleIn delay={400}>
+            <div className="overflow-hidden">
+              <div
+                className="flex transition-transform duration-500 ease-in-out"
+                style={{ transform: `translateX(-${current * 100}%)` }}
+              >
+                {testimonials.map((testimonial, index) => (
+                  <div key={index} className="w-full flex-shrink-0 px-2 md:px-4">
+                    <Card className="border-none bg-gradient-to-b from-white/80 to-white shadow-sm hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02]">
+                      <CardContent className="p-6 md:p-8">
+                        <div className="flex flex-col items-center text-center">
+                          <div className="relative mb-4 md:mb-6">
+                            <div className="absolute -inset-1 rounded-full bg-primary/10 blur-md" />
+                            <div className="relative h-16 md:h-20 w-16 md:w-20 overflow-hidden rounded-full border-2 border-background bg-background transform transition-all duration-300 hover:scale-110">
+                              <img
+                                src={testimonial.avatar || "/placeholder.svg"}
+                                alt={testimonial.name}
+                                className="h-full w-full object-cover"
+                              />
+                            </div>
+                          </div>
+                          <div className="mb-4 flex justify-center">
+                            <Quote className="h-5 md:h-6 w-5 md:w-6 text-primary/60 animate-pulse" />
+                          </div>
+                          <p className="mb-4 text-base md:text-lg italic text-muted-foreground leading-relaxed">
+                            "{testimonial.quote}"
+                          </p>
+                          <div>
+                            <h4 className="font-medium text-sm md:text-base">{testimonial.name}</h4>
+                            <p className="text-xs md:text-sm text-muted-foreground">{testimonial.location}</p>
                           </div>
                         </div>
-                        <div className="mb-4 flex justify-center">
-                          <Quote className="h-5 md:h-6 w-5 md:w-6 text-primary/60" />
-                        </div>
-                        <p className="mb-4 text-base md:text-lg italic text-muted-foreground leading-relaxed">
-                          "{testimonial.quote}"
-                        </p>
-                        <div>
-                          <h4 className="font-medium text-sm md:text-base">{testimonial.name}</h4>
-                          <p className="text-xs md:text-sm text-muted-foreground">{testimonial.location}</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              ))}
+                      </CardContent>
+                    </Card>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          </ScaleIn>
 
-          <div className="mt-6 md:mt-8 flex justify-center gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              className="rounded-full h-8 w-8 md:h-10 md:w-10"
-              onClick={() => {
-                setAutoplay(false)
-                setCurrent((current - 1 + testimonials.length) % testimonials.length)
-              }}
-            >
-              <ChevronLeft className="h-3 md:h-4 w-3 md:w-4" />
-              <span className="sr-only">Previous</span>
-            </Button>
-            {testimonials.map((_, index) => (
+          <FadeIn delay={600}>
+            <div className="mt-6 md:mt-8 flex justify-center gap-2">
               <Button
-                key={index}
-                variant="ghost"
-                size="sm"
-                className={`h-2 w-2 rounded-full p-0 ${current === index ? "bg-primary" : "bg-muted"}`}
+                variant="outline"
+                size="icon"
+                className="rounded-full h-8 w-8 md:h-10 md:w-10 hover:scale-110 transition-all duration-300"
                 onClick={() => {
                   setAutoplay(false)
-                  setCurrent(index)
+                  setCurrent((current - 1 + testimonials.length) % testimonials.length)
                 }}
               >
-                <span className="sr-only">Go to slide {index + 1}</span>
+                <ChevronLeft className="h-3 md:h-4 w-3 md:w-4" />
+                <span className="sr-only">Previous</span>
               </Button>
-            ))}
-            <Button
-              variant="outline"
-              size="icon"
-              className="rounded-full h-8 w-8 md:h-10 md:w-10"
-              onClick={() => {
-                setAutoplay(false)
-                setCurrent((current + 1) % testimonials.length)
-              }}
-            >
-              <ChevronRight className="h-3 md:h-4 w-3 md:w-4" />
-              <span className="sr-only">Next</span>
-            </Button>
-          </div>
+              {testimonials.map((_, index) => (
+                <Button
+                  key={index}
+                  variant="ghost"
+                  size="sm"
+                  className={`h-2 w-2 rounded-full p-0 transition-all duration-300 hover:scale-125 ${
+                    current === index ? "bg-primary" : "bg-muted"
+                  }`}
+                  onClick={() => {
+                    setAutoplay(false)
+                    setCurrent(index)
+                  }}
+                >
+                  <span className="sr-only">Go to slide {index + 1}</span>
+                </Button>
+              ))}
+              <Button
+                variant="outline"
+                size="icon"
+                className="rounded-full h-8 w-8 md:h-10 md:w-10 hover:scale-110 transition-all duration-300"
+                onClick={() => {
+                  setAutoplay(false)
+                  setCurrent((current + 1) % testimonials.length)
+                }}
+              >
+                <ChevronRight className="h-3 md:h-4 w-3 md:w-4" />
+                <span className="sr-only">Next</span>
+              </Button>
+            </div>
+          </FadeIn>
         </div>
       </div>
     </section>
