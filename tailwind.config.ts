@@ -1,6 +1,6 @@
 import type { Config } from "tailwindcss"
 
-const config: Config = {
+const config = {
   darkMode: ["class"],
   content: [
     "./pages/**/*.{ts,tsx}",
@@ -20,65 +20,44 @@ const config: Config = {
     },
     extend: {
       colors: {
-        border: "hsl(var(--border))", // slate-200 dark:slate-800
-        input: "hsl(var(--input))", // slate-300 dark:slate-700 (example)
-        ring: "hsl(var(--ring))", // maroon-700 (focus ring)
-        background: "hsl(var(--background))", // white dark:slate-950
-        foreground: "hsl(var(--foreground))", // slate-900 dark:slate-50
+        border: "hsl(var(--border))",
+        input: "hsl(var(--input))",
+        ring: "hsl(var(--ring))",
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
         primary: {
-          // Maroon based
-          DEFAULT: "#991b1b", // maroon-800
-          foreground: "#ffffff", // white
+          DEFAULT: "hsl(var(--primary))",
+          foreground: "hsl(var(--primary-foreground))",
         },
         secondary: {
-          // Grey based
-          DEFAULT: "hsl(var(--secondary))", // slate-100 dark:slate-800
-          foreground: "hsl(var(--secondary-foreground))", // slate-900 dark:slate-50
+          DEFAULT: "hsl(var(--secondary))",
+          foreground: "hsl(var(--secondary-foreground))",
         },
         destructive: {
-          DEFAULT: "hsl(var(--destructive))", // red-600
-          foreground: "hsl(var(--destructive-foreground))", // white
+          DEFAULT: "hsl(var(--destructive))",
+          foreground: "hsl(var(--destructive-foreground))",
         },
         muted: {
-          DEFAULT: "hsl(var(--muted))", // slate-100 dark:slate-800
-          foreground: "hsl(var(--muted-foreground))", // slate-500 dark:slate-400
+          DEFAULT: "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))",
         },
         accent: {
-          // Subtle accent, can be a lighter maroon or grey
-          DEFAULT: "hsl(var(--accent))", // maroon-50 dark:maroon-900/30
-          foreground: "hsl(var(--accent-foreground))", // maroon-800 dark:maroon-300
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
         },
         popover: {
-          DEFAULT: "hsl(var(--popover))", // white dark:slate-900
-          foreground: "hsl(var(--popover-foreground))", // slate-900 dark:slate-50
+          DEFAULT: "hsl(var(--popover))",
+          foreground: "hsl(var(--popover-foreground))",
         },
         card: {
-          DEFAULT: "hsl(var(--card))", // white dark:slate-900
-          foreground: "hsl(var(--card-foreground))", // slate-900 dark:slate-50
+          DEFAULT: "hsl(var(--card))",
+          foreground: "hsl(var(--card-foreground))",
         },
-        // Brand color: Deep earthy maroon
-        maroon: {
-          50: "#fef2f2",
-          100: "#fee2e2",
-          200: "#fecaca",
-          300: "#fca5a5",
-          400: "#f87171",
-          500: "#ef4444",
-          600: "#dc2626",
-          700: "#b91c1c",
-          800: "#991b1b", // Primary Interactive Maroon
-          900: "#7f1d1d",
-          950: "#450a0a",
-        },
-        // Neutrals: slate will be used for grays
-        // Black and White are implicitly available
       },
       borderRadius: {
-        lg: "var(--radius)", // 0.5rem
-        md: "calc(var(--radius) - 2px)", // 0.375rem
-        sm: "calc(var(--radius) - 4px)", // 0.25rem
-        xl: "calc(var(--radius) + 4px)", // 0.75rem
-        "2xl": "calc(var(--radius) + 8px)", // 1rem
+        lg: "var(--radius)",
+        md: "calc(var(--radius) - 2px)",
+        sm: "calc(var(--radius) - 4px)",
       },
       keyframes: {
         "accordion-down": {
