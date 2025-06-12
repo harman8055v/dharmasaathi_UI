@@ -46,8 +46,9 @@ export default function Hero() {
       </div>
 
       <div className="container px-4 md:px-6 relative z-10">
-        <div className="grid gap-8 lg:grid-cols-2 lg:gap-16 items-center">
-          <div className="flex flex-col justify-center space-y-6 animate-fade-in">
+        <div className="grid gap-12 lg:grid-cols-12 lg:gap-8 items-center max-w-7xl mx-auto">
+          {/* Left Content - Takes up more space */}
+          <div className="lg:col-span-7 flex flex-col justify-center space-y-6 animate-fade-in">
             <div className="space-y-4">
               <div className="inline-block mb-6">
                 <div className="flex items-center space-x-3 glass-effect px-6 py-3 rounded-full shadow-lg">
@@ -55,10 +56,10 @@ export default function Hero() {
                   <span className="text-lg font-semibold text-primary">DharmaSaathi</span>
                 </div>
               </div>
-              <h1 className="text-4xl font-bold tracking-tight sm:text-6xl md:text-7xl bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+              <h1 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl lg:text-6xl bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
                 From Drama to <span className="text-primary">Dharma</span>
               </h1>
-              <p className="max-w-[600px] text-xl text-muted-foreground md:text-2xl leading-relaxed">
+              <p className="max-w-[600px] text-lg sm:text-xl text-muted-foreground md:text-2xl leading-relaxed">
                 Where Seekers Meet Their Soulmates
               </p>
               <p className="max-w-[600px] text-muted-foreground leading-relaxed">
@@ -66,7 +67,7 @@ export default function Hero() {
                 your journey from chaos to consciousness, from drama to dharma.
               </p>
             </div>
-            <div className="flex flex-col gap-4 min-[400px]:flex-row">
+            <div className="flex flex-col gap-4 sm:flex-row">
               <Button
                 size="lg"
                 className="bg-primary hover:bg-primary/90 text-white px-8 py-4 text-lg shadow-lg hover:shadow-xl transition-all duration-300"
@@ -83,19 +84,26 @@ export default function Hero() {
             </div>
           </div>
 
-          <div className="mx-auto lg:mx-0 w-full max-w-md animate-fade-in" style={{ animationDelay: "0.3s" }}>
-            <div className="glass-effect p-8 rounded-3xl shadow-2xl border border-white/30">
+          {/* Right Form - Takes up less space and better positioned */}
+          <div className="lg:col-span-5 w-full animate-fade-in" style={{ animationDelay: "0.3s" }}>
+            <div className="glass-effect p-6 sm:p-8 rounded-3xl shadow-2xl border border-white/30 max-w-md mx-auto lg:mx-0">
               <Tabs defaultValue="signup" className="w-full" onValueChange={setActiveTab}>
                 <TabsList className="grid w-full grid-cols-2 mb-6 bg-muted/50">
-                  <TabsTrigger value="signup" className="data-[state=active]:bg-primary data-[state=active]:text-white">
+                  <TabsTrigger
+                    value="signup"
+                    className="data-[state=active]:bg-primary data-[state=active]:text-white text-sm"
+                  >
                     Sign Up
                   </TabsTrigger>
-                  <TabsTrigger value="login" className="data-[state=active]:bg-primary data-[state=active]:text-white">
+                  <TabsTrigger
+                    value="login"
+                    className="data-[state=active]:bg-primary data-[state=active]:text-white text-sm"
+                  >
                     Login
                   </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="signup" className="space-y-5">
+                <TabsContent value="signup" className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="name" className="text-sm font-medium">
                       Full Name
@@ -105,7 +113,7 @@ export default function Hero() {
                       <Input
                         id="name"
                         placeholder="Your full name"
-                        className="pl-10 h-12 border-muted-foreground/20 focus:border-primary"
+                        className="pl-10 h-11 border-muted-foreground/20 focus:border-primary text-sm"
                       />
                     </div>
                   </div>
@@ -120,7 +128,7 @@ export default function Hero() {
                         id="email"
                         type="email"
                         placeholder="your.email@example.com"
-                        className="pl-10 h-12 border-muted-foreground/20 focus:border-primary"
+                        className="pl-10 h-11 border-muted-foreground/20 focus:border-primary text-sm"
                       />
                     </div>
                   </div>
@@ -131,7 +139,7 @@ export default function Hero() {
                     </Label>
                     <div className="flex space-x-2">
                       <Select value={selectedCountryCode} onValueChange={setSelectedCountryCode}>
-                        <SelectTrigger className="w-24 h-12 border-muted-foreground/20">
+                        <SelectTrigger className="w-20 h-11 border-muted-foreground/20 text-xs">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -139,7 +147,7 @@ export default function Hero() {
                             <SelectItem key={country.code} value={country.code}>
                               <span className="flex items-center space-x-2">
                                 <span>{country.flag}</span>
-                                <span>{country.code}</span>
+                                <span className="text-xs">{country.code}</span>
                               </span>
                             </SelectItem>
                           ))}
@@ -151,7 +159,7 @@ export default function Hero() {
                           id="mobile"
                           type="tel"
                           placeholder="9876543210"
-                          className="pl-10 h-12 border-muted-foreground/20 focus:border-primary"
+                          className="pl-10 h-11 border-muted-foreground/20 focus:border-primary text-sm"
                         />
                       </div>
                     </div>
@@ -167,12 +175,12 @@ export default function Hero() {
                         id="password"
                         type="password"
                         placeholder="Create a strong password"
-                        className="pl-10 h-12 border-muted-foreground/20 focus:border-primary"
+                        className="pl-10 h-11 border-muted-foreground/20 focus:border-primary text-sm"
                       />
                     </div>
                   </div>
 
-                  <Button className="w-full h-12 bg-primary hover:bg-primary/90 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-300">
+                  <Button className="w-full h-11 bg-primary hover:bg-primary/90 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-300 text-sm">
                     Create Sacred Account
                   </Button>
 
@@ -186,8 +194,11 @@ export default function Hero() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
-                    <Button variant="outline" className="h-12 border-muted-foreground/20 hover:border-primary/40">
-                      <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
+                    <Button
+                      variant="outline"
+                      className="h-11 border-muted-foreground/20 hover:border-primary/40 text-xs"
+                    >
+                      <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
                         <path
                           fill="#4285F4"
                           d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -207,8 +218,11 @@ export default function Hero() {
                       </svg>
                       Google
                     </Button>
-                    <Button variant="outline" className="h-12 border-muted-foreground/20 hover:border-primary/40">
-                      <svg className="mr-2 h-5 w-5" fill="#1877F2" viewBox="0 0 24 24">
+                    <Button
+                      variant="outline"
+                      className="h-11 border-muted-foreground/20 hover:border-primary/40 text-xs"
+                    >
+                      <svg className="mr-2 h-4 w-4" fill="#1877F2" viewBox="0 0 24 24">
                         <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
                       </svg>
                       Facebook
@@ -216,7 +230,7 @@ export default function Hero() {
                   </div>
                 </TabsContent>
 
-                <TabsContent value="login" className="space-y-5">
+                <TabsContent value="login" className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="login-email" className="text-sm font-medium">
                       Email Address
@@ -227,7 +241,7 @@ export default function Hero() {
                         id="login-email"
                         type="email"
                         placeholder="your.email@example.com"
-                        className="pl-10 h-12 border-muted-foreground/20 focus:border-primary"
+                        className="pl-10 h-11 border-muted-foreground/20 focus:border-primary text-sm"
                       />
                     </div>
                   </div>
@@ -236,7 +250,7 @@ export default function Hero() {
                       <Label htmlFor="login-password" className="text-sm font-medium">
                         Password
                       </Label>
-                      <Button variant="link" className="h-auto p-0 text-sm text-primary hover:text-primary/80">
+                      <Button variant="link" className="h-auto p-0 text-xs text-primary hover:text-primary/80">
                         Forgot password?
                       </Button>
                     </div>
@@ -246,11 +260,11 @@ export default function Hero() {
                         id="login-password"
                         type="password"
                         placeholder="Enter your password"
-                        className="pl-10 h-12 border-muted-foreground/20 focus:border-primary"
+                        className="pl-10 h-11 border-muted-foreground/20 focus:border-primary text-sm"
                       />
                     </div>
                   </div>
-                  <Button className="w-full h-12 bg-primary hover:bg-primary/90 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-300">
+                  <Button className="w-full h-11 bg-primary hover:bg-primary/90 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-300 text-sm">
                     Sign In to Your Journey
                   </Button>
                 </TabsContent>

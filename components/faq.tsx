@@ -5,15 +5,15 @@ import { NotebookIcon as Lotus } from "lucide-react"
 
 export default function Faq() {
   return (
-    <section className="py-16 md:py-24 bg-gradient-to-b from-background/90 to-background">
+    <section id="faq" className="py-12 md:py-16 lg:py-24 bg-gradient-to-b from-background/90 to-background">
       <div className="container px-4 md:px-6">
-        <div className="flex flex-col items-center justify-center space-y-4 text-center">
-          <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">Common Questions</h2>
-          <p className="max-w-[700px] text-muted-foreground md:text-xl/relaxed">
+        <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12 md:mb-16">
+          <h2 className="text-2xl md:text-3xl font-bold tracking-tighter sm:text-4xl lg:text-5xl">Common Questions</h2>
+          <p className="max-w-[700px] text-muted-foreground text-base md:text-lg lg:text-xl leading-relaxed px-4">
             Answers to help you on your spiritual matchmaking journey
           </p>
         </div>
-        <div className="mx-auto max-w-3xl mt-12">
+        <div className="mx-auto max-w-3xl">
           <Accordion type="single" collapsible className="w-full">
             {[
               {
@@ -42,14 +42,16 @@ export default function Faq() {
                   "We implement a thorough KYC (Know Your Customer) process that verifies identity while respecting privacy. This includes document verification, video verification options, and community references where appropriate. Our goal is to create a safe, authentic community of genuine spiritual seekers.",
               },
             ].map((item, index) => (
-              <AccordionItem key={index} value={`item-${index}`}>
-                <AccordionTrigger className="text-left">
-                  <div className="flex items-center">
-                    <Lotus className="mr-2 h-4 w-4 text-primary" />
-                    {item.question}
+              <AccordionItem key={index} value={`item-${index}`} className="border-b border-muted-foreground/10">
+                <AccordionTrigger className="text-left py-4 md:py-6 hover:no-underline">
+                  <div className="flex items-start">
+                    <Lotus className="mr-3 h-4 w-4 text-primary mt-1 flex-shrink-0" />
+                    <span className="text-sm md:text-base font-medium">{item.question}</span>
                   </div>
                 </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground">{item.answer}</AccordionContent>
+                <AccordionContent className="text-muted-foreground text-sm md:text-base leading-relaxed pb-4 md:pb-6 pl-7">
+                  {item.answer}
+                </AccordionContent>
               </AccordionItem>
             ))}
           </Accordion>
