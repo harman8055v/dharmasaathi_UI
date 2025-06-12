@@ -3,7 +3,7 @@
 import { Suspense } from "react"
 import dynamic from "next/dynamic"
 import Header from "@/components/header"
-import EnhancedHeroOptimized from "@/components/enhanced-hero-optimized"
+import EnhancedHeroSimple from "@/components/enhanced-hero-simple"
 import InspirationQuote from "@/components/inspiration-quote"
 
 // Lazy load components with dynamic imports
@@ -27,7 +27,7 @@ const MobileApps = dynamic(() => import("@/components/mobile-apps"), {
   ssr: false,
 })
 
-const Faq = dynamic(() => import("@/components/faq"), {
+const FaqSimple = dynamic(() => import("@/components/faq-simple"), {
   loading: () => <div className="py-12 md:py-16 lg:py-24 bg-muted/20 animate-pulse" />,
   ssr: false,
 })
@@ -42,7 +42,7 @@ export default function Home() {
     <main className="min-h-screen bg-gradient-to-b from-background to-background/80">
       {/* Critical above-the-fold content */}
       <Header />
-      <EnhancedHeroOptimized />
+      <EnhancedHeroSimple />
 
       {/* Lazy loaded sections */}
       <Suspense fallback={<div className="py-12 md:py-16 lg:py-24 bg-muted/20 animate-pulse" />}>
@@ -65,7 +65,7 @@ export default function Home() {
       <InspirationQuote />
 
       <Suspense fallback={<div className="py-12 md:py-16 lg:py-24 bg-muted/20 animate-pulse" />}>
-        <Faq />
+        <FaqSimple />
       </Suspense>
 
       <Suspense fallback={<div className="py-12 md:py-16 bg-muted/20 animate-pulse" />}>
