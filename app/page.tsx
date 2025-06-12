@@ -2,7 +2,7 @@
 
 import { Suspense } from "react"
 import Header from "@/components/header"
-import Hero from "@/components/hero"
+import EnhancedHero from "@/components/enhanced-hero"
 import Features from "@/components/features"
 import HowItWorks from "@/components/how-it-works"
 import Testimonials from "@/components/testimonials"
@@ -30,7 +30,7 @@ export default function Home() {
       </LoadingWrapper>
 
       <LoadingWrapper skeleton={<HeroSkeleton />} delay={1200}>
-        <Hero />
+        <EnhancedHero />
       </LoadingWrapper>
 
       <LoadingWrapper skeleton={<FeaturesSkeleton />} delay={1600}>

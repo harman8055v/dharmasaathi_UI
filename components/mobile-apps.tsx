@@ -3,6 +3,8 @@
 import { Button } from "@/components/ui/button"
 import { Smartphone, Bell, Download } from "lucide-react"
 import Image from "next/image"
+import ParallaxContainer from "@/components/parallax/parallax-container"
+import { FloatingOrb } from "@/components/parallax/floating-elements"
 
 export default function MobileApps() {
   const scrollToSignup = () => {
@@ -13,10 +15,24 @@ export default function MobileApps() {
   }
 
   return (
-    <section className="py-12 md:py-16 lg:py-24 bg-gradient-to-b from-background/90 to-primary/5">
-      <div className="container px-4 md:px-6">
+    <section className="py-12 md:py-16 lg:py-24 bg-gradient-to-b from-background/90 to-primary/5 relative overflow-hidden">
+      {/* Parallax Background Elements */}
+      <FloatingOrb
+        className="top-20 left-20"
+        size="w-64 h-64"
+        color="bg-gradient-to-r from-primary/6 to-purple-100/12"
+        delay={0}
+      />
+      <FloatingOrb
+        className="bottom-10 right-10"
+        size="w-48 h-48"
+        color="bg-gradient-to-r from-rose-100/12 to-primary/6"
+        delay={1500}
+      />
+
+      <div className="container px-4 md:px-6 relative z-10">
         <div className="grid gap-8 lg:grid-cols-2 lg:gap-16 items-center">
-          <div className="flex flex-col justify-center space-y-6 order-2 lg:order-1">
+          <ParallaxContainer speed={0.1} className="flex flex-col justify-center space-y-6 order-2 lg:order-1">
             <div className="inline-block">
               <div className="flex items-center space-x-2 bg-primary/10 px-4 py-2 rounded-full">
                 <Smartphone className="h-4 md:h-5 w-4 md:w-5 text-primary" />
@@ -64,8 +80,9 @@ export default function MobileApps() {
                 Notify Me
               </Button>
             </div>
-          </div>
-          <div className="relative order-1 lg:order-2">
+          </ParallaxContainer>
+
+          <ParallaxContainer speed={0.15} className="relative order-1 lg:order-2">
             <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-purple-200/20 rounded-3xl blur-3xl" />
             <div className="relative glass-effect p-6 md:p-8 rounded-3xl">
               <Image
@@ -76,7 +93,7 @@ export default function MobileApps() {
                 className="w-full h-auto rounded-2xl shadow-2xl max-w-sm mx-auto"
               />
             </div>
-          </div>
+          </ParallaxContainer>
         </div>
       </div>
     </section>

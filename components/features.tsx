@@ -3,6 +3,8 @@ import Image from "next/image"
 import FadeIn from "@/components/animated/fade-in"
 import ScaleIn from "@/components/animated/scale-in"
 import StaggerContainer from "@/components/animated/stagger-container"
+import ParallaxContainer from "@/components/parallax/parallax-container"
+import { FloatingOrb, FloatingShape } from "@/components/parallax/floating-elements"
 
 export default function Features() {
   const features = [
@@ -49,8 +51,24 @@ export default function Features() {
       id="features"
       className="py-12 md:py-16 lg:py-24 bg-gradient-to-b from-background/80 to-background relative overflow-hidden"
     >
-      {/* Background decoration */}
-      <div className="absolute top-0 left-0 w-full h-full opacity-30">
+      {/* Parallax Background Elements */}
+      <FloatingOrb
+        className="top-10 right-20"
+        size="w-72 h-72"
+        color="bg-gradient-to-r from-primary/5 to-purple-100/20"
+        delay={0}
+      />
+      <FloatingOrb
+        className="bottom-20 left-10"
+        size="w-64 h-64"
+        color="bg-gradient-to-r from-rose-100/20 to-primary/5"
+        delay={1000}
+      />
+      <FloatingShape className="top-1/4 left-1/2" delay={500} />
+      <FloatingShape className="bottom-1/3 right-1/4" delay={1500} />
+
+      {/* Background decoration with parallax */}
+      <ParallaxContainer speed={0.2} className="absolute top-0 left-0 w-full h-full opacity-30">
         <Image
           src="/placeholder.svg?height=600&width=1200"
           alt="Background Pattern"
@@ -58,54 +76,58 @@ export default function Features() {
           height={600}
           className="w-full h-full object-cover"
         />
-      </div>
+      </ParallaxContainer>
 
       <div className="container px-4 md:px-6 relative z-10">
-        <FadeIn>
-          <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12 md:mb-16">
-            <ScaleIn delay={200}>
-              <div className="inline-block rounded-full glass-effect px-4 md:px-6 py-2 md:py-3 text-sm shadow-lg">
-                <Lotus className="inline-block w-4 md:w-5 h-4 md:h-5 mr-2 text-primary" />
-                <span className="font-semibold text-primary">Our Sacred Features</span>
-              </div>
-            </ScaleIn>
-            <h2 className="text-2xl md:text-3xl font-bold tracking-tighter sm:text-4xl lg:text-5xl bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-              Mindful Connections
-            </h2>
-            <p className="max-w-[700px] text-muted-foreground text-base md:text-lg lg:text-xl leading-relaxed px-4">
-              Discover how DharmaSaathi helps spiritual seekers find their perfect match through sacred technology
-            </p>
-          </div>
-        </FadeIn>
-
-        <StaggerContainer
-          staggerDelay={200}
-          className="mx-auto grid max-w-6xl grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 lg:gap-12"
-        >
-          {features.map((feature, index) => (
-            <div
-              key={index}
-              className={`relative overflow-hidden rounded-2xl md:rounded-3xl bg-gradient-to-br ${feature.gradient} p-6 md:p-8 shadow-xl border border-white/50 hover:shadow-2xl transition-all duration-500 group cursor-pointer transform hover:scale-[1.02]`}
-            >
-              <div
-                className={`absolute top-0 right-0 -mt-4 -mr-4 h-24 md:h-32 w-24 md:w-32 rounded-full bg-gradient-to-r ${feature.decorationColor} blur-2xl group-hover:blur-xl transition-all duration-500`}
-              />
-              <div className="relative">
-                <div
-                  className={`inline-flex h-12 md:h-16 w-12 md:w-16 items-center justify-center rounded-xl md:rounded-2xl bg-gradient-to-r ${feature.iconBg} shadow-lg transform transition-all duration-300 group-hover:scale-110`}
-                >
-                  {feature.icon}
+        <ParallaxContainer speed={0.1}>
+          <FadeIn>
+            <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12 md:mb-16">
+              <ScaleIn delay={200}>
+                <div className="inline-block rounded-full glass-effect px-4 md:px-6 py-2 md:py-3 text-sm shadow-lg">
+                  <Lotus className="inline-block w-4 md:w-5 h-4 md:h-5 mr-2 text-primary" />
+                  <span className="font-semibold text-primary">Our Sacred Features</span>
                 </div>
-                <h3 className="mt-4 md:mt-6 text-xl md:text-2xl font-bold text-foreground transition-colors duration-300 group-hover:text-primary">
-                  {feature.title}
-                </h3>
-                <p className="mt-3 md:mt-4 text-sm md:text-base text-muted-foreground leading-relaxed">
-                  {feature.description}
-                </p>
-              </div>
+              </ScaleIn>
+              <h2 className="text-2xl md:text-3xl font-bold tracking-tighter sm:text-4xl lg:text-5xl bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+                Mindful Connections
+              </h2>
+              <p className="max-w-[700px] text-muted-foreground text-base md:text-lg lg:text-xl leading-relaxed px-4">
+                Discover how DharmaSaathi helps spiritual seekers find their perfect match through sacred technology
+              </p>
             </div>
-          ))}
-        </StaggerContainer>
+          </FadeIn>
+        </ParallaxContainer>
+
+        <ParallaxContainer speed={0.05}>
+          <StaggerContainer
+            staggerDelay={200}
+            className="mx-auto grid max-w-6xl grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 lg:gap-12"
+          >
+            {features.map((feature, index) => (
+              <div
+                key={index}
+                className={`relative overflow-hidden rounded-2xl md:rounded-3xl bg-gradient-to-br ${feature.gradient} p-6 md:p-8 shadow-xl border border-white/50 hover:shadow-2xl transition-all duration-500 group cursor-pointer transform hover:scale-[1.02]`}
+              >
+                <div
+                  className={`absolute top-0 right-0 -mt-4 -mr-4 h-24 md:h-32 w-24 md:w-32 rounded-full bg-gradient-to-r ${feature.decorationColor} blur-2xl group-hover:blur-xl transition-all duration-500`}
+                />
+                <div className="relative">
+                  <div
+                    className={`inline-flex h-12 md:h-16 w-12 md:w-16 items-center justify-center rounded-xl md:rounded-2xl bg-gradient-to-r ${feature.iconBg} shadow-lg transform transition-all duration-300 group-hover:scale-110`}
+                  >
+                    {feature.icon}
+                  </div>
+                  <h3 className="mt-4 md:mt-6 text-xl md:text-2xl font-bold text-foreground transition-colors duration-300 group-hover:text-primary">
+                    {feature.title}
+                  </h3>
+                  <p className="mt-3 md:mt-4 text-sm md:text-base text-muted-foreground leading-relaxed">
+                    {feature.description}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </StaggerContainer>
+        </ParallaxContainer>
       </div>
     </section>
   )
