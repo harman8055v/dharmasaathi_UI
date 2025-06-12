@@ -1,10 +1,5 @@
-import OnboardingForm from "@/components/onboarding-form"
+import Dashboard from "@/components/dashboard"
 
-export default function Home() {
-  return (
-    // Simplified background for a cleaner look
-    <main className="min-h-screen bg-slate-50 dark:bg-slate-900">
-      <OnboardingForm />
-    </main>
-  )
+export default function Page() {
+  return <Dashboard />
 }
