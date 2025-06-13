@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useState } from "react"
-import { ArrowRight, AlertCircle } from "lucide-react"
+import { ArrowLeft, ArrowRight, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
@@ -209,4 +209,23 @@ export default function SpiritualPathStep({ onNext, onSkip, onBack }: SpiritualP
             Continue <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
           <div className="flex justify-between">
-            <Button\
+            <Button
+              onClick={onBack}
+              variant="ghost"
+              className="text-slate-600 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" /> Back
+            </Button>
+            <Button
+              onClick={onSkip}
+              variant="ghost"
+              className="text-slate-600 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50"
+            >
+              Skip for now
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
