@@ -1,278 +1,391 @@
 "use client"
 
+import type React from "react"
+
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Heart, Mail, Lock, User, Phone } from "lucide-react"
-import Image from "next/image"
+import { supabase } from "@/lib/supabase"
+import { Loader2, Heart, Sparkles } from "lucide-react"
 
-const countryCodes = [
-  { code: "+91", country: "IN", flag: "🇮🇳" },
-  { code: "+1", country: "US", flag: "🇺🇸" },
-  { code: "+44", country: "UK", flag: "🇬🇧" },
-  { code: "+61", country: "AU", flag: "🇦🇺" },
-  { code: "+971", country: "AE", flag: "🇦🇪" },
-  { code: "+65", country: "SG", flag: "🇸🇬" },
-]
+interface FormData {
+  firstName: string
+  lastName: string
+  email: string
+  password: string
+}
+
+interface FormErrors {
+  firstName?: string
+  lastName?: string
+  email?: string
+  password?: string
+  general?: string
+}
 
 export default function Hero() {
-  const [activeTab, setActiveTab] = useState("signup")
-  const [selectedCountryCode, setSelectedCountryCode] = useState("+91")
+  const [formData, setFormData] = useState<FormData>({
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+  })
+  const [errors, setErrors] = useState<FormErrors>({})
+  const [isLoading, setIsLoading] = useState(false)
+  const [isSuccess, setIsSuccess] = useState(false)
+  const router = useRouter()
+
+  const validateForm = (): boolean => {
+    const newErrors: FormErrors = {}
+
+    // First name validation
+    if (!formData.firstName.trim()) {
+      newErrors.firstName = "First name is required"
+    } else if (formData.firstName.trim().length < 2) {
+      newErrors.firstName = "First name must be at least 2 characters"
+    }
+
+    // Last name validation
+    if (!formData.lastName.trim()) {
+      newErrors.lastName = "Last name is required"
+    } else if (formData.lastName.trim().length < 2) {
+      newErrors.lastName = "Last name must be at least 2 characters"
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required"
+    } else if (!emailRegex.test(formData.email)) {
+      newErrors.email = "Please enter a valid email address"
+    }
+
+    // Password validation
+    if (!formData.password) {
+      newErrors.password = "Password is required"
+    } else if (formData.password.length < 8) {
+      newErrors.password = "Password must be at least 8 characters"
+    } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password)) {
+      newErrors.password = "Password must contain at least one uppercase letter, one lowercase letter, and one number"
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
+  const handleInputChange = (field: keyof FormData, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }))
+    // Clear error for this field when user starts typing
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: undefined }))
+    }
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!validateForm()) {
+      return
+    }
+
+    setIsLoading(true)
+    setErrors({})
+
+    try {
+      // Sign up the user with metadata
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            first_name: formData.firstName,
+            last_name: formData.lastName,
+            full_name: `${formData.firstName} ${formData.lastName}`,
+          },
+        },
+      })
+
+      if (authError) {
+        console.error("Auth error:", authError)
+        throw authError
+      }
+
+      if (authData.user) {
+        console.log("User created successfully:", authData.user.id)
+
+        // Try to create profile - but don't fail if it doesn't work
+        try {
+          // First, let's check if a users table exists and what its structure is
+          const { data: existingProfile, error: checkError } = await supabase
+            .from("users")
+            .select("*")
+            .eq("id", authData.user.id)
+            .single()
+
+          if (checkError && checkError.code !== "PGRST116") {
+            // PGRST116 means "not found", which is expected for new users
+            console.log("Error checking existing profile:", checkError)
+          }
+
+          if (!existingProfile) {
+            // Try to insert the profile
+            const profileData = {
+              id: authData.user.id,
+              email: formData.email,
+              first_name: formData.firstName,
+              last_name: formData.lastName,
+              full_name: `${formData.firstName} ${formData.lastName}`,
+              onboarding_completed: false,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            }
+
+            console.log("Attempting to create profile with data:", profileData)
+
+            const { data: profileResult, error: profileError } = await supabase
+              .from("users")
+              .insert(profileData)
+              .select()
+
+            if (profileError) {
+              console.error("Profile creation error details:", {
+                message: profileError.message,
+                details: profileError.details,
+                hint: profileError.hint,
+                code: profileError.code,
+              })
+
+              // Don't throw here - the auth user was created successfully
+              // The onboarding page can handle creating the profile if needed
+            } else {
+              console.log("Profile created successfully:", profileResult)
+            }
+          }
+        } catch (profileError) {
+          console.error("Profile creation failed:", profileError)
+          // Continue anyway - onboarding can handle this
+        }
+
+        setIsSuccess(true)
+
+        // Redirect to onboarding after a brief success message
+        setTimeout(() => {
+          router.push("/onboarding")
+        }, 2000)
+      }
+    } catch (error: any) {
+      console.error("Sign up error:", error)
+
+      if (error.message?.includes("already registered") || error.message?.includes("already been registered")) {
+        setErrors({ email: "This email is already registered. Please try signing in instead." })
+      } else if (error.message?.includes("Invalid email")) {
+        setErrors({ email: "Please enter a valid email address" })
+      } else if (error.message?.includes("Password")) {
+        setErrors({ password: error.message })
+      } else {
+        setErrors({ general: error.message || "An error occurred during sign up. Please try again." })
+      }
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  if (isSuccess) {
+    return (
+      <section className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 overflow-hidden">
+        <div className="absolute inset-0 bg-[url('/images/hero-bg.png')] bg-cover bg-center opacity-10" />
+
+        <div className="relative z-10 text-center px-4 sm:px-6 lg:px-8 max-w-2xl mx-auto">
+          <div className="animate-bounce mb-8">
+            <Heart className="w-16 h-16 text-orange-500 mx-auto mb-4" />
+          </div>
+
+          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">Welcome to DharmaSaathi! 🌸</h1>
+
+          <p className="text-xl text-gray-700 mb-8">
+            Your sacred account has been created successfully.
+            <br />
+            Redirecting you to complete your spiritual profile...
+          </p>
+
+          <div className="flex justify-center">
+            <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
+          </div>
+        </div>
+      </section>
+    )
+  }
 
   return (
-    <section id="signup-form" className="relative overflow-hidden pt-24 pb-20 md:pt-32 md:pb-32">
-      {/* Enhanced Background */}
-      <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-gradient-to-br from-rose-50/80 via-white to-purple-50/60" />
-        <div className="absolute top-20 left-10 w-96 h-96 rounded-full bg-gradient-to-r from-primary/10 to-purple-200/20 blur-3xl animate-float" />
-        <div
-          className="absolute bottom-10 right-10 w-80 h-80 rounded-full bg-gradient-to-r from-rose-200/20 to-primary/10 blur-3xl animate-float"
-          style={{ animationDelay: "1s" }}
-        />
+    <section className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 overflow-hidden">
+      {/* Background Elements */}
+      <div className="absolute inset-0 bg-[url('/images/hero-bg.png')] bg-cover bg-center opacity-10" />
+
+      {/* Floating Elements */}
+      <div className="absolute top-20 left-10 animate-float">
+        <Sparkles className="w-8 h-8 text-orange-300" />
+      </div>
+      <div className="absolute top-40 right-20 animate-float-delayed">
+        <Heart className="w-6 h-6 text-pink-300" />
+      </div>
+      <div className="absolute bottom-32 left-20 animate-float">
+        <Sparkles className="w-10 h-10 text-yellow-300" />
       </div>
 
-      {/* Decorative Image */}
-      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 opacity-5 pointer-events-none">
-        <Image
-          src="/placeholder.svg?height=800&width=800"
-          alt="Spiritual Background"
-          width={800}
-          height={800}
-          className="w-full h-full object-contain"
-        />
-      </div>
+      <div className="relative z-10 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid lg:grid-cols-2 gap-12 items-center">
+          {/* Left Column - Content */}
+          <div className="text-center lg:text-left">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight">
+              Find Your
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-pink-500 block">
+                Sacred Soulmate
+              </span>
+            </h1>
 
-      <div className="container px-4 md:px-6 relative z-10">
-        <div className="grid gap-12 lg:grid-cols-12 lg:gap-8 items-center max-w-7xl mx-auto">
-          {/* Left Content - Takes up more space */}
-          <div className="lg:col-span-7 flex flex-col justify-center space-y-6 animate-fade-in">
-            <div className="space-y-4">
-              <div className="inline-block mb-6">
-                <div className="flex items-center space-x-3 glass-effect px-6 py-3 rounded-full shadow-lg">
-                  <Heart className="h-6 w-6 text-primary animate-pulse" />
-                  <span className="text-lg font-semibold text-primary">DharmaSaathi</span>
-                </div>
+            <p className="text-xl text-gray-700 mb-8 leading-relaxed">
+              Connect with like-minded souls on a journey of dharma, devotion, and divine love. Your spiritual companion
+              awaits.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-8">
+              <div className="flex items-center gap-2 text-gray-600">
+                <Heart className="w-5 h-5 text-red-500" />
+                <span>Dharma-Based Matching</span>
               </div>
-              <h1 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl lg:text-6xl bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-                From Drama to <span className="text-primary">Dharma</span>
-              </h1>
-              <p className="max-w-[600px] text-lg sm:text-xl text-muted-foreground md:text-2xl leading-relaxed">
-                Where Seekers Meet Their Soulmates
-              </p>
-              <p className="max-w-[600px] text-muted-foreground leading-relaxed">
-                Join thousands of spiritual souls who have found their perfect match through our sacred platform. Begin
-                your journey from chaos to consciousness, from drama to dharma.
-              </p>
-            </div>
-            <div className="flex flex-col gap-4 sm:flex-row">
-              <Button
-                size="lg"
-                className="bg-primary hover:bg-primary/90 text-white px-8 py-4 text-lg shadow-lg hover:shadow-xl transition-all duration-300"
-              >
-                Start Your Spiritual Journey
-              </Button>
-              <Button
-                variant="outline"
-                size="lg"
-                className="px-8 py-4 text-lg border-primary/20 hover:border-primary/40"
-              >
-                Watch Stories
-              </Button>
+              <div className="flex items-center gap-2 text-gray-600">
+                <Sparkles className="w-5 h-5 text-yellow-500" />
+                <span>Spiritual Compatibility</span>
+              </div>
             </div>
           </div>
 
-          {/* Right Form - Takes up less space and better positioned */}
-          <div className="lg:col-span-5 w-full animate-fade-in" style={{ animationDelay: "0.3s" }}>
-            <div className="glass-effect p-6 sm:p-8 rounded-3xl shadow-2xl border border-white/30 max-w-md mx-auto lg:mx-0">
-              <Tabs defaultValue="signup" className="w-full" onValueChange={setActiveTab}>
-                <TabsList className="grid w-full grid-cols-2 mb-6 bg-muted/50">
-                  <TabsTrigger
-                    value="signup"
-                    className="data-[state=active]:bg-primary data-[state=active]:text-white text-sm"
-                  >
-                    Sign Up
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="login"
-                    className="data-[state=active]:bg-primary data-[state=active]:text-white text-sm"
-                  >
-                    Login
-                  </TabsTrigger>
-                </TabsList>
+          {/* Right Column - Sign Up Form */}
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-2xl p-8 border border-white/20">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Create Sacred Account</h2>
+              <p className="text-gray-600">Begin your journey to find your dharmic partner</p>
+            </div>
 
-                <TabsContent value="signup" className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name" className="text-sm font-medium">
-                      Full Name
-                    </Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="name"
-                        placeholder="Your full name"
-                        className="pl-10 h-11 border-muted-foreground/20 focus:border-primary text-sm"
-                      />
-                    </div>
-                  </div>
+            {errors.general && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-red-700 text-sm">{errors.general}</p>
+              </div>
+            )}
 
-                  <div className="space-y-2">
-                    <Label htmlFor="email" className="text-sm font-medium">
-                      Email Address
-                    </Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder="your.email@example.com"
-                        className="pl-10 h-11 border-muted-foreground/20 focus:border-primary text-sm"
-                      />
-                    </div>
-                  </div>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="firstName" className="text-gray-700 font-medium">
+                    First Name *
+                  </Label>
+                  <Input
+                    id="firstName"
+                    type="text"
+                    value={formData.firstName}
+                    onChange={(e) => handleInputChange("firstName", e.target.value)}
+                    className={`mt-1 ${errors.firstName ? "border-red-500 focus:ring-red-500" : ""}`}
+                    placeholder="Enter your first name"
+                    disabled={isLoading}
+                  />
+                  {errors.firstName && <p className="mt-1 text-sm text-red-600">{errors.firstName}</p>}
+                </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="mobile" className="text-sm font-medium">
-                      Mobile Number
-                    </Label>
-                    <div className="flex space-x-2">
-                      <Select value={selectedCountryCode} onValueChange={setSelectedCountryCode}>
-                        <SelectTrigger className="w-20 h-11 border-muted-foreground/20 text-xs">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {countryCodes.map((country) => (
-                            <SelectItem key={country.code} value={country.code}>
-                              <span className="flex items-center space-x-2">
-                                <span>{country.flag}</span>
-                                <span className="text-xs">{country.code}</span>
-                              </span>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <div className="relative flex-1">
-                        <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          id="mobile"
-                          type="tel"
-                          placeholder="9876543210"
-                          className="pl-10 h-11 border-muted-foreground/20 focus:border-primary text-sm"
-                        />
-                      </div>
-                    </div>
-                  </div>
+                <div>
+                  <Label htmlFor="lastName" className="text-gray-700 font-medium">
+                    Last Name *
+                  </Label>
+                  <Input
+                    id="lastName"
+                    type="text"
+                    value={formData.lastName}
+                    onChange={(e) => handleInputChange("lastName", e.target.value)}
+                    className={`mt-1 ${errors.lastName ? "border-red-500 focus:ring-red-500" : ""}`}
+                    placeholder="Enter your last name"
+                    disabled={isLoading}
+                  />
+                  {errors.lastName && <p className="mt-1 text-sm text-red-600">{errors.lastName}</p>}
+                </div>
+              </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="password" className="text-sm font-medium">
-                      Create Password
-                    </Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="password"
-                        type="password"
-                        placeholder="Create a strong password"
-                        className="pl-10 h-11 border-muted-foreground/20 focus:border-primary text-sm"
-                      />
-                    </div>
-                  </div>
+              <div>
+                <Label htmlFor="email" className="text-gray-700 font-medium">
+                  Email Address *
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => handleInputChange("email", e.target.value)}
+                  className={`mt-1 ${errors.email ? "border-red-500 focus:ring-red-500" : ""}`}
+                  placeholder="Enter your email address"
+                  disabled={isLoading}
+                />
+                {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
+              </div>
 
-                  <Button className="w-full h-11 bg-primary hover:bg-primary/90 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-300 text-sm">
-                    Create Sacred Account
-                  </Button>
+              <div>
+                <Label htmlFor="password" className="text-gray-700 font-medium">
+                  Password *
+                </Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => handleInputChange("password", e.target.value)}
+                  className={`mt-1 ${errors.password ? "border-red-500 focus:ring-red-500" : ""}`}
+                  placeholder="Create a strong password"
+                  disabled={isLoading}
+                />
+                {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
+                <p className="mt-1 text-xs text-gray-500">
+                  Must be 8+ characters with uppercase, lowercase, and number
+                </p>
+              </div>
 
-                  <div className="relative">
-                    <div className="absolute inset-0 flex items-center">
-                      <span className="w-full border-t border-muted-foreground/20" />
-                    </div>
-                    <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-white px-3 text-muted-foreground font-medium">Or continue with</span>
-                    </div>
-                  </div>
+              <Button
+                type="submit"
+                disabled={isLoading}
+                className="w-full bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    Creating Account...
+                  </>
+                ) : (
+                  "Create Sacred Account"
+                )}
+              </Button>
+            </form>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <Button
-                      variant="outline"
-                      className="h-11 border-muted-foreground/20 hover:border-primary/40 text-xs"
-                    >
-                      <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
-                        <path
-                          fill="#4285F4"
-                          d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                        />
-                        <path
-                          fill="#34A853"
-                          d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                        />
-                        <path
-                          fill="#FBBC05"
-                          d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                        />
-                        <path
-                          fill="#EA4335"
-                          d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                        />
-                      </svg>
-                      Google
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="h-11 border-muted-foreground/20 hover:border-primary/40 text-xs"
-                    >
-                      <svg className="mr-2 h-4 w-4" fill="#1877F2" viewBox="0 0 24 24">
-                        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                      </svg>
-                      Facebook
-                    </Button>
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="login" className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="login-email" className="text-sm font-medium">
-                      Email Address
-                    </Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="login-email"
-                        type="email"
-                        placeholder="your.email@example.com"
-                        className="pl-10 h-11 border-muted-foreground/20 focus:border-primary text-sm"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="login-password" className="text-sm font-medium">
-                        Password
-                      </Label>
-                      <Button variant="link" className="h-auto p-0 text-xs text-primary hover:text-primary/80">
-                        Forgot password?
-                      </Button>
-                    </div>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="login-password"
-                        type="password"
-                        placeholder="Enter your password"
-                        className="pl-10 h-11 border-muted-foreground/20 focus:border-primary text-sm"
-                      />
-                    </div>
-                  </div>
-                  <Button className="w-full h-11 bg-primary hover:bg-primary/90 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-300 text-sm">
-                    Sign In to Your Journey
-                  </Button>
-                </TabsContent>
-              </Tabs>
+            <div className="mt-6 text-center">
+              <p className="text-sm text-gray-600">
+                Already have an account?{" "}
+                <button className="text-orange-600 hover:text-orange-700 font-medium">Sign In</button>
+              </p>
             </div>
           </div>
         </div>
       </div>
+
+      <style jsx>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-20px); }
+        }
+        
+        .animate-float {
+          animation: float 6s ease-in-out infinite;
+        }
+        
+        .animate-float-delayed {
+          animation: float 6s ease-in-out infinite;
+          animation-delay: 2s;
+        }
+      `}</style>
     </section>
   )
 }

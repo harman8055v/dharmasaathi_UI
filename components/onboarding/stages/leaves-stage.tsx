@@ -1,31 +1,65 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
-import { Loader2 } from "lucide-react"
+import { Loader2, GraduationCap, Briefcase, DollarSign } from "lucide-react"
+import type { OnboardingData } from "@/lib/types/onboarding"
 
 interface LeavesStageProps {
-  profile: any
-  onSubmit: (data: any) => void
-  isSubmitting: boolean
+  formData: OnboardingData
+  onChange: (updates: Partial<OnboardingData>) => void
+  onNext: () => void
+  isLoading: boolean
+  error?: string | null
 }
 
-export default function LeavesStage({ profile, onSubmit, isSubmitting }: LeavesStageProps) {
-  const [formData, setFormData] = useState({
-    education: profile.education || "",
-    profession: profile.profession || "",
-    annual_income: profile.annual_income || "",
-  })
+export default function LeavesStage({ formData, onChange, onNext, isLoading, error }: LeavesStageProps) {
+  // Destructure with null defaults
+  const { education = null, profession = null, annual_income = null } = formData
+
+  const [errors, setErrors] = useState<Record<string, string>>({})
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
+    onChange({ ...formData, [name]: value || null })
+
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: "" }))
+    }
+  }
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {}
+
+    if (!education) {
+      newErrors.education = "Please select your education level"
+    }
+
+    if (!profession?.trim()) {
+      newErrors.profession = "Please enter your profession"
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
   }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    onSubmit(formData)
+    if (validateForm()) {
+      onNext()
+    }
+  }
+
+  const handleSkip = () => {
+    // Set skipped fields to null
+    onChange({
+      ...formData,
+      education: null,
+      profession: null,
+      annual_income: null,
+    })
+    onNext()
   }
 
   const incomeRanges = [
@@ -40,89 +74,125 @@ export default function LeavesStage({ profile, onSubmit, isSubmitting }: LeavesS
     "Prefer not to say",
   ]
 
+  const educationLevels = [
+    "High School",
+    "Diploma",
+    "Bachelor's Degree",
+    "Master's Degree",
+    "Doctorate",
+    "Professional Degree",
+    "Other",
+  ]
+
   return (
     <div className="space-y-6">
-      <div className="bg-card p-6 rounded-lg shadow-sm">
-        <h2 className="text-xl font-semibold mb-4">Name your strengths</h2>
+      <div className="text-center mb-6">
+        <div className="text-4xl mb-4">🍃</div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Name your strengths</h2>
+        <p className="text-gray-600">Share your professional background and achievements</p>
+      </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Education */}
-          <div className="space-y-2">
-            <label htmlFor="education" className="block text-sm font-medium text-foreground">
-              Highest Education
-            </label>
-            <select
-              id="education"
-              name="education"
-              value={formData.education}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
-              required
-            >
-              <option value="">Select education level</option>
-              <option value="High School">High School</option>
-              <option value="Bachelor's">Bachelor's Degree</option>
-              <option value="Master's">Master's Degree</option>
-              <option value="Doctorate">Doctorate</option>
-              <option value="Other">Other</option>
-            </select>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Education */}
+        <div className="space-y-2">
+          <label htmlFor="education" className="flex items-center text-sm font-semibold text-gray-700">
+            <GraduationCap className="w-4 h-4 mr-2" />
+            Highest Education *
+          </label>
+          <select
+            id="education"
+            name="education"
+            value={education || ""}
+            onChange={handleChange}
+            className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors ${
+              errors.education ? "border-red-300" : "border-gray-200"
+            }`}
+          >
+            <option value="">Select your education level</option>
+            {educationLevels.map((level) => (
+              <option key={level} value={level}>
+                {level}
+              </option>
+            ))}
+          </select>
+          {errors.education && <p className="text-red-500 text-sm">{errors.education}</p>}
+        </div>
+
+        {/* Profession */}
+        <div className="space-y-2">
+          <label htmlFor="profession" className="flex items-center text-sm font-semibold text-gray-700">
+            <Briefcase className="w-4 h-4 mr-2" />
+            Profession *
+          </label>
+          <input
+            type="text"
+            id="profession"
+            name="profession"
+            value={profession || ""}
+            onChange={handleChange}
+            placeholder="e.g. Software Engineer, Doctor, Teacher, Business Owner"
+            className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors ${
+              errors.profession ? "border-red-300" : "border-gray-200"
+            }`}
+          />
+          {errors.profession && <p className="text-red-500 text-sm">{errors.profession}</p>}
+        </div>
+
+        {/* Annual Income */}
+        <div className="space-y-2">
+          <label htmlFor="annual_income" className="flex items-center text-sm font-semibold text-gray-700">
+            <DollarSign className="w-4 h-4 mr-2" />
+            Annual Income
+          </label>
+          <select
+            id="annual_income"
+            name="annual_income"
+            value={annual_income || ""}
+            onChange={handleChange}
+            className="w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors border-gray-200"
+          >
+            <option value="">Select your income range (optional)</option>
+            {incomeRanges.map((range) => (
+              <option key={range} value={range}>
+                {range}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Display any server errors */}
+        {error && (
+          <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-700 text-sm">{error}</p>
           </div>
+        )}
 
-          {/* Profession */}
-          <div className="space-y-2">
-            <label htmlFor="profession" className="block text-sm font-medium text-foreground">
-              Profession
-            </label>
-            <input
-              type="text"
-              id="profession"
-              name="profession"
-              value={formData.profession}
-              onChange={handleChange}
-              placeholder="e.g. Software Engineer, Doctor, Teacher"
-              className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
-              required
-            />
-          </div>
-
-          {/* Annual Income */}
-          <div className="space-y-2">
-            <label htmlFor="annual_income" className="block text-sm font-medium text-foreground">
-              Annual Income
-            </label>
-            <select
-              id="annual_income"
-              name="annual_income"
-              value={formData.annual_income}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
-              required
-            >
-              <option value="">Select income range</option>
-              {incomeRanges.map((range) => (
-                <option key={range} value={range}>
-                  {range}
-                </option>
-              ))}
-            </select>
-          </div>
-
+        <div className="flex gap-4">
           <button
             type="submit"
-            disabled={isSubmitting}
-            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-2 px-4 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={isLoading}
+            className="flex-1 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold py-4 px-6 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl"
           >
-            {isSubmitting ? (
+            {isLoading ? (
               <span className="flex items-center justify-center gap-2">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Processing...
+                <Loader2 className="h-5 w-5 animate-spin" />
+                Saving...
               </span>
             ) : (
-              "Next"
+              "Continue to Spiritual Preferences"
             )}
           </button>
-        </form>
-      </div>
+
+          <button
+            type="button"
+            onClick={handleSkip}
+            disabled={isLoading}
+            className="px-6 py-4 text-gray-600 hover:text-gray-800 font-medium transition-colors"
+          >
+            Skip
+          </button>
+        </div>
+      </form>
     </div>
   )
 }
