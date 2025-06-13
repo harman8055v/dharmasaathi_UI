@@ -15,8 +15,15 @@ interface StemStageProps {
 }
 
 export default function StemStage({ formData, onChange, onNext, isLoading, error }: StemStageProps) {
-  // Destructure with null defaults
-  const { gender = null, birthdate = null, city = null, state = null, country = null, mother_tongue = null } = formData
+  // Destructure with null defaults, but set India as default for country
+  const {
+    gender = null,
+    birthdate = null,
+    city = null,
+    state = null,
+    country = "India", // Default to India
+    mother_tongue = null,
+  } = formData
 
   const [errors, setErrors] = useState<Record<string, string>>({})
 
@@ -88,14 +95,14 @@ export default function StemStage({ formData, onChange, onNext, isLoading, error
   }
 
   const handleSkip = () => {
-    // Set skipped fields to null
+    // Set skipped fields to null, but keep India as default for country
     onChange({
       ...formData,
       gender: null,
       birthdate: null,
       city: null,
       state: null,
-      country: null,
+      country: "India",
       mother_tongue: null,
     })
     onNext()
@@ -205,7 +212,7 @@ export default function StemStage({ formData, onChange, onNext, isLoading, error
             type="text"
             id="country"
             name="country"
-            value={country || ""}
+            value={country || "India"}
             onChange={handleChange}
             placeholder="Enter your country"
             className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors ${

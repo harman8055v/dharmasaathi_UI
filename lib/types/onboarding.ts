@@ -37,6 +37,7 @@ export interface OnboardingProfile extends OnboardingData {
   email: string
   first_name?: string
   last_name?: string
+  mobile_number?: string
   onboarding_completed?: boolean
   updated_at?: string
 }
@@ -56,4 +57,29 @@ export function validateEnumField<T extends keyof typeof VALID_VALUES>(
   value: any,
 ): value is (typeof VALID_VALUES)[T][number] {
   return VALID_VALUES[field].includes(value as any)
+}
+
+// Helper function to validate mobile number
+export function validateMobileNumber(mobile: string): boolean {
+  if (!mobile) return false
+
+  // Remove all non-digit characters except +
+  const cleanMobile = mobile.replace(/[^\d+]/g, "")
+
+  // Should start with + or digit, be 10-15 characters long
+  const mobileRegex = /^[+]?[1-9]\d{9,14}$/
+  return mobileRegex.test(cleanMobile)
+}
+
+// Helper function to format mobile number
+export function formatMobileNumber(mobile: string): string {
+  // Remove all non-digit characters except +
+  let cleaned = mobile.replace(/[^\d+]/g, "")
+
+  // If it doesn't start with +, and it's an Indian number (10 digits), add +91
+  if (!cleaned.startsWith("+") && cleaned.length === 10 && cleaned.match(/^[6-9]/)) {
+    cleaned = "+91" + cleaned
+  }
+
+  return cleaned
 }

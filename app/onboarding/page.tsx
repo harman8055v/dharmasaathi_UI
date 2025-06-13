@@ -57,6 +57,7 @@ export default function OnboardingPage() {
               email: user.email!, // Email is required and comes from auth
               first_name: user.user_metadata?.first_name || null,
               last_name: user.user_metadata?.last_name || null,
+              mobile_number: user.user_metadata?.mobile_number || null,
               onboarding_completed: false,
               // Initialize all enum fields as null
               gender: null,
@@ -77,7 +78,7 @@ export default function OnboardingPage() {
               user_photos: [],
               about_me: null,
               partner_expectations: null,
-              email_verified: false,
+              email_verified: !!user.email_confirmed_at, // Set based on auth status
             }
 
             const { data: insertedProfile, error: insertError } = await supabase
@@ -113,6 +114,11 @@ export default function OnboardingPage() {
           // Ensure email is set (it should be from the database)
           if (!profileData.email) {
             profileData.email = user.email!
+          }
+
+          // Ensure email_verified is set based on auth status if not already set
+          if (profileData.email_verified === null || profileData.email_verified === undefined) {
+            profileData.email_verified = !!user.email_confirmed_at
           }
 
           setProfile(profileData)

@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   title: "DharmaSaathi - Where Spiritual Seekers Find Love",
   description:
     "A global spiritual matrimony platform connecting like-minded souls on their journey from drama to dharma.",
-    generator: 'v0.dev'
+  generator: "v0.dev",
 }
 
 export default function RootLayout({

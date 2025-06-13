@@ -1,391 +1,199 @@
 "use client"
 
-import type React from "react"
-
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { supabase } from "@/lib/supabase"
-import { Loader2, Heart, Sparkles } from "lucide-react"
-
-interface FormData {
-  firstName: string
-  lastName: string
-  email: string
-  password: string
-}
-
-interface FormErrors {
-  firstName?: string
-  lastName?: string
-  email?: string
-  password?: string
-  general?: string
-}
+import { Heart, Sparkles, Users, Shield, ArrowRight, Play } from "lucide-react"
+import Image from "next/image"
+import AuthDialog from "./auth-dialog"
 
 export default function Hero() {
-  const [formData, setFormData] = useState<FormData>({
-    firstName: "",
-    lastName: "",
-    email: "",
-    password: "",
-  })
-  const [errors, setErrors] = useState<FormErrors>({})
-  const [isLoading, setIsLoading] = useState(false)
-  const [isSuccess, setIsSuccess] = useState(false)
-  const router = useRouter()
+  const [isAuthOpen, setIsAuthOpen] = useState(false)
+  const [authMode, setAuthMode] = useState<"signup" | "login">("signup")
 
-  const validateForm = (): boolean => {
-    const newErrors: FormErrors = {}
-
-    // First name validation
-    if (!formData.firstName.trim()) {
-      newErrors.firstName = "First name is required"
-    } else if (formData.firstName.trim().length < 2) {
-      newErrors.firstName = "First name must be at least 2 characters"
-    }
-
-    // Last name validation
-    if (!formData.lastName.trim()) {
-      newErrors.lastName = "Last name is required"
-    } else if (formData.lastName.trim().length < 2) {
-      newErrors.lastName = "Last name must be at least 2 characters"
-    }
-
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!formData.email.trim()) {
-      newErrors.email = "Email is required"
-    } else if (!emailRegex.test(formData.email)) {
-      newErrors.email = "Please enter a valid email address"
-    }
-
-    // Password validation
-    if (!formData.password) {
-      newErrors.password = "Password is required"
-    } else if (formData.password.length < 8) {
-      newErrors.password = "Password must be at least 8 characters"
-    } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password)) {
-      newErrors.password = "Password must contain at least one uppercase letter, one lowercase letter, and one number"
-    }
-
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
+  const openAuth = (mode: "signup" | "login") => {
+    setAuthMode(mode)
+    setIsAuthOpen(true)
   }
 
-  const handleInputChange = (field: keyof FormData, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-    // Clear error for this field when user starts typing
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: undefined }))
+  const scrollToSection = (sectionId: string) => {
+    const element = document.getElementById(sectionId)
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth" })
     }
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-
-    if (!validateForm()) {
-      return
-    }
-
-    setIsLoading(true)
-    setErrors({})
-
-    try {
-      // Sign up the user with metadata
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        options: {
-          data: {
-            first_name: formData.firstName,
-            last_name: formData.lastName,
-            full_name: `${formData.firstName} ${formData.lastName}`,
-          },
-        },
-      })
-
-      if (authError) {
-        console.error("Auth error:", authError)
-        throw authError
-      }
-
-      if (authData.user) {
-        console.log("User created successfully:", authData.user.id)
-
-        // Try to create profile - but don't fail if it doesn't work
-        try {
-          // First, let's check if a users table exists and what its structure is
-          const { data: existingProfile, error: checkError } = await supabase
-            .from("users")
-            .select("*")
-            .eq("id", authData.user.id)
-            .single()
-
-          if (checkError && checkError.code !== "PGRST116") {
-            // PGRST116 means "not found", which is expected for new users
-            console.log("Error checking existing profile:", checkError)
-          }
-
-          if (!existingProfile) {
-            // Try to insert the profile
-            const profileData = {
-              id: authData.user.id,
-              email: formData.email,
-              first_name: formData.firstName,
-              last_name: formData.lastName,
-              full_name: `${formData.firstName} ${formData.lastName}`,
-              onboarding_completed: false,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            }
-
-            console.log("Attempting to create profile with data:", profileData)
-
-            const { data: profileResult, error: profileError } = await supabase
-              .from("users")
-              .insert(profileData)
-              .select()
-
-            if (profileError) {
-              console.error("Profile creation error details:", {
-                message: profileError.message,
-                details: profileError.details,
-                hint: profileError.hint,
-                code: profileError.code,
-              })
-
-              // Don't throw here - the auth user was created successfully
-              // The onboarding page can handle creating the profile if needed
-            } else {
-              console.log("Profile created successfully:", profileResult)
-            }
-          }
-        } catch (profileError) {
-          console.error("Profile creation failed:", profileError)
-          // Continue anyway - onboarding can handle this
-        }
-
-        setIsSuccess(true)
-
-        // Redirect to onboarding after a brief success message
-        setTimeout(() => {
-          router.push("/onboarding")
-        }, 2000)
-      }
-    } catch (error: any) {
-      console.error("Sign up error:", error)
-
-      if (error.message?.includes("already registered") || error.message?.includes("already been registered")) {
-        setErrors({ email: "This email is already registered. Please try signing in instead." })
-      } else if (error.message?.includes("Invalid email")) {
-        setErrors({ email: "Please enter a valid email address" })
-      } else if (error.message?.includes("Password")) {
-        setErrors({ password: error.message })
-      } else {
-        setErrors({ general: error.message || "An error occurred during sign up. Please try again." })
-      }
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  if (isSuccess) {
-    return (
-      <section className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 overflow-hidden">
-        <div className="absolute inset-0 bg-[url('/images/hero-bg.png')] bg-cover bg-center opacity-10" />
-
-        <div className="relative z-10 text-center px-4 sm:px-6 lg:px-8 max-w-2xl mx-auto">
-          <div className="animate-bounce mb-8">
-            <Heart className="w-16 h-16 text-orange-500 mx-auto mb-4" />
-          </div>
-
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">Welcome to DharmaSaathi! 🌸</h1>
-
-          <p className="text-xl text-gray-700 mb-8">
-            Your sacred account has been created successfully.
-            <br />
-            Redirecting you to complete your spiritual profile...
-          </p>
-
-          <div className="flex justify-center">
-            <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
-          </div>
-        </div>
-      </section>
-    )
   }
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 overflow-hidden">
-      {/* Background Elements */}
-      <div className="absolute inset-0 bg-[url('/images/hero-bg.png')] bg-cover bg-center opacity-10" />
+    <>
+      <section
+        id="hero"
+        className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 overflow-hidden pt-16"
+      >
+        {/* Animated Background Elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute top-20 left-10 w-32 h-32 bg-gradient-to-r from-orange-200 to-pink-200 rounded-full blur-3xl opacity-30 animate-pulse-slow"></div>
+          <div className="absolute top-40 right-20 w-24 h-24 bg-gradient-to-r from-pink-200 to-purple-200 rounded-full blur-2xl opacity-40 animate-pulse-slow delay-1000"></div>
+          <div className="absolute bottom-32 left-20 w-40 h-40 bg-gradient-to-r from-yellow-200 to-orange-200 rounded-full blur-3xl opacity-25 animate-pulse-slow delay-2000"></div>
+          <div className="absolute bottom-20 right-10 w-28 h-28 bg-gradient-to-r from-amber-200 to-yellow-200 rounded-full blur-2xl opacity-35 animate-pulse-slow delay-3000"></div>
+        </div>
 
-      {/* Floating Elements */}
-      <div className="absolute top-20 left-10 animate-float">
-        <Sparkles className="w-8 h-8 text-orange-300" />
-      </div>
-      <div className="absolute top-40 right-20 animate-float-delayed">
-        <Heart className="w-6 h-6 text-pink-300" />
-      </div>
-      <div className="absolute bottom-32 left-20 animate-float">
-        <Sparkles className="w-10 h-10 text-yellow-300" />
-      </div>
+        {/* Floating Icons */}
+        <div className="absolute top-32 left-16 animate-float opacity-60">
+          <Heart className="w-6 h-6 text-pink-400" />
+        </div>
+        <div className="absolute top-48 right-24 animate-float-delayed opacity-60">
+          <Sparkles className="w-8 h-8 text-yellow-400" />
+        </div>
+        <div className="absolute bottom-40 left-24 animate-float opacity-60">
+          <Users className="w-7 h-7 text-orange-400" />
+        </div>
+        <div className="absolute bottom-56 right-16 animate-float-delayed opacity-60">
+          <Shield className="w-6 h-6 text-purple-400" />
+        </div>
 
-      <div className="relative z-10 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          {/* Left Column - Content */}
-          <div className="text-center lg:text-left">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight">
-              Find Your
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-pink-500 block">
-                Sacred Soulmate
-              </span>
-            </h1>
-
-            <p className="text-xl text-gray-700 mb-8 leading-relaxed">
-              Connect with like-minded souls on a journey of dharma, devotion, and divine love. Your spiritual companion
-              awaits.
-            </p>
-
-            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-8">
-              <div className="flex items-center gap-2 text-gray-600">
-                <Heart className="w-5 h-5 text-red-500" />
-                <span>Dharma-Based Matching</span>
-              </div>
-              <div className="flex items-center gap-2 text-gray-600">
-                <Sparkles className="w-5 h-5 text-yellow-500" />
-                <span>Spiritual Compatibility</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Right Column - Sign Up Form */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-2xl p-8 border border-white/20">
-            <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Create Sacred Account</h2>
-              <p className="text-gray-600">Begin your journey to find your dharmic partner</p>
-            </div>
-
-            {errors.general && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-700 text-sm">{errors.general}</p>
-              </div>
-            )}
-
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="firstName" className="text-gray-700 font-medium">
-                    First Name *
-                  </Label>
-                  <Input
-                    id="firstName"
-                    type="text"
-                    value={formData.firstName}
-                    onChange={(e) => handleInputChange("firstName", e.target.value)}
-                    className={`mt-1 ${errors.firstName ? "border-red-500 focus:ring-red-500" : ""}`}
-                    placeholder="Enter your first name"
-                    disabled={isLoading}
-                  />
-                  {errors.firstName && <p className="mt-1 text-sm text-red-600">{errors.firstName}</p>}
-                </div>
-
-                <div>
-                  <Label htmlFor="lastName" className="text-gray-700 font-medium">
-                    Last Name *
-                  </Label>
-                  <Input
-                    id="lastName"
-                    type="text"
-                    value={formData.lastName}
-                    onChange={(e) => handleInputChange("lastName", e.target.value)}
-                    className={`mt-1 ${errors.lastName ? "border-red-500 focus:ring-red-500" : ""}`}
-                    placeholder="Enter your last name"
-                    disabled={isLoading}
-                  />
-                  {errors.lastName && <p className="mt-1 text-sm text-red-600">{errors.lastName}</p>}
-                </div>
+        <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            {/* Left Column - Content */}
+            <div className="text-center lg:text-left space-y-8">
+              {/* Badge */}
+              <div className="inline-flex items-center px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full shadow-lg border border-orange-100 animate-fade-in-up">
+                <Sparkles className="w-4 h-4 text-orange-500 mr-2" />
+                <span className="text-sm font-medium text-orange-700">
+                  India's First Spiritual Matchmaking Platform
+                </span>
               </div>
 
-              <div>
-                <Label htmlFor="email" className="text-gray-700 font-medium">
-                  Email Address *
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => handleInputChange("email", e.target.value)}
-                  className={`mt-1 ${errors.email ? "border-red-500 focus:ring-red-500" : ""}`}
-                  placeholder="Enter your email address"
-                  disabled={isLoading}
-                />
-                {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
-              </div>
-
-              <div>
-                <Label htmlFor="password" className="text-gray-700 font-medium">
-                  Password *
-                </Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => handleInputChange("password", e.target.value)}
-                  className={`mt-1 ${errors.password ? "border-red-500 focus:ring-red-500" : ""}`}
-                  placeholder="Create a strong password"
-                  disabled={isLoading}
-                />
-                {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
-                <p className="mt-1 text-xs text-gray-500">
-                  Must be 8+ characters with uppercase, lowercase, and number
+              {/* Main Heading */}
+              <div className="space-y-4 animate-fade-in-up delay-200">
+                <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">
+                  Find Your
+                  <span className="block text-transparent bg-clip-text bg-gradient-to-r from-orange-500 via-pink-500 to-purple-500 animate-gradient-x">
+                    Spiritual Soulmate
+                  </span>
+                </h1>
+                <p className="text-xl md:text-2xl text-gray-700 leading-relaxed max-w-2xl">
+                  Connect with like-minded souls on a journey of dharma, devotion, and divine love. Your spiritual
+                  companion awaits on this sacred path.
                 </p>
               </div>
 
-              <Button
-                type="submit"
-                disabled={isLoading}
-                className="w-full bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                    Creating Account...
-                  </>
-                ) : (
-                  "Create Sacred Account"
-                )}
-              </Button>
-            </form>
+              {/* Features */}
+              <div className="flex flex-col sm:flex-row gap-6 justify-center lg:justify-start animate-fade-in-up delay-400">
+                <div className="flex items-center gap-3 text-gray-700">
+                  <div className="p-2 bg-gradient-to-r from-orange-100 to-pink-100 rounded-full">
+                    <Heart className="w-5 h-5 text-red-500" />
+                  </div>
+                  <span className="font-medium">Dharma-Based Matching</span>
+                </div>
+                <div className="flex items-center gap-3 text-gray-700">
+                  <div className="p-2 bg-gradient-to-r from-yellow-100 to-orange-100 rounded-full">
+                    <Sparkles className="w-5 h-5 text-yellow-500" />
+                  </div>
+                  <span className="font-medium">Spiritual Compatibility</span>
+                </div>
+              </div>
 
-            <div className="mt-6 text-center">
-              <p className="text-sm text-gray-600">
-                Already have an account?{" "}
-                <button className="text-orange-600 hover:text-orange-700 font-medium">Sign In</button>
-              </p>
+              {/* CTA Buttons */}
+              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start animate-fade-in-up delay-600">
+                <Button
+                  onClick={() => openAuth("signup")}
+                  size="lg"
+                  className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white font-semibold px-8 py-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 group"
+                >
+                  Start Your Journey
+                  <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform duration-200" />
+                </Button>
+                <Button
+                  onClick={() => scrollToSection("how-it-works")}
+                  variant="outline"
+                  size="lg"
+                  className="border-2 border-orange-200 text-orange-700 hover:bg-orange-50 px-8 py-4 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 group"
+                >
+                  <Play className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform duration-200" />
+                  How It Works
+                </Button>
+              </div>
+
+              {/* Stats */}
+              <div className="grid grid-cols-3 gap-6 pt-8 animate-fade-in-up delay-800">
+                <div className="text-center">
+                  <div className="text-2xl md:text-3xl font-bold text-orange-600">10K+</div>
+                  <div className="text-sm text-gray-600">Spiritual Seekers</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl md:text-3xl font-bold text-pink-600">500+</div>
+                  <div className="text-sm text-gray-600">Success Stories</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl md:text-3xl font-bold text-purple-600">50+</div>
+                  <div className="text-sm text-gray-600">Cities</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column - Hero Image */}
+            <div className="relative animate-fade-in-up delay-300">
+              {/* Main Image Container */}
+              <div className="relative mx-auto max-w-lg">
+                {/* Glow Effect */}
+                <div className="absolute inset-0 bg-gradient-to-r from-orange-200 via-pink-200 to-purple-200 rounded-3xl blur-3xl opacity-30 animate-pulse-glow"></div>
+
+                {/* Image Card */}
+                <div className="relative bg-white/90 backdrop-blur-sm rounded-3xl p-6 shadow-2xl border border-white/50 transform hover:scale-105 transition-transform duration-500">
+                  <Image
+                    src="/placeholder.svg?height=500&width=400&text=Spiritual+Couple+Finding+Connection"
+                    alt="Spiritual couple finding meaningful connection through DharmaSaathi"
+                    width={400}
+                    height={500}
+                    className="w-full h-auto rounded-2xl"
+                    priority
+                  />
+
+                  {/* Floating Elements on Image */}
+                  <div className="absolute -top-4 -right-4 bg-gradient-to-r from-pink-500 to-purple-500 text-white p-3 rounded-full shadow-lg animate-bounce-slow">
+                    <Heart className="w-6 h-6" />
+                  </div>
+                  <div className="absolute -bottom-4 -left-4 bg-gradient-to-r from-orange-500 to-yellow-500 text-white p-3 rounded-full shadow-lg animate-bounce-slow delay-1000">
+                    <Sparkles className="w-6 h-6" />
+                  </div>
+                </div>
+
+                {/* Decorative Elements */}
+                <div className="absolute top-8 -left-8 w-16 h-16 bg-gradient-to-r from-yellow-300 to-orange-300 rounded-full opacity-20 animate-ping"></div>
+                <div className="absolute bottom-8 -right-8 w-12 h-12 bg-gradient-to-r from-pink-300 to-purple-300 rounded-full opacity-25 animate-ping delay-1000"></div>
+              </div>
+
+              {/* Trust Indicators */}
+              <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-white/90 backdrop-blur-sm rounded-2xl p-4 shadow-lg border border-white/50 animate-fade-in-up delay-1000">
+                <div className="flex items-center gap-4 text-sm">
+                  <div className="flex items-center gap-2">
+                    <Shield className="w-4 h-4 text-green-500" />
+                    <span className="text-gray-700 font-medium">Verified Profiles</span>
+                  </div>
+                  <div className="w-px h-4 bg-gray-300"></div>
+                  <div className="flex items-center gap-2">
+                    <Heart className="w-4 h-4 text-red-500" />
+                    <span className="text-gray-700 font-medium">Safe & Secure</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <style jsx>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-20px); }
-        }
-        
-        .animate-float {
-          animation: float 6s ease-in-out infinite;
-        }
-        
-        .animate-float-delayed {
-          animation: float 6s ease-in-out infinite;
-          animation-delay: 2s;
-        }
-      `}</style>
-    </section>
+        {/* Login Link */}
+        <div className="absolute top-20 right-4 lg:right-8 animate-fade-in-up delay-1000">
+          <Button
+            onClick={() => openAuth("login")}
+            variant="ghost"
+            className="text-gray-700 hover:text-orange-600 hover:bg-white/50 backdrop-blur-sm transition-all duration-200"
+          >
+            Already have an account? <span className="font-semibold ml-1">Sign In</span>
+          </Button>
+        </div>
+      </section>
+
+      {/* Auth Dialog */}
+      <AuthDialog isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} defaultMode={authMode} />
+    </>
   )
 }

@@ -6,9 +6,8 @@ import { supabase } from "@/lib/supabase"
 import type { User } from "@supabase/supabase-js"
 import type { OnboardingData, OnboardingProfile } from "@/lib/types/onboarding"
 import { VALID_VALUES, validateEnumField } from "@/lib/types/onboarding"
-import StageIndicator from "./stage-indicator"
+import ProgressBar from "./progress-bar"
 import NavigationButtons from "./navigation-buttons"
-import LotusAnimation from "./lotus-animation"
 import CompletionOverlay from "./completion-overlay"
 
 // Dynamic imports for stages
@@ -51,7 +50,7 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
     birthdate: null,
     city: null,
     state: null,
-    country: null,
+    country: "India", // Default to India
     mother_tongue: null,
     education: null,
     profession: null,
@@ -76,7 +75,7 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
         birthdate: profile.birthdate || null,
         city: profile.city || null,
         state: profile.state || null,
-        country: profile.country || null,
+        country: profile.country || "India", // Default to India if not set
         mother_tongue: profile.mother_tongue || null,
         education: profile.education || null,
         profession: profile.profession || null,
@@ -355,59 +354,40 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
     return <CompletionOverlay profile={profile} />
   }
 
-  const stageTitles = [
-    "Verify your email to plant the seed",
-    "Let's sprout your profile",
-    "Name your strengths",
-    "Choose your spiritual petals",
-    "Your blossom is complete—add the finishing touches!",
-  ]
+  const stageNames = ["Seed", "Stem", "Leaves", "Petals", "Full Bloom"]
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 relative overflow-hidden">
-      {/* Background lotus animation */}
-      <LotusAnimation currentStage={stage} />
-
-      {/* Stage indicator */}
-      <StageIndicator
-        currentStage={stage}
-        totalStages={5}
-        stageName={["Seed", "Stem", "Leaves", "Petals", "Full Bloom"][stage - 1]}
-      />
-
       {/* Main content */}
       <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
-        <div className="w-full max-w-2xl">
-          {/* Stage title */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">{stageTitles[stage - 1]}</h1>
-            <p className="text-gray-600">
-              Welcome, {profile?.first_name || "Friend"}! Let's complete your spiritual profile.
-            </p>
-          </div>
+        <div className="w-full max-w-4xl">
+          {/* Progress bar */}
+          <ProgressBar currentStage={stage} totalStages={5} stageName={stageNames[stage - 1]} />
 
           {/* Error message */}
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg max-w-2xl mx-auto">
               <p className="text-red-700 text-sm">{error}</p>
             </div>
           )}
 
           {/* Stage content */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-2xl p-8 border border-white/20">
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-2xl p-8 border border-white/20 max-w-2xl mx-auto">
             {renderCurrentStage()}
           </div>
 
           {/* Navigation */}
-          <NavigationButtons
-            currentStage={stage}
-            totalStages={5}
-            onBack={handleBack}
-            onNext={handleSaveAndNext}
-            onSkip={handleSkip}
-            isLoading={isLoading}
-            canProceed={true}
-          />
+          <div className="max-w-2xl mx-auto">
+            <NavigationButtons
+              currentStage={stage}
+              totalStages={5}
+              onBack={handleBack}
+              onNext={handleSaveAndNext}
+              onSkip={handleSkip}
+              isLoading={isLoading}
+              canProceed={true}
+            />
+          </div>
         </div>
       </div>
     </div>

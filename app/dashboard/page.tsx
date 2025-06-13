@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
-import { Heart, Settings, LogOut } from "lucide-react"
+import { Heart, Settings, LogOut, Phone, Mail } from "lucide-react"
 import type { User } from "@supabase/supabase-js"
 
 export default function DashboardPage() {
@@ -138,23 +138,38 @@ export default function DashboardPage() {
           <div className="grid md:grid-cols-2 gap-6">
             <div>
               <h4 className="font-semibold text-gray-900 mb-2">Basic Information</h4>
-              <p className="text-gray-600">
-                Name: {profile?.first_name} {profile?.last_name}
-              </p>
-              <p className="text-gray-600">Email: {profile?.email}</p>
-              {profile?.city && (
+              <div className="space-y-2">
                 <p className="text-gray-600">
-                  Location: {profile.city}, {profile.state}
+                  Name: {profile?.first_name} {profile?.last_name}
                 </p>
-              )}
+                <div className="flex items-center gap-2 text-gray-600">
+                  <Mail className="w-4 h-4" />
+                  <span>{profile?.email}</span>
+                </div>
+                {profile?.mobile_number && (
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <Phone className="w-4 h-4" />
+                    <span>{profile.mobile_number}</span>
+                  </div>
+                )}
+                {profile?.city && (
+                  <p className="text-gray-600">
+                    Location: {profile.city}, {profile.state}
+                  </p>
+                )}
+              </div>
             </div>
             <div>
               <h4 className="font-semibold text-gray-900 mb-2">Spiritual Preferences</h4>
-              {profile?.spiritual_org && <p className="text-gray-600">Organization: {profile.spiritual_org}</p>}
-              {profile?.diet && <p className="text-gray-600">Diet: {profile.diet}</p>}
-              {profile?.temple_visit_freq && (
-                <p className="text-gray-600">Temple Visits: {profile.temple_visit_freq}</p>
-              )}
+              <div className="space-y-2">
+                {profile?.spiritual_org && profile.spiritual_org.length > 0 && (
+                  <p className="text-gray-600">Organizations: {profile.spiritual_org.join(", ")}</p>
+                )}
+                {profile?.diet && <p className="text-gray-600">Diet: {profile.diet}</p>}
+                {profile?.temple_visit_freq && (
+                  <p className="text-gray-600">Temple Visits: {profile.temple_visit_freq}</p>
+                )}
+              </div>
             </div>
           </div>
         </div>
