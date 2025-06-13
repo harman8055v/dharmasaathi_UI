@@ -1,12 +1,13 @@
 "use client"
 
 import { useState } from "react"
-import { ArrowLeft, ArrowRight } from "lucide-react"
+import { ArrowLeft, ArrowRight, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { indianLanguages } from "@/lib/indian-languages"
 
 interface LifestyleStepProps {
@@ -22,15 +23,23 @@ export default function LifestyleStep({ onNext, onSkip, onBack }: LifestyleStepP
   const [templeVisits, setTempleVisits] = useState("")
   const [motherTongue, setMotherTongue] = useState("")
   const [otherMotherTongue, setOtherMotherTongue] = useState("")
+  const [error, setError] = useState<string | null>(null)
+
+  const validateForm = () => {
+    // This step is optional, so we don't need to validate
+    return true
+  }
 
   const handleSubmit = () => {
-    onNext({
-      diet,
-      smoking,
-      drinking,
-      templeVisits,
-      motherTongue: motherTongue === "Other" ? otherMotherTongue : motherTongue,
-    })
+    if (validateForm()) {
+      onNext({
+        diet,
+        smoking,
+        drinking,
+        templeVisits,
+        motherTongue: motherTongue === "Other" ? otherMotherTongue : motherTongue,
+      })
+    }
   }
 
   const commonRadioGroup = (
@@ -67,6 +76,13 @@ export default function LifestyleStep({ onNext, onSkip, onBack }: LifestyleStepP
           Simple choices shape our daily lives. Your lifestyle details help us find someone whose rhythm matches yours.
         </p>
       </div>
+
+      {error && (
+        <Alert variant="destructive" className="mb-6 bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
       <div className="space-y-8">
         {commonRadioGroup(

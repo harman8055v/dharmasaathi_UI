@@ -3,24 +3,36 @@
 import type React from "react"
 
 import { useState } from "react"
-import { ArrowLeft, ArrowRight, Upload, X } from "lucide-react"
+import { ArrowLeft, ArrowRight, Upload, X, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 interface PhotosStepProps {
   onNext: (data: any) => void
-  onSkip: () => void
   onBack: () => void
 }
 
-export default function PhotosStep({ onNext, onSkip, onBack }: PhotosStepProps) {
+export default function PhotosStep({ onNext, onBack }: PhotosStepProps) {
   const [profilePreview, setProfilePreview] = useState<string | null>(null)
   const [additionalPreviews, setAdditionalPreviews] = useState<string[]>([])
+  const [error, setError] = useState<string | null>(null)
+
+  const totalPhotos = profilePreview ? 1 + additionalPreviews.length : 0 + additionalPreviews.length
+  const requiredPhotos = 4
+  const remainingPhotos = Math.max(0, requiredPhotos - totalPhotos)
 
   const handleSubmit = () => {
+    if (totalPhotos < requiredPhotos) {
+      setError(`Please add at least ${requiredPhotos} photos. You need ${remainingPhotos} more.`)
+      return
+    }
+
+    setError(null)
     onNext({
       hasProfilePhoto: !!profilePreview,
       additionalPhotosCount: additionalPreviews.length,
+      totalPhotos: totalPhotos,
     })
   }
 
@@ -40,7 +52,7 @@ export default function PhotosStep({ onNext, onSkip, onBack }: PhotosStepProps) 
         reader.onloadend = () => {
           newPreviews.push(reader.result as string)
           if (newPreviews.length === files.length) {
-            setAdditionalPreviews((prev) => [...prev, ...newPreviews].slice(0, 6))
+            setAdditionalPreviews((prev) => [...prev, ...newPreviews].slice(0, 10))
           }
         }
         reader.readAsDataURL(file)
@@ -78,19 +90,32 @@ export default function PhotosStep({ onNext, onSkip, onBack }: PhotosStepProps) 
       <div className="mb-8">
         <h2 className="text-2xl font-light text-slate-900 dark:text-slate-100 mb-3">Add your photos</h2>
         <p className="text-slate-600 dark:text-slate-400">
-          Show your authentic self with photos that represent who you are.
+          Show your authentic self with photos that represent who you are.{" "}
+          <span className="font-medium text-maroon-700 dark:text-maroon-400">
+            At least {requiredPhotos} photos are required
+          </span>{" "}
+          for profile verification.
         </p>
       </div>
 
+      {error && (
+        <Alert variant="destructive" className="mb-6 bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
       <div className="space-y-8">
         <div className="space-y-4">
-          <Label className="text-base font-medium text-slate-700 dark:text-slate-300">Profile Photo</Label>
+          <Label className="text-base font-medium text-slate-700 dark:text-slate-300">
+            Profile Photo <span className="text-maroon-700 dark:text-maroon-400">*</span>
+          </Label>
           {!profilePreview ? (
             commonUploadBox(
               "profilePhotoUpload",
               (e) => handleFileChange(e, true),
-              "Click to upload",
-              "PNG, JPG or WEBP (MAX. 5MB)",
+              "Click to upload your main photo",
+              "This will be your primary profile picture",
             )
           ) : (
             <div className="relative w-40 h-40 sm:w-48 sm:h-48">
@@ -113,13 +138,16 @@ export default function PhotosStep({ onNext, onSkip, onBack }: PhotosStepProps) 
 
         <div className="space-y-4">
           <Label className="text-base font-medium text-slate-700 dark:text-slate-300">
-            Additional Photos <span className="text-slate-500 dark:text-slate-400">(up to 6)</span>
+            Additional Photos <span className="text-maroon-700 dark:text-maroon-400">*</span>
+            <span className="text-slate-500 dark:text-slate-400 ml-2 font-normal">
+              (at least {Math.max(0, requiredPhotos - (profilePreview ? 1 : 0))} more required)
+            </span>
           </Label>
           {commonUploadBox(
             "additionalPhotosUpload",
             (e) => handleFileChange(e, false),
             "Add more photos",
-            "Showcase your personality",
+            "Showcase different aspects of your personality",
             true,
           )}
           {additionalPreviews.length > 0 && (
@@ -153,22 +181,13 @@ export default function PhotosStep({ onNext, onSkip, onBack }: PhotosStepProps) 
             Save and continue <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
 
-          <div className="flex justify-between">
-            <Button
-              onClick={onBack}
-              variant="ghost"
-              className="text-slate-600 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50"
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" /> Back
-            </Button>
-            <Button
-              onClick={onSkip}
-              variant="ghost"
-              className="text-slate-600 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50"
-            >
-              Skip for now
-            </Button>
-          </div>
+          <Button
+            onClick={onBack}
+            variant="ghost"
+            className="text-slate-600 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" /> Back
+          </Button>
         </div>
       </div>
     </div>

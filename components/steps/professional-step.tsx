@@ -1,11 +1,12 @@
 "use client"
 
 import { useState } from "react"
-import { ArrowLeft, ArrowRight } from "lucide-react"
+import { ArrowLeft, ArrowRight, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 interface ProfessionalStepProps {
   onNext: (data: any) => void
@@ -17,13 +18,27 @@ export default function ProfessionalStep({ onNext, onSkip, onBack }: Professiona
   const [education, setEducation] = useState("")
   const [profession, setProfession] = useState("")
   const [income, setIncome] = useState("")
+  const [error, setError] = useState<string | null>(null)
 
   const handleSubmit = () => {
+    // This step is optional, so we don't need to validate
     onNext({ education, profession, income })
   }
 
   const educationLevels = ["10th", "12th", "Bachelor's", "Master's", "Doctorate", "Other"]
-  const incomeRanges = ["<3L", "3-6L", "6-10L", "10-20L", "20L+", "Prefer not to say"]
+  const incomeRanges = [
+    "<3L",
+    "3-6L",
+    "6-10L",
+    "10-20L",
+    "20-30L",
+    "30-50L",
+    "50L-1Cr",
+    "1-2Cr",
+    "2-5Cr",
+    "5Cr+",
+    "Prefer not to say",
+  ]
 
   return (
     <div>
@@ -33,6 +48,13 @@ export default function ProfessionalStep({ onNext, onSkip, onBack }: Professiona
           Worldly experience is as valuable as spiritual growth—share your background.
         </p>
       </div>
+
+      {error && (
+        <Alert variant="destructive" className="mb-6 bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
       <div className="space-y-8">
         <div className="space-y-3">

@@ -1,12 +1,13 @@
 "use client"
 
 import { useState } from "react"
-import { ArrowLeft, ArrowRight } from "lucide-react"
+import { ArrowLeft, ArrowRight, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 interface PersonalDetailsStepProps {
   onNext: (data: any) => void
@@ -22,19 +23,57 @@ export default function PersonalDetailsStep({ onNext, onSkip, onBack }: Personal
   const [spiritualOpenness, setSpiritualOpenness] = useState("")
   const [vanaprastha, setVanaprastha] = useState("")
   const [lifeFocus, setLifeFocus] = useState("")
+  const [errors, setErrors] = useState<{
+    height?: string
+    ageRange?: string
+    spiritualOpenness?: string
+  } | null>(null)
+
+  const validateForm = () => {
+    const newErrors: {
+      height?: string
+      ageRange?: string
+      spiritualOpenness?: string
+    } = {}
+    let isValid = true
+
+    if (!height) {
+      newErrors.height = "Please select your height"
+      isValid = false
+    }
+
+    if (minPartnerAge && maxPartnerAge) {
+      const min = Number.parseInt(minPartnerAge)
+      const max = Number.parseInt(maxPartnerAge)
+      if (min > max) {
+        newErrors.ageRange = "Minimum age cannot be greater than maximum age"
+        isValid = false
+      }
+    }
+
+    if (!spiritualOpenness) {
+      newErrors.spiritualOpenness = "Please select your preference for spiritual openness"
+      isValid = false
+    }
+
+    setErrors(isValid ? null : newErrors)
+    return isValid
+  }
 
   const handleSubmit = () => {
-    onNext({
-      height,
-      partnerAgeRange: {
-        min: minPartnerAge ? Number.parseInt(minPartnerAge) : undefined,
-        max: maxPartnerAge ? Number.parseInt(maxPartnerAge) : undefined,
-      },
-      partnerLocation: locationPref,
-      spiritualOpenness,
-      vanaprastha,
-      lifeFocus,
-    })
+    if (validateForm()) {
+      onNext({
+        height,
+        partnerAgeRange: {
+          min: minPartnerAge ? Number.parseInt(minPartnerAge) : undefined,
+          max: maxPartnerAge ? Number.parseInt(maxPartnerAge) : undefined,
+        },
+        partnerLocation: locationPref,
+        spiritualOpenness,
+        vanaprastha,
+        lifeFocus,
+      })
+    }
   }
 
   const heightOptions = Array.from({ length: 71 }, (_, i) => {
@@ -67,11 +106,22 @@ export default function PersonalDetailsStep({ onNext, onSkip, onBack }: Personal
         </p>
       </div>
 
+      {errors && Object.keys(errors).length > 0 && (
+        <Alert variant="destructive" className="mb-6 bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>Please correct the errors below to continue.</AlertDescription>
+        </Alert>
+      )}
+
       <div className="space-y-8">
         <div className="space-y-3">
-          <Label className="text-base font-medium text-slate-700 dark:text-slate-300">Height</Label>
+          <Label className="text-base font-medium text-slate-700 dark:text-slate-300">
+            Height <span className="text-maroon-700 dark:text-maroon-400">*</span>
+          </Label>
           <Select value={height} onValueChange={setHeight}>
-            <SelectTrigger className="border-slate-300 dark:border-slate-600 hover:border-slate-400 dark:hover:border-slate-500 focus:ring-maroon-700">
+            <SelectTrigger
+              className={`border-slate-300 dark:border-slate-600 hover:border-slate-400 dark:hover:border-slate-500 focus:ring-maroon-700 ${errors?.height ? "border-red-500 dark:border-red-500" : ""}`}
+            >
               <SelectValue placeholder="Select your height" />
             </SelectTrigger>
             <SelectContent>
@@ -82,6 +132,7 @@ export default function PersonalDetailsStep({ onNext, onSkip, onBack }: Personal
               ))}
             </SelectContent>
           </Select>
+          {errors?.height && <p className="text-sm text-red-600 dark:text-red-400">{errors.height}</p>}
         </div>
 
         <div className="space-y-4">
@@ -99,7 +150,7 @@ export default function PersonalDetailsStep({ onNext, onSkip, onBack }: Personal
                 onChange={(e) => setMinPartnerAge(e.target.value)}
                 min="18"
                 max="99"
-                className="border-slate-300 dark:border-slate-600 focus:border-maroon-700 dark:focus:border-maroon-500 ring-offset-background focus-visible:ring-maroon-700"
+                className={`border-slate-300 dark:border-slate-600 focus:border-maroon-700 dark:focus:border-maroon-500 ring-offset-background focus-visible:ring-maroon-700 ${errors?.ageRange ? "border-red-500 dark:border-red-500" : ""}`}
               />
             </div>
             <div className="space-y-2">
@@ -114,10 +165,11 @@ export default function PersonalDetailsStep({ onNext, onSkip, onBack }: Personal
                 onChange={(e) => setMaxPartnerAge(e.target.value)}
                 min="18"
                 max="99"
-                className="border-slate-300 dark:border-slate-600 focus:border-maroon-700 dark:focus:border-maroon-500 ring-offset-background focus-visible:ring-maroon-700"
+                className={`border-slate-300 dark:border-slate-600 focus:border-maroon-700 dark:focus:border-maroon-500 ring-offset-background focus-visible:ring-maroon-700 ${errors?.ageRange ? "border-red-500 dark:border-red-500" : ""}`}
               />
             </div>
           </div>
+          {errors?.ageRange && <p className="text-sm text-red-600 dark:text-red-400">{errors.ageRange}</p>}
         </div>
 
         <div className="space-y-3">
@@ -136,7 +188,7 @@ export default function PersonalDetailsStep({ onNext, onSkip, onBack }: Personal
 
         <div className="space-y-4">
           <Label className="text-base font-medium text-slate-700 dark:text-slate-300">
-            Spiritual Openness (in partner)
+            Spiritual Openness (in partner) <span className="text-maroon-700 dark:text-maroon-400">*</span>
           </Label>
           <RadioGroup
             value={spiritualOpenness}
@@ -152,6 +204,9 @@ export default function PersonalDetailsStep({ onNext, onSkip, onBack }: Personal
               "openness",
             )}
           </RadioGroup>
+          {errors?.spiritualOpenness && (
+            <p className="text-sm text-red-600 dark:text-red-400">{errors.spiritualOpenness}</p>
+          )}
         </div>
 
         <div className="space-y-4">

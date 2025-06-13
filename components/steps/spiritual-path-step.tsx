@@ -3,12 +3,13 @@
 import type React from "react"
 
 import { useState } from "react"
-import { ArrowLeft, ArrowRight } from "lucide-react"
+import { ArrowRight, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 const spiritualPathsOptions = [
   { id: "isha", label: "Isha Foundation (Sadhguru)" },
@@ -48,6 +49,12 @@ export default function SpiritualPathStep({ onNext, onSkip, onBack }: SpiritualP
   const [showOtherPracticeInput, setShowOtherPracticeInput] = useState(false)
 
   const [yearsOnPath, setYearsOnPath] = useState("")
+  const [error, setError] = useState<string | null>(null)
+
+  const validateForm = () => {
+    // This step is optional, so we don't need to validate
+    return true
+  }
 
   const handleCheckboxChange = (
     id: string,
@@ -58,13 +65,15 @@ export default function SpiritualPathStep({ onNext, onSkip, onBack }: SpiritualP
   }
 
   const handleSubmit = () => {
-    onNext({
-      spiritualPaths: selectedPaths,
-      otherSpiritualPath: showOtherPathInput ? otherPath : undefined,
-      dailyPractices: selectedPractices,
-      otherDailyPractice: showOtherPracticeInput ? otherPractice : undefined,
-      yearsOnPath,
-    })
+    if (validateForm()) {
+      onNext({
+        spiritualPaths: selectedPaths,
+        otherSpiritualPath: showOtherPathInput ? otherPath : undefined,
+        dailyPractices: selectedPractices,
+        otherDailyPractice: showOtherPracticeInput ? otherPractice : undefined,
+        yearsOnPath,
+      })
+    }
   }
 
   const renderCheckboxGroup = (
@@ -132,6 +141,13 @@ export default function SpiritualPathStep({ onNext, onSkip, onBack }: SpiritualP
         </p>
       </div>
 
+      {error && (
+        <Alert variant="destructive" className="mb-6 bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
       <div className="space-y-8">
         <div className="space-y-4">
           <Label className="text-base font-medium text-slate-700 dark:text-slate-300">
@@ -193,23 +209,4 @@ export default function SpiritualPathStep({ onNext, onSkip, onBack }: SpiritualP
             Continue <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
           <div className="flex justify-between">
-            <Button
-              onClick={onBack}
-              variant="ghost"
-              className="text-slate-600 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50"
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" /> Back
-            </Button>
-            <Button
-              onClick={onSkip}
-              variant="ghost"
-              className="text-slate-600 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50"
-            >
-              Skip for now
-            </Button>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
+            <Button\

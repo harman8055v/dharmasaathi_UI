@@ -25,15 +25,48 @@ export default function BasicInfoStep({ onNext, onSkip }: BasicInfoStepProps) {
   const [city, setCity] = useState("")
   const [state, setState] = useState("")
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false)
+  const [errors, setErrors] = useState<{ gender?: string; birthdate?: string; city?: string; state?: string } | null>(
+    null,
+  )
+
+  const validateForm = () => {
+    const newErrors: { gender?: string; birthdate?: string; city?: string; state?: string } = {}
+    let isValid = true
+
+    if (!gender) {
+      newErrors.gender = "Please select your gender"
+      isValid = false
+    }
+
+    if (!birthdate) {
+      newErrors.birthdate = "Please select your date of birth"
+      isValid = false
+    }
+
+    if (!city.trim()) {
+      newErrors.city = "Please enter your city"
+      isValid = false
+    }
+
+    if (!state) {
+      newErrors.state = "Please select your state"
+      isValid = false
+    }
+
+    setErrors(isValid ? null : newErrors)
+    return isValid
+  }
 
   const handleSubmit = () => {
-    onNext({
-      gender,
-      birthdate,
-      city,
-      state,
-      country: "India",
-    })
+    if (validateForm()) {
+      onNext({
+        gender,
+        birthdate,
+        city,
+        state,
+        country: "India",
+      })
+    }
   }
 
   const currentYear = new Date().getFullYear()
@@ -54,7 +87,9 @@ export default function BasicInfoStep({ onNext, onSkip }: BasicInfoStepProps) {
 
       <div className="space-y-8">
         <div className="space-y-4">
-          <Label className="text-base font-medium text-slate-700 dark:text-slate-300">Gender</Label>
+          <Label className="text-base font-medium text-slate-700 dark:text-slate-300">
+            Gender <span className="text-maroon-700 dark:text-maroon-400">*</span>
+          </Label>
           <RadioGroup value={gender} onValueChange={setGender} className="flex flex-col space-y-3">
             {["Male", "Female", "Other"].map((option) => (
               <div key={option} className="flex items-center space-x-3">
@@ -69,10 +104,13 @@ export default function BasicInfoStep({ onNext, onSkip }: BasicInfoStepProps) {
               </div>
             ))}
           </RadioGroup>
+          {errors?.gender && <p className="text-sm text-red-600 dark:text-red-400">{errors.gender}</p>}
         </div>
 
         <div className="space-y-3">
-          <Label className="text-base font-medium text-slate-700 dark:text-slate-300">Date of birth</Label>
+          <Label className="text-base font-medium text-slate-700 dark:text-slate-300">
+            Date of birth <span className="text-maroon-700 dark:text-maroon-400">*</span>
+          </Label>
           <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
             <PopoverTrigger asChild>
               <Button
@@ -80,6 +118,7 @@ export default function BasicInfoStep({ onNext, onSkip }: BasicInfoStepProps) {
                 className={cn(
                   "w-full justify-start text-left font-normal border-slate-300 dark:border-slate-600 hover:border-slate-400 dark:hover:border-slate-500",
                   !birthdate && "text-slate-500 dark:text-slate-400",
+                  errors?.birthdate && "border-red-500 dark:border-red-500",
                 )}
               >
                 {birthdate ? format(birthdate, "PPP") : <span>Select your date of birth</span>}
@@ -112,11 +151,12 @@ export default function BasicInfoStep({ onNext, onSkip }: BasicInfoStepProps) {
               </div>
             </PopoverContent>
           </Popover>
+          {errors?.birthdate && <p className="text-sm text-red-600 dark:text-red-400">{errors.birthdate}</p>}
         </div>
 
         <div className="space-y-3">
           <Label htmlFor="city" className="text-base font-medium text-slate-700 dark:text-slate-300">
-            City
+            City <span className="text-maroon-700 dark:text-maroon-400">*</span>
           </Label>
           <Input
             id="city"
@@ -124,14 +164,19 @@ export default function BasicInfoStep({ onNext, onSkip }: BasicInfoStepProps) {
             placeholder="Enter your city"
             value={city}
             onChange={(e) => setCity(e.target.value)}
-            className="border-slate-300 dark:border-slate-600 focus:border-maroon-700 dark:focus:border-maroon-500 ring-offset-background focus-visible:ring-maroon-700"
+            className={`border-slate-300 dark:border-slate-600 focus:border-maroon-700 dark:focus:border-maroon-500 ring-offset-background focus-visible:ring-maroon-700 ${errors?.city ? "border-red-500 dark:border-red-500" : ""}`}
           />
+          {errors?.city && <p className="text-sm text-red-600 dark:text-red-400">{errors.city}</p>}
         </div>
 
         <div className="space-y-3">
-          <Label className="text-base font-medium text-slate-700 dark:text-slate-300">State</Label>
+          <Label className="text-base font-medium text-slate-700 dark:text-slate-300">
+            State <span className="text-maroon-700 dark:text-maroon-400">*</span>
+          </Label>
           <Select value={state} onValueChange={setState}>
-            <SelectTrigger className="border-slate-300 dark:border-slate-600 hover:border-slate-400 dark:hover:border-slate-500 focus:ring-maroon-700">
+            <SelectTrigger
+              className={`border-slate-300 dark:border-slate-600 hover:border-slate-400 dark:hover:border-slate-500 focus:ring-maroon-700 ${errors?.state ? "border-red-500 dark:border-red-500" : ""}`}
+            >
               <SelectValue placeholder="Select your state" />
             </SelectTrigger>
             <SelectContent>
@@ -142,6 +187,7 @@ export default function BasicInfoStep({ onNext, onSkip }: BasicInfoStepProps) {
               ))}
             </SelectContent>
           </Select>
+          {errors?.state && <p className="text-sm text-red-600 dark:text-red-400">{errors.state}</p>}
         </div>
 
         <div className="flex flex-col space-y-4 pt-6">
