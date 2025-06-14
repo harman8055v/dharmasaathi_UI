@@ -2,14 +2,14 @@
 
 import type React from "react"
 import { useState } from "react"
-import { Loader2, Upload, X } from "lucide-react"
+import { Loader2, Upload, X } from 'lucide-react'
 import Image from "next/image"
 import type { OnboardingData } from "@/lib/types/onboarding"
 
 interface FullBloomStageProps {
   formData: OnboardingData
   onChange: (updates: Partial<OnboardingData>) => void
-  onNext: () => void
+  onNext: (updates: Partial<OnboardingData>) => void // Changed
   isLoading: boolean
   error?: string | null
 }
@@ -102,30 +102,28 @@ export default function FullBloomStage({ formData, onChange, onNext, isLoading, 
     try {
       const uploadedPhotoUrls = await uploadPhotos()
 
-      // Update the parent form data with sanitized values
-      onChange({
-        ...formData,
+      const dataToSave: Partial<OnboardingData> = {
         about_me: localFormData.about_me.trim() || null,
         partner_expectations: localFormData.partner_expectations.trim() || null,
         user_photos: uploadedPhotoUrls,
-      })
+      }
 
-      // Proceed to next step
-      onNext()
+      // Pass the data directly to onNext, which will handle saving and moving to the next stage
+      onNext(dataToSave)
     } catch (error) {
       console.error("Error submitting form:", error)
+      // You might want to set a local error state here if photo upload fails
     }
   }
 
   const handleSkip = () => {
-    // Set skipped fields to null
-    onChange({
-      ...formData,
+    const dataToSave: Partial<OnboardingData> = {
       about_me: null,
       partner_expectations: null,
       user_photos: [],
-    })
-    onNext()
+    }
+    onChange(dataToSave) // Update local form data
+    onNext(dataToSave) // Trigger save and next stage
   }
 
   return (

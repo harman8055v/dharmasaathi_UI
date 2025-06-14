@@ -7,7 +7,7 @@ import Image from "next/image"
 
 export default function Footer() {
   const scrollToSignup = () => {
-    const signupForm = document.getElementById("signup-form")
+    const signupForm = document.getElementById("signup")
     if (signupForm) {
       signupForm.scrollIntoView({ behavior: "smooth" })
     }

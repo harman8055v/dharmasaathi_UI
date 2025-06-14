@@ -9,7 +9,7 @@ import { VALID_VALUES } from "@/lib/types/onboarding"
 interface StemStageProps {
   formData: OnboardingData
   onChange: (updates: Partial<OnboardingData>) => void
-  onNext: () => void
+  onNext: (updates: Partial<OnboardingData>) => void // Changed
   isLoading: boolean
   error?: string | null
 }
@@ -90,22 +90,29 @@ export default function StemStage({ formData, onChange, onNext, isLoading, error
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (validateForm()) {
-      onNext()
+      const dataToSave: Partial<OnboardingData> = {
+        gender,
+        birthdate,
+        city,
+        state,
+        country,
+        mother_tongue,
+      }
+      onNext(dataToSave) // Pass data to parent for saving and next stage
     }
   }
 
   const handleSkip = () => {
-    // Set skipped fields to null, but keep India as default for country
-    onChange({
-      ...formData,
+    const dataToSave: Partial<OnboardingData> = {
       gender: null,
       birthdate: null,
       city: null,
       state: null,
       country: "India",
       mother_tongue: null,
-    })
-    onNext()
+    }
+    onChange(dataToSave) // Update local form data
+    onNext(dataToSave) // Trigger save and next stage
   }
 
   return (

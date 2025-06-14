@@ -79,6 +79,7 @@ export default function OnboardingPage() {
               about_me: null,
               partner_expectations: null,
               email_verified: !!user.email_confirmed_at, // Set based on auth status
+              mobile_verified: !!user.phone_confirmed_at, // Set based on auth status
             }
 
             const { data: insertedProfile, error: insertError } = await supabase
@@ -119,6 +120,11 @@ export default function OnboardingPage() {
           // Ensure email_verified is set based on auth status if not already set
           if (profileData.email_verified === null || profileData.email_verified === undefined) {
             profileData.email_verified = !!user.email_confirmed_at
+          }
+
+          // Ensure mobile_verified is set based on auth status if not already set
+          if (profileData.mobile_verified === null || profileData.mobile_verified === undefined) {
+            profileData.mobile_verified = !!user.phone_confirmed_at
           }
 
           setProfile(profileData)

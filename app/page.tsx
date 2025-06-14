@@ -1,5 +1,6 @@
 import Header from "@/components/header"
 import Hero from "@/components/hero"
+import SignupSection from "@/components/signup-section"
 import Features from "@/components/features"
 import HowItWorks from "@/components/how-it-works"
 import Testimonials from "@/components/testimonials"
@@ -13,6 +14,7 @@ export default function Home() {
     <main className="min-h-screen bg-gradient-to-b from-background to-background/80">
       <Header />
       <Hero />
+      <SignupSection />
       <Features />
       <HowItWorks />
       <Testimonials />

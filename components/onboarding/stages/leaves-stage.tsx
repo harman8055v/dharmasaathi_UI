@@ -8,7 +8,7 @@ import type { OnboardingData } from "@/lib/types/onboarding"
 interface LeavesStageProps {
   formData: OnboardingData
   onChange: (updates: Partial<OnboardingData>) => void
-  onNext: () => void
+  onNext: (updates: Partial<OnboardingData>) => void // Changed
   isLoading: boolean
   error?: string | null
 }
@@ -47,19 +47,23 @@ export default function LeavesStage({ formData, onChange, onNext, isLoading, err
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (validateForm()) {
-      onNext()
+      const dataToSave: Partial<OnboardingData> = {
+        education,
+        profession,
+        annual_income,
+      }
+      onNext(dataToSave) // Pass data to parent for saving and next stage
     }
   }
 
   const handleSkip = () => {
-    // Set skipped fields to null
-    onChange({
-      ...formData,
+    const dataToSave: Partial<OnboardingData> = {
       education: null,
       profession: null,
       annual_income: null,
-    })
-    onNext()
+    }
+    onChange(dataToSave) // Update local form data
+    onNext(dataToSave) // Trigger save and next stage
   }
 
   const incomeRanges = [

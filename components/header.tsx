@@ -85,7 +85,7 @@ export default function Header() {
                 Login
               </Button>
               <Button
-                onClick={() => openAuth("signup")}
+                onClick={() => scrollToSection("signup")}
                 className="bg-gradient-to-r from-brand-600 to-primary hover:from-brand-700 hover:to-primary/90 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
               >
                 Join Now
@@ -140,7 +140,7 @@ export default function Header() {
                     Login
                   </Button>
                   <Button
-                    onClick={() => openAuth("signup")}
+                    onClick={() => scrollToSection("signup")}
                     className="bg-gradient-to-r from-brand-600 to-primary hover:from-brand-700 hover:to-primary/90 text-white"
                   >
                     Join Now

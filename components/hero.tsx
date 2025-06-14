@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Heart, Sparkles, Shield, ArrowRight, Play } from "lucide-react"
+import { Heart, Sparkles, Shield, ArrowRight, Compass } from "lucide-react"
 import Image from "next/image"
 import AuthDialog from "./auth-dialog"
 
@@ -59,7 +59,7 @@ export default function Hero() {
         <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
             {/* Left Column - Content */}
-            <div className="text-center lg:text-left space-y-6 lg:space-y-8 order-2 lg:order-1">
+            <div className="text-center lg:text-left space-y-6 lg:space-y-8 order-1 lg:order-1">
               {/* Badge */}
               <div
                 className={`inline-flex items-center px-3 py-2 md:px-4 md:py-2 bg-white/90 backdrop-blur-sm rounded-full shadow-lg border border-brand-100/50 transition-all duration-700 ${isLoaded ? "animate-fade-in-up" : "opacity-0"}`}
@@ -94,7 +94,7 @@ export default function Hero() {
                   <div className="p-2 bg-gradient-to-r from-brand-100 to-brand-200 rounded-full flex-shrink-0">
                     <Heart className="w-4 h-4 md:w-5 md:h-5 text-brand-600" />
                   </div>
-                  <span className="font-medium text-sm md:text-base">Dharma-Based Matching</span>
+                  <span className="font-medium text-sm md:text-base">From Drama to Dharma</span>
                 </div>
                 <div className="flex items-center gap-3 text-gray-700 justify-center lg:justify-start">
                   <div className="p-2 bg-gradient-to-r from-brand-200 to-brand-300 rounded-full flex-shrink-0">
@@ -109,7 +109,7 @@ export default function Hero() {
                 className={`flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center lg:justify-start transition-all duration-700 delay-600 ${isLoaded ? "animate-fade-in-up" : "opacity-0"}`}
               >
                 <Button
-                  onClick={() => openAuth("signup")}
+                  onClick={() => scrollToSection("signup")}
                   size="lg"
                   className="bg-gradient-to-r from-brand-700 to-primary hover:from-brand-800 hover:to-primary/90 text-white font-semibold px-6 md:px-8 py-3 md:py-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 group w-full sm:w-auto"
                 >
@@ -122,7 +122,7 @@ export default function Hero() {
                   size="lg"
                   className="border-2 border-brand-200 text-brand-700 hover:bg-brand-50 px-6 md:px-8 py-3 md:py-4 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 group w-full sm:w-auto"
                 >
-                  <Play className="w-4 h-4 md:w-5 md:h-5 mr-2 group-hover:scale-110 transition-transform duration-200" />
+                  <Compass className="w-4 h-4 md:w-5 md:h-5 mr-2 group-hover:rotate-12 transition-transform duration-200" />
                   How It Works
                 </Button>
               </div>
@@ -154,7 +154,7 @@ export default function Hero() {
 
             {/* Right Column - Hero Image */}
             <div
-              className={`relative transition-all duration-700 delay-300 order-1 lg:order-2 ${isLoaded ? "animate-fade-in-up" : "opacity-0"}`}
+              className={`relative transition-all duration-700 delay-300 order-2 lg:order-2 ${isLoaded ? "animate-fade-in-up" : "opacity-0"}`}
             >
               {/* Main Image Container */}
               <div className="relative mx-auto max-w-sm md:max-w-md lg:max-w-lg">
@@ -181,19 +181,19 @@ export default function Hero() {
                     <Sparkles className="w-4 h-4 md:w-5 md:h-5" />
                   </div>
                 </div>
-              </div>
 
-              {/* Trust Indicators */}
-              <div className="mt-8 mx-auto bg-white/95 backdrop-blur-sm rounded-xl md:rounded-2xl p-3 md:p-4 shadow-lg border border-white/60 w-11/12 max-w-sm">
-                <div className="flex items-center justify-center gap-3 md:gap-4 text-xs md:text-sm">
-                  <div className="flex items-center gap-2">
-                    <Shield className="w-3 h-3 md:w-4 md:h-4 text-green-500 flex-shrink-0" />
-                    <span className="text-gray-700 font-medium">Verified Profiles</span>
-                  </div>
-                  <div className="w-px h-3 md:h-4 bg-gray-300"></div>
-                  <div className="flex items-center gap-2">
-                    <Heart className="w-3 h-3 md:w-4 md:h-4 text-brand-500 flex-shrink-0" />
-                    <span className="text-gray-700 font-medium">Safe & Secure</span>
+                {/* Trust Indicators - Overlapping the image */}
+                <div className="absolute -bottom-4 right-4 bg-white/95 backdrop-blur-sm rounded-xl md:rounded-2xl p-2 md:p-3 shadow-lg border border-white/60 max-w-[220px]">
+                  <div className="flex items-center justify-center gap-2 text-xs">
+                    <div className="flex items-center gap-2">
+                      <Shield className="w-3 h-3 text-green-500 flex-shrink-0" />
+                      <span className="text-gray-700 font-medium">Verified Profiles</span>
+                    </div>
+                    <div className="w-px h-3 md:h-4 bg-gray-300"></div>
+                    <div className="flex items-center gap-2">
+                      <Heart className="w-3 h-3 text-brand-500 flex-shrink-0" />
+                      <span className="text-gray-700 font-medium">Safe & Secure</span>
+                    </div>
                   </div>
                 </div>
               </div>

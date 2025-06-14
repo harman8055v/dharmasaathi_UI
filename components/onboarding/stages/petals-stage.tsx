@@ -9,7 +9,7 @@ import { VALID_VALUES } from "@/lib/types/onboarding"
 interface PetalsStageProps {
   formData: OnboardingData
   onChange: (updates: Partial<OnboardingData>) => void
-  onNext: () => void
+  onNext: (updates: Partial<OnboardingData>) => void // Changed
   isLoading: boolean
   error?: string | null
 }
@@ -67,20 +67,27 @@ export default function PetalsStage({ formData, onChange, onNext, isLoading, err
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (validateForm()) {
-      onNext()
+      const dataToSave: Partial<OnboardingData> = {
+        spiritual_org,
+        daily_practices,
+        diet,
+        temple_visit_freq,
+        vanaprastha_interest,
+        artha_vs_moksha,
+      }
+      onNext(dataToSave) // Pass data to parent for saving and next stage
     }
   }
 
   const handleSkip = () => {
-    // Set skipped enum fields to null
-    onChange({
-      ...formData,
+    const dataToSave: Partial<OnboardingData> = {
       diet: null,
       temple_visit_freq: null,
       vanaprastha_interest: null,
       artha_vs_moksha: null,
-    })
-    onNext()
+    }
+    onChange(dataToSave) // Update local form data
+    onNext(dataToSave) // Trigger save and next stage
   }
 
   const spiritualOrgs = [

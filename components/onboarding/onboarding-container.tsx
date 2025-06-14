@@ -8,7 +8,6 @@ import type { OnboardingData, OnboardingProfile } from "@/lib/types/onboarding"
 import { VALID_VALUES, validateEnumField } from "@/lib/types/onboarding"
 import ProgressBar from "./progress-bar"
 import NavigationButtons from "./navigation-buttons"
-import CompletionOverlay from "./completion-overlay"
 
 // Dynamic imports for stages
 import SeedStage from "./stages/seed-stage"
@@ -46,6 +45,8 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
   // Initialize form state with null for all enum/text fields and [] for arrays
   const [formData, setFormData] = useState<OnboardingData>({
     email_verified: false,
+    mobile_verified: false,
+    mobile_number: null, // Add this line
     gender: null,
     birthdate: null,
     city: null,
@@ -71,6 +72,8 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
     if (profile) {
       setFormData({
         email_verified: !!user?.email_confirmed_at || profile.email_verified || false,
+        mobile_verified: !!user?.phone_confirmed_at || profile.mobile_verified || false,
+        mobile_number: profile.mobile_number || null, // Add this line
         gender: profile.gender || null,
         birthdate: profile.birthdate || null,
         city: profile.city || null,
@@ -92,7 +95,8 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
       })
 
       // Determine current stage based on completed data
-      if (!user?.email_confirmed_at && !profile.email_verified) {
+      // First stage is now mobile verification
+      if (!user?.phone_confirmed_at && !profile.mobile_verified) {
         setStage(1)
       } else if (!profile.gender || !profile.birthdate) {
         setStage(2)
@@ -112,13 +116,12 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
   }
 
   // Save and next handler
-  async function handleSaveAndNext() {
+  async function handleSaveAndNext(stagePayload: Partial<OnboardingData>) {
     setIsLoading(true)
     setError(null)
 
     try {
-      // Get current stage data
-      const stageData = getStageData()
+      const stageData = stagePayload // Use the payload passed directly from the stage
 
       // Validate stage data before saving
       if (Object.keys(stageData).length > 0) {
@@ -182,6 +185,11 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
 
   const validateStageData = (stageData: Partial<OnboardingData>, currentStage: number) => {
     switch (currentStage) {
+      case 1: // Mobile Verification Stage
+        if (!stageData.mobile_verified) {
+          throw new Error("Please verify your mobile number before proceeding.")
+        }
+        break
       case 2:
         // Validate gender
         if (stageData.gender !== undefined && !validateEnumField("gender", stageData.gender)) {
@@ -284,77 +292,13 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
     }
   }
 
-  const getStageData = (): Partial<OnboardingData> => {
-    switch (stage) {
-      case 1:
-        return {
-          email_verified: formData.email_verified,
-        }
-      case 2:
-        return {
-          gender: formData.gender,
-          birthdate: formData.birthdate,
-          city: formData.city,
-          state: formData.state,
-          country: formData.country,
-          mother_tongue: formData.mother_tongue,
-        }
-      case 3:
-        return {
-          education: formData.education,
-          profession: formData.profession,
-          annual_income: formData.annual_income,
-        }
-      case 4:
-        return {
-          spiritual_org: formData.spiritual_org,
-          daily_practices: formData.daily_practices,
-          diet: formData.diet,
-          temple_visit_freq: formData.temple_visit_freq,
-          vanaprastha_interest: formData.vanaprastha_interest,
-          artha_vs_moksha: formData.artha_vs_moksha,
-        }
-      case 5:
-        return {
-          about_me: formData.about_me,
-          partner_expectations: formData.partner_expectations,
-          user_photos: formData.user_photos,
-        }
-      default:
-        return {}
-    }
-  }
-
-  const renderCurrentStage = () => {
-    const stageProps = {
-      formData,
-      onChange: handleFormChange,
-      onNext: handleSaveAndNext,
-      isLoading,
-      error,
-    }
-
-    switch (stage) {
-      case 1:
-        return <SeedStage {...stageProps} user={user} />
-      case 2:
-        return <StemStage {...stageProps} />
-      case 3:
-        return <LeavesStage {...stageProps} />
-      case 4:
-        return <PetalsStage {...stageProps} />
-      case 5:
-        return <FullBloomStage {...stageProps} />
-      default:
-        return <SeedStage {...stageProps} user={user} />
-    }
-  }
-
-  if (showCompletion) {
-    return <CompletionOverlay profile={profile} />
-  }
-
-  const stageNames = ["Seed", "Stem", "Leaves", "Petals", "Full Bloom"]
+  const stageNames = [
+    "Mobile Verification",
+    "Personal Info",
+    "Professional Info",
+    "Spiritual Preferences",
+    "About You & Photos",
+  ]
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 relative overflow-hidden">
@@ -373,7 +317,53 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
 
           {/* Stage content */}
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-2xl p-8 border border-white/20 max-w-2xl mx-auto">
-            {renderCurrentStage()}
+            {/* Render current stage based on state */}
+            {stage === 1 && (
+              <SeedStage
+                formData={formData}
+                onChange={handleFormChange}
+                onNext={handleSaveAndNext}
+                isLoading={isLoading}
+                user={user}
+                error={error}
+              />
+            )}
+            {stage === 2 && (
+              <StemStage
+                formData={formData}
+                onChange={handleFormChange}
+                onNext={handleSaveAndNext}
+                isLoading={isLoading}
+                error={error}
+              />
+            )}
+            {stage === 3 && (
+              <LeavesStage
+                formData={formData}
+                onChange={handleFormChange}
+                onNext={handleSaveAndNext}
+                isLoading={isLoading}
+                error={error}
+              />
+            )}
+            {stage === 4 && (
+              <PetalsStage
+                formData={formData}
+                onChange={handleFormChange}
+                onNext={handleSaveAndNext}
+                isLoading={isLoading}
+                error={error}
+              />
+            )}
+            {stage === 5 && (
+              <FullBloomStage
+                formData={formData}
+                onChange={handleFormChange}
+                onNext={handleSaveAndNext}
+                isLoading={isLoading}
+                error={error}
+              />
+            )}
           </div>
 
           {/* Navigation */}

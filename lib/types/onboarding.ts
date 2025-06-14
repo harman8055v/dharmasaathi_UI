@@ -2,6 +2,9 @@
 export interface OnboardingData {
   // Email verification
   email_verified: boolean
+  // Mobile verification
+  mobile_verified: boolean
+  mobile_number?: string | null // Add this line
 
   // Personal info
   gender: "Male" | "Female" | "Other" | null
