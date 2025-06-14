@@ -116,12 +116,12 @@ export function ReferralProgram({ userId, userProfile }: ReferralProgramProps) {
 
   const shareReferralLink = async () => {
     const link = generateReferralLink()
-    const text = `Join me on DharmaSaathi - India's premier spiritual matrimony platform! 🕉️ Find your spiritual life partner. Use my referral link: ${link}`
+    const text = `Join me on DharmaSaathi - India's premier spiritual matrimony platform! 🕉️ Find your spiritual life partner.`
 
     if (navigator.share) {
       try {
         await navigator.share({
-          title: "Join DharmaSaathi",
+          title: "Join DharmaSaathi - Find Your Spiritual Life Partner",
           text: text,
           url: link,
         })
@@ -152,17 +152,65 @@ export function ReferralProgram({ userId, userProfile }: ReferralProgramProps) {
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-xl p-4 sm:p-6 shadow-lg">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
-            <Users className="w-5 h-5 text-red-600" />
+      <div className="bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 rounded-xl p-4 sm:p-6 shadow-lg border border-purple-200">
+        <div className="flex items-start gap-3 mb-4">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+            <Users className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
           </div>
-          <h3 className="text-lg font-bold text-red-800">Referral Program</h3>
+          <div className="flex-1">
+            <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">Referral Program</h3>
+            <p className="text-sm sm:text-base text-gray-700 mb-4">
+              The referral system database needs to be initialized.
+            </p>
+          </div>
         </div>
-        <p className="text-red-700 mb-4">{error}</p>
-        <Button onClick={fetchReferralData} variant="outline" className="border-red-300 text-red-700 hover:bg-red-50">
-          Try Again
-        </Button>
+
+        <div className="bg-white/70 rounded-lg p-4 mb-4">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
+            <span className="text-sm font-medium text-gray-700">Database Setup Required</span>
+          </div>
+          <p className="text-xs text-gray-600 mb-3">
+            Please run the SQL script:{" "}
+            <code className="bg-gray-100 px-2 py-1 rounded text-xs font-mono">
+              scripts/create-referral-system-v2.sql
+            </code>
+          </p>
+          <p className="text-xs text-gray-500">
+            This will create the necessary database tables and columns for referral tracking, rewards, and user referral
+            codes.
+          </p>
+        </div>
+
+        <div className="text-center">
+          <p className="text-sm text-gray-600 mb-3">Once the database is set up, you'll be able to:</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-gray-600 mb-4">
+            <div className="flex items-center gap-2">
+              <div className="w-1 h-1 bg-purple-500 rounded-full"></div>
+              <span>Generate referral links</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-1 h-1 bg-purple-500 rounded-full"></div>
+              <span>Track successful referrals</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-1 h-1 bg-purple-500 rounded-full"></div>
+              <span>Earn fast verification</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-1 h-1 bg-purple-500 rounded-full"></div>
+              <span>Get 14 days premium free</span>
+            </div>
+          </div>
+          <Button
+            onClick={() => window.location.reload()}
+            variant="outline"
+            size="sm"
+            className="border-purple-300 text-purple-700 hover:bg-purple-50"
+          >
+            Refresh After Setup
+          </Button>
+        </div>
       </div>
     )
   }
