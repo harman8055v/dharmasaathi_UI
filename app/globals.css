@@ -78,6 +78,25 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Performance optimizations for mobile */
+  @media (max-width: 768px) {
+    * {
+      -webkit-transform: translateZ(0);
+      transform: translateZ(0);
+    }
+
+    /* Reduce motion for better performance on mobile */
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  }
 }
 
 @layer components {
@@ -156,8 +175,15 @@
     }
   }
 
+  /* Optimized animations for mobile */
   .animate-float {
     animation: float 6s ease-in-out infinite;
+  }
+
+  @media (max-width: 768px) {
+    .animate-float {
+      animation: float 8s ease-in-out infinite;
+    }
   }
 
   .animate-float-delayed {
@@ -167,6 +193,12 @@
 
   .animate-pulse-slow {
     animation: pulse-slow 4s ease-in-out infinite;
+  }
+
+  @media (max-width: 768px) {
+    .animate-pulse-slow {
+      animation: pulse-slow 6s ease-in-out infinite;
+    }
   }
 
   .animate-pulse-glow {
@@ -179,6 +211,12 @@
 
   .animate-fade-in-up {
     animation: fade-in-up 0.8s ease-out forwards;
+  }
+
+  @media (max-width: 768px) {
+    .animate-fade-in-up {
+      animation: fade-in-up 0.6s ease-out forwards;
+    }
   }
 
   .animate-gradient-x {
@@ -215,5 +253,37 @@
 
   .delay-4000 {
     animation-delay: 4s;
+  }
+
+  /* Mobile-specific optimizations */
+  @media (max-width: 768px) {
+    .delay-200 {
+      animation-delay: 0.1s;
+    }
+
+    .delay-400 {
+      animation-delay: 0.2s;
+    }
+
+    .delay-600 {
+      animation-delay: 0.3s;
+    }
+
+    .delay-800 {
+      animation-delay: 0.4s;
+    }
+  }
+}
+
+/* Critical CSS for above-the-fold content */
+.hero-critical {
+  contain: layout style paint;
+}
+
+/* Optimize images for mobile */
+@media (max-width: 768px) {
+  img {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
   }
 }

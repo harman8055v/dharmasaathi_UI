@@ -43,7 +43,7 @@ export default function Header() {
                   />
                 </div>
               </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent group-hover:from-orange-700 group-hover:to-pink-700 transition-all duration-300">
+              <span className="text-xl font-bold bg-gradient-to-r from-brand-700 to-primary bg-clip-text text-transparent group-hover:from-brand-800 group-hover:to-primary/90 transition-all duration-300">
                 DharmaSaathi
               </span>
             </div>
@@ -80,13 +80,13 @@ export default function Header() {
               <Button
                 variant="ghost"
                 onClick={() => openAuth("login")}
-                className="hover:bg-orange-50 hover:text-orange-600 transition-all duration-200 transform hover:scale-105"
+                className="hover:bg-brand-50 hover:text-brand-600 transition-all duration-200 transform hover:scale-105"
               >
                 Login
               </Button>
               <Button
                 onClick={() => openAuth("signup")}
-                className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
+                className="bg-gradient-to-r from-brand-600 to-primary hover:from-brand-700 hover:to-primary/90 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
               >
                 Join Now
               </Button>
@@ -96,7 +96,7 @@ export default function Header() {
             <Button
               variant="ghost"
               size="icon"
-              className="md:hidden hover:bg-orange-50 transition-colors duration-200"
+              className="md:hidden hover:bg-brand-50 transition-colors duration-200"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
               {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -109,25 +109,25 @@ export default function Header() {
               <nav className="flex flex-col space-y-4">
                 <button
                   onClick={() => scrollToSection("features")}
-                  className="text-sm font-medium hover:text-primary transition-colors text-left px-2 py-1 rounded hover:bg-orange-50"
+                  className="text-sm font-medium hover:text-primary transition-colors text-left px-2 py-1 rounded hover:bg-brand-50"
                 >
                   Features
                 </button>
                 <button
                   onClick={() => scrollToSection("how-it-works")}
-                  className="text-sm font-medium hover:text-primary transition-colors text-left px-2 py-1 rounded hover:bg-orange-50"
+                  className="text-sm font-medium hover:text-primary transition-colors text-left px-2 py-1 rounded hover:bg-brand-50"
                 >
                   How It Works
                 </button>
                 <button
                   onClick={() => scrollToSection("testimonials")}
-                  className="text-sm font-medium hover:text-primary transition-colors text-left px-2 py-1 rounded hover:bg-orange-50"
+                  className="text-sm font-medium hover:text-primary transition-colors text-left px-2 py-1 rounded hover:bg-brand-50"
                 >
                   Stories
                 </button>
                 <button
                   onClick={() => scrollToSection("faq")}
-                  className="text-sm font-medium hover:text-primary transition-colors text-left px-2 py-1 rounded hover:bg-orange-50"
+                  className="text-sm font-medium hover:text-primary transition-colors text-left px-2 py-1 rounded hover:bg-brand-50"
                 >
                   FAQ
                 </button>
@@ -135,13 +135,13 @@ export default function Header() {
                   <Button
                     variant="ghost"
                     onClick={() => openAuth("login")}
-                    className="justify-start hover:bg-orange-50 hover:text-orange-600"
+                    className="justify-start hover:bg-brand-50 hover:text-brand-600"
                   >
                     Login
                   </Button>
                   <Button
                     onClick={() => openAuth("signup")}
-                    className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white"
+                    className="bg-gradient-to-r from-brand-600 to-primary hover:from-brand-700 hover:to-primary/90 text-white"
                   >
                     Join Now
                   </Button>
