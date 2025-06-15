@@ -9,6 +9,7 @@ import { ReferralProgram } from "@/components/dashboard/referral-program"
 import MobileNav from "@/components/dashboard/mobile-nav"
 import SettingsCard from "@/components/dashboard/settings-card"
 import type { User as SupabaseUser } from "@supabase/supabase-js"
+import WelcomeSection from "@/components/dashboard/welcome-section"
 
 export default function DashboardPage() {
   const [user, setUser] = useState<SupabaseUser | null>(null)
@@ -135,6 +136,11 @@ export default function DashboardPage() {
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome back, {profile?.first_name}! 🌸</h1>
             <p className="text-gray-600">Your spiritual journey continues here</p>
+          </div>
+
+          {/* Welcome Section */}
+          <div className="mb-8">
+            <WelcomeSection profile={profile} />
           </div>
 
           {/* Verification Status Section */}

@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, Save, Mail, MapPin, User } from "lucide-react"
 import MobileNav from "@/components/dashboard/mobile-nav"
 import { toast } from "sonner"
+import { Toaster } from "sonner"
 
 export default function AccountSettingsPage() {
   const [user, setUser] = useState<any>(null)
@@ -84,7 +85,7 @@ export default function AccountSettingsPage() {
       setProfile({ ...profile, ...formData })
     } catch (error) {
       console.error("Error updating profile:", error)
-      toast.error("Failed to update account settings")
+      toast.error("Failed to update account settings. Please try again.")
     } finally {
       setSaving(false)
     }
@@ -157,8 +158,9 @@ export default function AccountSettingsPage() {
                       <SelectValue placeholder="Select gender" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="male">Male</SelectItem>
-                      <SelectItem value="female">Female</SelectItem>
+                      <SelectItem value="Male">Male</SelectItem>
+                      <SelectItem value="Female">Female</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -263,6 +265,7 @@ export default function AccountSettingsPage() {
           </div>
         </div>
       </main>
+      <Toaster position="top-center" />
     </div>
   )
 }

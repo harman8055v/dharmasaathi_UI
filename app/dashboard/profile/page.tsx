@@ -7,12 +7,15 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ArrowLeft, Edit, Camera, MapPin, Briefcase, Heart } from "lucide-react"
 import MobileNav from "@/components/dashboard/mobile-nav"
+import ProfileImageUploader from "@/components/dashboard/profile-image-uploader"
+import { Toaster } from "sonner"
 
 export default function ProfilePage() {
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const router = useRouter()
+  const [userImages, setUserImages] = useState<string[]>([])
 
   useEffect(() => {
     async function getUser() {
@@ -35,6 +38,7 @@ export default function ProfilePage() {
         }
 
         setProfile(profileData)
+        setUserImages(profileData.user_photos || [])
         setLoading(false)
       } catch (error) {
         console.error("Error:", error)
@@ -97,13 +101,18 @@ export default function ProfilePage() {
               <CardContent className="p-6">
                 <div className="flex flex-col items-center text-center">
                   <div className="relative mb-4">
-                    <div className="w-24 h-24 bg-gradient-to-r from-orange-400 to-pink-400 rounded-full flex items-center justify-center text-white text-2xl font-bold">
-                      {profile?.first_name?.[0]}
-                      {profile?.last_name?.[0]}
-                    </div>
-                    <Button size="sm" className="absolute -bottom-2 -right-2 rounded-full w-8 h-8 p-0">
-                      <Camera className="w-4 h-4" />
-                    </Button>
+                    {userImages.length > 0 ? (
+                      <img
+                        src={userImages[0] || "/placeholder.svg"}
+                        alt="Profile"
+                        className="w-24 h-24 rounded-full object-cover border-4 border-orange-200"
+                      />
+                    ) : (
+                      <div className="w-24 h-24 bg-gradient-to-r from-orange-400 to-pink-400 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                        {profile?.first_name?.[0]}
+                        {profile?.last_name?.[0]}
+                      </div>
+                    )}
                   </div>
                   <h2 className="text-2xl font-bold text-gray-900 mb-1">
                     {profile?.first_name} {profile?.last_name}
@@ -118,6 +127,23 @@ export default function ProfilePage() {
                     </span>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Photo Management */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Camera className="w-5 h-5" />
+                  Profile Photos
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ProfileImageUploader
+                  userId={user?.id || ""}
+                  currentImages={userImages}
+                  onImagesUpdate={setUserImages}
+                />
               </CardContent>
             </Card>
 
@@ -212,6 +238,7 @@ export default function ProfilePage() {
           </div>
         </div>
       </main>
+      <Toaster position="top-center" />
     </div>
   )
 }

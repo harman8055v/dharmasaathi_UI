@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ArrowLeft, Save, Heart, Users, MapPin } from "lucide-react"
 import MobileNav from "@/components/dashboard/mobile-nav"
-import { toast } from "sonner"
+import { toast, Toaster } from "sonner"
 
 export default function PartnerPreferencesPage() {
   const [user, setUser] = useState<any>(null)
@@ -22,7 +22,6 @@ export default function PartnerPreferencesPage() {
   const [preferences, setPreferences] = useState({
     preferred_age_min: "",
     preferred_age_max: "",
-    preferred_gender: "",
     preferred_location: "",
     preferred_education: "",
     preferred_profession: "",
@@ -57,7 +56,6 @@ export default function PartnerPreferencesPage() {
         setPreferences({
           preferred_age_min: profileData.preferred_age_min?.toString() || "",
           preferred_age_max: profileData.preferred_age_max?.toString() || "",
-          preferred_gender: profileData.preferred_gender || "",
           preferred_location: profileData.preferred_location || "",
           preferred_education: profileData.preferred_education || "",
           preferred_profession: profileData.preferred_profession || "",
@@ -100,7 +98,7 @@ export default function PartnerPreferencesPage() {
       setProfile({ ...profile, ...updateData })
     } catch (error) {
       console.error("Error updating preferences:", error)
-      toast.error("Failed to update partner preferences")
+      toast.error("Failed to update partner preferences. Please try again.")
     } finally {
       setSaving(false)
     }
@@ -142,22 +140,6 @@ export default function PartnerPreferencesPage() {
                 <CardDescription>Define your basic partner requirements</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="preferred_gender">Preferred Gender</Label>
-                  <Select
-                    value={preferences.preferred_gender}
-                    onValueChange={(value) => setPreferences({ ...preferences, preferred_gender: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select preferred gender" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="male">Male</SelectItem>
-                      <SelectItem value="female">Female</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
                 <div>
                   <Label>Age Range</Label>
                   <div className="grid grid-cols-2 gap-4">
@@ -316,6 +298,7 @@ export default function PartnerPreferencesPage() {
           </div>
         </div>
       </main>
+      <Toaster position="top-center" />
     </div>
   )
 }

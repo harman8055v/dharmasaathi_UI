@@ -604,7 +604,7 @@ export default function AuthDialog({ isOpen, onClose, defaultMode }: AuthDialogP
   if (isSuccess) {
     return (
       <Dialog open={isOpen} onOpenChange={handleClose}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md sm:top-[20%] sm:translate-y-0 max-h-[90vh] overflow-y-auto">
           <div className="text-center py-8">
             <div className="animate-bounce mb-6">
               <Heart className="w-16 h-16 text-orange-500 mx-auto" />
@@ -627,7 +627,7 @@ export default function AuthDialog({ isOpen, onClose, defaultMode }: AuthDialogP
   if (viewMode === "reset-sent") {
     return (
       <Dialog open={isOpen} onOpenChange={handleClose}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md sm:top-[20%] sm:translate-y-0 max-h-[90vh] overflow-y-auto">
           <div className="text-center py-8">
             <div className="mb-6">
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -672,7 +672,7 @@ export default function AuthDialog({ isOpen, onClose, defaultMode }: AuthDialogP
   if (viewMode === "forgot-password") {
     return (
       <Dialog open={isOpen} onOpenChange={handleClose}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md sm:top-[20%] sm:translate-y-0 max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <div className="flex items-center gap-3 mb-2">
               <Button variant="ghost" size="sm" onClick={handleBackToAuth} className="p-1">
@@ -745,7 +745,7 @@ export default function AuthDialog({ isOpen, onClose, defaultMode }: AuthDialogP
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md sm:top-[20%] sm:translate-y-0 max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-center text-2xl font-bold text-gray-900">
             {activeTab === "signup" ? "Join DharmaSaathi" : "Welcome Back"}

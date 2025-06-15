@@ -10,7 +10,7 @@ import {
   Settings,
   Search,
   MessageCircle,
-  Bell,
+  ShoppingBag,
   Menu,
   X,
   LogOut,
@@ -35,14 +35,14 @@ export default function MobileNav({ userProfile }: MobileNavProps) {
   }
 
   const navItems = [
-    { icon: Home, label: "Dashboard", href: "/dashboard", active: pathname === "/dashboard" },
-    { icon: Search, label: "Discover", href: "/dashboard/discover", active: pathname === "/dashboard/discover" },
+    { icon: Home, label: "Home", href: "/dashboard", active: pathname === "/dashboard" },
+    { icon: Search, label: "Matches", href: "/dashboard/matches", active: pathname === "/dashboard/matches" },
     { icon: MessageCircle, label: "Messages", href: "/dashboard/messages", active: pathname === "/dashboard/messages" },
     {
-      icon: Bell,
-      label: "Notifications",
-      href: "/dashboard/notifications",
-      active: pathname === "/dashboard/notifications",
+      icon: ShoppingBag,
+      label: "Store",
+      href: "/dashboard/store",
+      active: pathname === "/dashboard/store",
     },
     { icon: User, label: "Profile", href: "/dashboard/profile", active: pathname === "/dashboard/profile" },
   ]
@@ -80,7 +80,7 @@ export default function MobileNav({ userProfile }: MobileNavProps) {
 
         {/* Mobile Menu Dropdown */}
         {isMenuOpen && (
-          <div className="absolute top-full left-0 right-0 bg-white/98 backdrop-blur-md border-b border-orange-100 shadow-lg">
+          <div className="absolute top-full left-0 right-0 bg-white border-b border-orange-100 shadow-lg">
             <div className="px-4 py-4">
               <div className="space-y-1 mb-4">
                 <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Settings</h3>
@@ -115,7 +115,7 @@ export default function MobileNav({ userProfile }: MobileNavProps) {
       </header>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-orange-100">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-orange-100 safe-area-pb">
         <div className="flex items-center justify-around px-2 py-2">
           {navItems.map((item) => (
             <button
