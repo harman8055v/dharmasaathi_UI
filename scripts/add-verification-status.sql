@@ -6,10 +6,9 @@ ALTER TABLE users
   ADD CONSTRAINT IF NOT EXISTS users_verification_status_check
   CHECK (verification_status IN ('pending','verified','rejected'));
 
--- Auto-mark existing phone-verified users
-UPDATE users
-SET verification_status = 'verified'
-WHERE mobile_verified = TRUE;
+-- Verification is determined manually from the admin panel. Phone verification
+-- does not automatically mark a user as verified, so we do not update existing
+-- records here.
 
 -- Create index for faster lookups
 CREATE INDEX IF NOT EXISTS idx_users_verification_status ON users(verification_status);
