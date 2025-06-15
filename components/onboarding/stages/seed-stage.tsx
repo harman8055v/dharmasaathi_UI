@@ -29,6 +29,7 @@ export default function SeedStage({ formData, onChange, onNext, isLoading, user,
   const [localError, setLocalError] = useState<string | null>(null)
   const [isMobileVerified, setIsMobileVerified] = useState(formData.mobile_verified || false)
   const [resendTimer, setResendTimer] = useState(0)
+  const [isUserEditing, setIsUserEditing] = useState(false)
 
   useEffect(() => {
     // If mobile is already verified, immediately proceed
@@ -37,45 +38,23 @@ export default function SeedStage({ formData, onChange, onNext, isLoading, user,
     }
   }, [isMobileVerified, onNext])
 
-  // Update local state if formData props change
+  // Update local state if formData props change (but not when user is actively editing)
   useEffect(() => {
-    if (formData.mobile_number && formData.mobile_number !== mobileNumber) {
-      setMobileNumber(formData.mobile_number)
+    if (!isUserEditing) {
+      if (formData.mobile_number && formData.mobile_number !== mobileNumber) {
+        setMobileNumber(formData.mobile_number)
+      }
     }
     if (formData.mobile_verified !== isMobileVerified) {
       setIsMobileVerified(formData.mobile_verified || false)
     }
-  }, [formData.mobile_number, formData.mobile_verified, mobileNumber, isMobileVerified])
+  }, [formData.mobile_number, formData.mobile_verified, mobileNumber, isMobileVerified, isUserEditing])
 
   const handleMobileNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatMobileNumber(e.target.value)
     setMobileNumber(formatted)
+    setIsUserEditing(true)
     setLocalError(null)
-  }
-
-  const checkMobileExists = async (mobile: string): Promise<boolean> => {
-    try {
-      const { data, error } = await supabase
-        .from("users")
-        .select("id, mobile_verified")
-        .eq("mobile_number", mobile)
-        .limit(1)
-
-      if (error) {
-        console.error("Error checking mobile number:", error)
-        return false
-      }
-
-      // Check if a user exists with this mobile number AND it's not the current user
-      // This prevents the current user from being flagged as "already registered" to themselves
-      if (data && data.length > 0) {
-        return data[0].id !== user?.id // 'user' here is the current userProfile
-      }
-      return false
-    } catch (err) {
-      console.error("Error in mobile check:", err)
-      return false
-    }
   }
 
   const handleSendOtp = async () => {
@@ -87,78 +66,15 @@ export default function SeedStage({ formData, onChange, onNext, isLoading, user,
 
     setIsVerifying(true)
     try {
-      // First check if mobile number is already registered by another user
-      const mobileExistsForOtherUser = await checkMobileExists(mobileNumber)
-
-      if (mobileExistsForOtherUser) {
-        setLocalError(
-          "This mobile number is already registered with another account. Please use a different number or contact support if this is your number.",
-        )
-        setIsVerifying(false)
-        return
-      }
-
       // Update the user's phone number in auth.users table
-      // This will also trigger an OTP to be sent if the phone number is new or changed
-      const { data: updateAuthData, error: updateAuthError } = await supabase.auth.updateUser({
+      const { data: updateData, error: updateError } = await supabase.auth.updateUser({
         phone: mobileNumber,
       })
 
-      if (updateAuthError) {
-        console.error("Error updating phone in auth:", updateAuthError)
-        // Specific error for phone already registered by *another* user
-        if (
-          updateAuthError.message?.includes("already been registered") ||
-          updateAuthError.message?.includes("User with this phone number has already been registered")
-        ) {
-          setLocalError("This mobile number is already registered with another account. Please use a different number.")
-          setIsVerifying(false)
-          return
-        }
-        // For other errors, we might still proceed to OTP if it's a transient issue
-        // or if the phone number is already set in auth but not yet verified.
-        // We'll rely on signInWithOtp to handle the actual OTP sending.
-      }
-
-      // If the phone number was just updated in auth, an OTP should have been sent.
-      // If it was already the same, signInWithOtp will resend.
-      // Use signInWithOtp to explicitly send the OTP for verification.
-      const { error: otpError } = await supabase.auth.signInWithOtp({
-        phone: mobileNumber,
-        options: {
-          shouldCreateUser: false, // User is already created via email/password signup
-        },
-      })
-
-      if (otpError) {
-        console.error("OTP Error:", otpError)
-
-        if (
-          otpError.message?.includes("already been registered") ||
-          otpError.message?.includes("User with this phone number has already been registered")
-        ) {
-          setLocalError(
-            "This mobile number is already registered with another account. Please use a different number or contact support if this is your number.",
-          )
-          setIsVerifying(false)
-          return
-        } else if (
-          otpError.message?.includes("Signups not allowed for otp") ||
-          otpError.message?.includes("Phone signups are disabled")
-        ) {
-          setLocalError("SMS verification is currently unavailable. You can skip this step for now.")
-          setIsVerifying(false)
-          return
-        } else if (otpError.message?.includes("rate limit") || otpError.message?.includes("too many")) {
-          setLocalError("Too many attempts. Please wait a few minutes before trying again.")
-          setIsVerifying(false)
-          return
-        } else {
-          throw otpError
-        }
-      }
+      if (updateError) throw updateError
 
       setOtpSent(true)
+      setIsUserEditing(false)
       setResendTimer(60)
 
       // Start countdown timer
@@ -198,7 +114,7 @@ export default function SeedStage({ formData, onChange, onNext, isLoading, user,
       const { data, error: verifyError } = await supabase.auth.verifyOtp({
         phone: mobileNumber,
         token: otp,
-        type: "sms",
+        type: "phone_change",
       })
 
       if (verifyError) throw verifyError
@@ -245,11 +161,8 @@ export default function SeedStage({ formData, onChange, onNext, isLoading, user,
     setLocalError(null)
 
     try {
-      const { error } = await supabase.auth.signInWithOtp({
+      const { error } = await supabase.auth.updateUser({
         phone: mobileNumber,
-        options: {
-          shouldCreateUser: false,
-        },
       })
 
       if (error) throw error
@@ -363,11 +276,30 @@ export default function SeedStage({ formData, onChange, onNext, isLoading, user,
                     <MessageSquareText className="w-6 h-6 text-green-600" />
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">Enter Verification Code</h3>
-                  <p className="text-gray-600 text-sm">
-                    We've sent a 6-digit code to:
-                    <br />
-                    <span className="font-semibold text-gray-900">{mobileNumber}</span>
-                  </p>
+                  <p className="text-gray-600 text-sm">We've sent a 6-digit code to:</p>
+                </div>
+
+                <div className="space-y-2 mb-4">
+                  <label htmlFor="mobileNumberEdit" className="block text-sm font-medium text-foreground">
+                    Mobile Number *
+                  </label>
+                  <div className="relative mt-1">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Phone className="h-4 w-4 text-gray-400" />
+                    </div>
+                    <input
+                      id="mobileNumberEdit"
+                      type="tel"
+                      value={mobileNumber}
+                      onChange={handleMobileNumberChange}
+                      className={`w-full pl-10 pr-3 py-2 border border-input rounded-md focus:outline-none focus:ring-1 focus:ring-primary ${
+                        localError ? "border-red-500" : ""
+                      }`}
+                      placeholder="+91 98765 43210"
+                      disabled={isVerifying}
+                    />
+                  </div>
+                  <p className="mt-1 text-xs text-gray-500">You can edit your mobile number if needed</p>
                 </div>
 
                 <div className="space-y-2">
