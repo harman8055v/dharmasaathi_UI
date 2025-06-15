@@ -8,6 +8,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useStates, useCities } from "@/lib/hooks/useLocations"
+import { SPIRITUAL_ORGS } from "@/lib/constants/spiritual-orgs"
+import { DAILY_PRACTICES } from "@/lib/constants/daily-practices"
 import {
   ArrowLeft,
   MapPin,
@@ -55,6 +58,10 @@ export default function AccountSettingsPage() {
   const [processingDeactivate, setProcessingDeactivate] = useState(false)
   const [processingDelete, setProcessingDelete] = useState(false)
 
+  const statesList = useStates()
+  const selectedState = statesList.find((s) => s.name === formData.state)
+  const citiesList = useCities(selectedState?.state_code || null)
+
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
@@ -64,6 +71,7 @@ export default function AccountSettingsPage() {
     state: "",
     country: "",
     birthdate: "",
+    height: "",
     gender: "",
     education: "",
     profession: "",
@@ -72,6 +80,8 @@ export default function AccountSettingsPage() {
     temple_visit_freq: "",
     vanaprastha_interest: "",
     artha_vs_moksha: "",
+    spiritual_org: [],
+    daily_practices: [],
   })
 
   const educationLevels = [
@@ -137,6 +147,7 @@ export default function AccountSettingsPage() {
           state: profileData.state || "",
           country: profileData.country || "",
           birthdate: profileData.birthdate || "",
+          height: profileData.height || "",
           gender: profileData.gender || "",
           education: profileData.education || "",
           profession: profileData.profession || "",
@@ -145,6 +156,8 @@ export default function AccountSettingsPage() {
           temple_visit_freq: profileData.temple_visit_freq || "",
           vanaprastha_interest: profileData.vanaprastha_interest || "",
           artha_vs_moksha: profileData.artha_vs_moksha || "",
+          spiritual_org: profileData.spiritual_org || [],
+          daily_practices: profileData.daily_practices || [],
         })
         setNewMobileNumber(profileData.mobile_number || "")
         setLoading(false)
@@ -381,7 +394,7 @@ export default function AccountSettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 pb-20">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 pb-40">
       <MobileNav userProfile={profile} />
 
       <main className="pt-20 px-4">
@@ -453,6 +466,15 @@ export default function AccountSettingsPage() {
                     type="date"
                     value={formData.birthdate}
                     onChange={(e) => setFormData({ ...formData, birthdate: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="height">Height (cm)</Label>
+                  <Input
+                    id="height"
+                    type="number"
+                    value={formData.height}
+                    onChange={(e) => setFormData({ ...formData, height: e.target.value })}
                   />
                 </div>
               </CardContent>
@@ -606,8 +628,14 @@ export default function AccountSettingsPage() {
                     id="city"
                     value={formData.city}
                     onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                    placeholder="Enter city"
+                    placeholder="Select city"
+                    list="city-list"
                   />
+                  <datalist id="city-list">
+                    {citiesList.map((c) => (
+                      <option key={c.id} value={c.name} />
+                    ))}
+                  </datalist>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -617,8 +645,14 @@ export default function AccountSettingsPage() {
                       id="state"
                       value={formData.state}
                       onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                      placeholder="Enter state"
+                      placeholder="Select state"
+                      list="state-list"
                     />
+                    <datalist id="state-list">
+                      {statesList.map((s) => (
+                        <option key={s.id} value={s.name} />
+                      ))}
+                    </datalist>
                   </div>
                   <div>
                     <Label htmlFor="country">Country</Label>
@@ -703,6 +737,48 @@ export default function AccountSettingsPage() {
                 <CardDescription>Share your spiritual preferences</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                <div>
+                  <Label>Spiritual Organizations</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {SPIRITUAL_ORGS.map((org) => (
+                      <button
+                        key={org}
+                        type="button"
+                        onClick={() => {
+                          const arr = formData.spiritual_org.includes(org)
+                            ? formData.spiritual_org.filter((o: string) => o !== org)
+                            : [...formData.spiritual_org, org]
+                          setFormData({ ...formData, spiritual_org: arr })
+                        }}
+                        className={`px-3 py-1 text-sm rounded-full ${formData.spiritual_org.includes(org) ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
+                      >
+                        {org}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <Label>Daily Practices</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {DAILY_PRACTICES.map((p) => (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => {
+                          const arr = formData.daily_practices.includes(p)
+                            ? formData.daily_practices.filter((d: string) => d !== p)
+                            : [...formData.daily_practices, p]
+                          setFormData({ ...formData, daily_practices: arr })
+                        }}
+                        className={`px-3 py-1 text-sm rounded-full ${formData.daily_practices.includes(p) ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
+                      >
+                        {p}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 <div>
                   <Label htmlFor="diet">Diet</Label>
                   <Select

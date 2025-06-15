@@ -201,15 +201,10 @@ export default function DashboardPage() {
       <MobileNav userProfile={profile} />
 
       {/* Main Content */}
-      <main className="pt-24 pb-32 min-h-screen flex flex-col">
+      <main className="pt-16 pb-32 min-h-screen flex flex-col">
         {isVerified ? (
           // Verified User - Swipe Interface
-          <div className="flex-1 flex flex-col">
-            <div className="text-center px-4 py-4">
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Discover Your Match 💫</h1>
-              <p className="text-gray-600">Swipe right to like, left to pass</p>
-            </div>
-
+          <div className="flex-1 flex flex-col mt-4">
             <SwipeStack profiles={profiles} onSwipe={handleSwipe} />
           </div>
         ) : (

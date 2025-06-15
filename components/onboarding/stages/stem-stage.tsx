@@ -5,6 +5,8 @@ import { useState } from "react"
 import { Loader2 } from "lucide-react"
 import type { OnboardingData } from "@/lib/types/onboarding"
 import { VALID_VALUES } from "@/lib/types/onboarding"
+import { useStates, useCities } from "@/lib/hooks/useLocations"
+import { MOTHER_TONGUES } from "@/lib/constants/mother-tongues"
 
 interface StemStageProps {
   formData: OnboardingData
@@ -19,6 +21,7 @@ export default function StemStage({ formData, onChange, onNext, isLoading, error
   const {
     gender = null,
     birthdate = null,
+    height = null,
     city = null,
     state = null,
     country = "India", // Default to India
@@ -26,6 +29,10 @@ export default function StemStage({ formData, onChange, onNext, isLoading, error
   } = formData
 
   const [errors, setErrors] = useState<Record<string, string>>({})
+
+  const statesList = useStates()
+  const selectedState = statesList.find((s) => s.name === state)
+  const citiesList = useCities(selectedState?.state_code || null)
 
   const validGenderOptions = VALID_VALUES.gender.filter((g) => g !== null) as Array<"Male" | "Female" | "Other">
 
@@ -67,6 +74,10 @@ export default function StemStage({ formData, onChange, onNext, isLoading, error
       }
     }
 
+    if (!height) {
+      newErrors.height = "Please enter your height"
+    }
+
     if (!city?.trim()) {
       newErrors.city = "Please enter your city"
     }
@@ -93,6 +104,7 @@ export default function StemStage({ formData, onChange, onNext, isLoading, error
       const dataToSave: Partial<OnboardingData> = {
         gender,
         birthdate,
+        height,
         city,
         state,
         country,
@@ -106,6 +118,7 @@ export default function StemStage({ formData, onChange, onNext, isLoading, error
     const dataToSave: Partial<OnboardingData> = {
       gender: null,
       birthdate: null,
+      height: null,
       city: null,
       state: null,
       country: "India",
@@ -172,6 +185,25 @@ export default function StemStage({ formData, onChange, onNext, isLoading, error
           {errors.birthdate && <p className="text-red-500 text-sm">{errors.birthdate}</p>}
         </div>
 
+        {/* Height */}
+        <div className="space-y-2">
+          <label htmlFor="height" className="block text-sm font-semibold text-gray-700">
+            Height (cm) *
+          </label>
+          <input
+            type="number"
+            id="height"
+            name="height"
+            value={height || ""}
+            onChange={handleChange}
+            placeholder="Enter your height"
+            className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors ${
+              errors.height ? "border-red-300" : "border-gray-200"
+            }`}
+          />
+          {errors.height && <p className="text-red-500 text-sm">{errors.height}</p>}
+        </div>
+
         {/* City */}
         <div className="space-y-2">
           <label htmlFor="city" className="block text-sm font-semibold text-gray-700">
@@ -183,11 +215,17 @@ export default function StemStage({ formData, onChange, onNext, isLoading, error
             name="city"
             value={city || ""}
             onChange={handleChange}
-            placeholder="Enter your city"
+            placeholder="Select your city"
+            list="city-list"
             className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors ${
               errors.city ? "border-red-300" : "border-gray-200"
             }`}
           />
+          <datalist id="city-list">
+            {citiesList.map((c) => (
+              <option key={c.id} value={c.name} />
+            ))}
+          </datalist>
           {errors.city && <p className="text-red-500 text-sm">{errors.city}</p>}
         </div>
 
@@ -202,11 +240,17 @@ export default function StemStage({ formData, onChange, onNext, isLoading, error
             name="state"
             value={state || ""}
             onChange={handleChange}
-            placeholder="Enter your state or province"
+            placeholder="Select your state"
+            list="state-list"
             className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors ${
               errors.state ? "border-red-300" : "border-gray-200"
             }`}
           />
+          <datalist id="state-list">
+            {statesList.map((s) => (
+              <option key={s.id} value={s.name} />
+            ))}
+          </datalist>
           {errors.state && <p className="text-red-500 text-sm">{errors.state}</p>}
         </div>
 
@@ -240,11 +284,17 @@ export default function StemStage({ formData, onChange, onNext, isLoading, error
             name="mother_tongue"
             value={mother_tongue || ""}
             onChange={handleChange}
-            placeholder="Enter your mother tongue"
+            placeholder="Select mother tongue"
+            list="mother-tongue-list"
             className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors ${
               errors.mother_tongue ? "border-red-300" : "border-gray-200"
             }`}
           />
+          <datalist id="mother-tongue-list">
+            {MOTHER_TONGUES.map((lang) => (
+              <option key={lang} value={lang} />
+            ))}
+          </datalist>
           {errors.mother_tongue && <p className="text-red-500 text-sm">{errors.mother_tongue}</p>}
         </div>
 

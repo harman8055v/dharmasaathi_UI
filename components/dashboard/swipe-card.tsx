@@ -22,10 +22,7 @@ export default function SwipeCard({ profile, onSwipe, isTop, index }: SwipeCardP
   const rotateRaw = useTransform(x, [-300, 300], [-30, 30])
   const opacity = useTransform(x, [-300, -150, 0, 150, 300], [0, 1, 1, 1, 0])
 
-  const isSwiping = useMotionValue(false)
-  const rotate = useTransform(() => {
-    return isSwiping.get() ? rotateRaw.get() : 0
-  })
+  const rotate = rotateRaw
 
   const calculateAge = (birthdate: string) => {
     if (!birthdate) return "N/A"
@@ -118,12 +115,7 @@ export default function SwipeCard({ profile, onSwipe, isTop, index }: SwipeCardP
           opacity,
           zIndex: isTop ? 20 : 10 - index,
         }}
-        drag={!isExpanded}
-        dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
-        dragElastic={0.2}
-        onDragStart={() => isSwiping.set(true)}
-        onDragEnd={handleDragEnd}
-        onDrag={() => isSwiping.set(true)}
+        drag={false}
         whileTap={{ scale: isExpanded ? 1 : 0.95 }}
         layout
       >
