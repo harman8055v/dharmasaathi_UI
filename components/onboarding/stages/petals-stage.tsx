@@ -5,6 +5,7 @@ import { useState } from "react"
 import { Loader2, X } from "lucide-react"
 import type { OnboardingData } from "@/lib/types/onboarding"
 import { VALID_VALUES } from "@/lib/types/onboarding"
+import { SPIRITUAL_ORGS } from "@/lib/constants/spiritual-orgs"
 
 interface PetalsStageProps {
   formData: OnboardingData
@@ -90,17 +91,7 @@ export default function PetalsStage({ formData, onChange, onNext, isLoading, err
     onNext(dataToSave) // Trigger save and next stage
   }
 
-  const spiritualOrgs = [
-    "ISKCON",
-    "Ramakrishna Mission",
-    "Art of Living",
-    "Brahma Kumaris",
-    "Chinmaya Mission",
-    "Swaminarayan",
-    "Sathya Sai Organization",
-    "Divine Life Society",
-    "Other",
-  ]
+  const spiritualOrgs = [...SPIRITUAL_ORGS]
 
   const dailyPractices = [
     "Meditation",
