@@ -113,10 +113,10 @@ export default function PartnerPreferencesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 pb-20">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50">
       <MobileNav userProfile={profile} />
 
-      <main className="pt-20 px-4">
+      <main className="pt-24 pb-40 px-4 min-h-screen">
         <div className="max-w-2xl mx-auto">
           {/* Header */}
           <div className="flex items-center gap-3 mb-6">
