@@ -193,7 +193,7 @@ export default function DashboardPage() {
   }
 
   const profileCompleteness = calculateProfileCompleteness()
-  const isVerified = profile?.email_verified && profile?.mobile_verified // Add your verification logic here
+  const isVerified = profile?.verification_status === 'verified'
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50">

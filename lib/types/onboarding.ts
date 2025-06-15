@@ -41,6 +41,7 @@ export interface OnboardingProfile extends OnboardingData {
   first_name?: string
   last_name?: string
   mobile_number?: string
+  verification_status?: 'pending' | 'verified' | 'rejected'
   onboarding_completed?: boolean
   updated_at?: string
 }
