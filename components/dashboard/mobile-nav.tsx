@@ -151,7 +151,13 @@ export default function MobileNav({ userProfile }: MobileNavProps) {
                           {userProfile?.first_name} {userProfile?.last_name}
                         </p>
                         <p className="text-sm text-gray-600">
-                          {userProfile?.fast_track_verification ? "Fast Track Verification" : "Profile Under Review"}
+                          {userProfile?.verification_status === 'verified'
+                            ? 'Verified'
+                            : userProfile?.verification_status === 'rejected'
+                            ? 'Verification Rejected'
+                            : userProfile?.fast_track_verification
+                            ? 'Fast Track Verification'
+                            : 'Profile Under Review'}
                         </p>
                       </div>
                     </div>
