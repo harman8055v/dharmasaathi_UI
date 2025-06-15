@@ -159,6 +159,9 @@ Copy .env.example to .env.local and fill in your actual keys:
 \`\`\`
 NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+# Razorpay credentials for payments
+RAZORPAY_KEY_ID=your-razorpay-key-id
+RAZORPAY_KEY_SECRET=your-razorpay-key-secret
 # (Do NOT expose secret keys on frontend!)
 \`\`\`
 
