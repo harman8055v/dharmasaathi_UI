@@ -102,7 +102,7 @@ export default function MobileNav({ userProfile }: MobileNavProps) {
 
           {/* Centered Logo */}
           <div className="flex items-center justify-center flex-1">
-            <Image src="/logo.png" alt="DharmaSaathi" width={100} height={32} className="h-8 w-auto" />
+            <Image src="/logo.png" alt="DharmaSaathi" width={120} height={40} className="h-10 w-auto" />
           </div>
 
           {/* User Profile Dropdown */}
@@ -199,7 +199,7 @@ export default function MobileNav({ userProfile }: MobileNavProps) {
       </header>
 
       {/* Bottom Navigation - Floating with Subtle Animations */}
-      <nav className="fixed bottom-6 left-4 right-4 z-50">
+      <nav className="fixed bottom-4 left-4 right-4 z-[9999]">
         <div className="bg-white/90 backdrop-blur-xl border border-orange-200/50 rounded-3xl shadow-2xl shadow-orange-500/10">
           <div className="flex items-center justify-around px-2 py-4">
             {navItems.map((item) => (
@@ -244,7 +244,7 @@ export default function MobileNav({ userProfile }: MobileNavProps) {
       </nav>
 
       {/* Bottom Safe Area */}
-      <div className="h-24" />
+      <div className="h-32" />
     </>
   )
 }

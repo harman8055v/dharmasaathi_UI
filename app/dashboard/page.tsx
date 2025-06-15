@@ -131,7 +131,7 @@ export default function DashboardPage() {
       <MobileNav userProfile={profile} />
 
       {/* Main Content with proper spacing to avoid overlap */}
-      <main className="pt-24 pb-40 px-4 min-h-screen">
+      <main className="pt-24 pb-32 px-4 min-h-screen">
         <div className="max-w-4xl mx-auto space-y-6">
           {/* Welcome Section */}
           <div className="text-center">
