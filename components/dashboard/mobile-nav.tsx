@@ -133,7 +133,7 @@ export default function MobileNav({ userProfile }: MobileNavProps) {
             {isProfileMenuOpen && (
               <>
                 <div className="fixed inset-0 z-30" onClick={() => setIsProfileMenuOpen(false)} />
-                <div className="absolute top-full right-0 mt-2 w-64 bg-white/95 backdrop-blur-md border border-orange-200 rounded-2xl shadow-2xl z-40 overflow-hidden animate-in slide-in-from-top-2 duration-200">
+                <div className="absolute top-full right-0 mt-2 w-64 bg-white backdrop-blur-md border border-orange-200 rounded-2xl shadow-2xl z-40 overflow-hidden animate-in slide-in-from-top-2 duration-200">
                   {/* User Info */}
                   <div className="p-4 bg-gradient-to-r from-orange-50 to-pink-50 border-b border-orange-100">
                     <div className="flex items-center gap-3">
