@@ -3,7 +3,7 @@ import Hero from "@/components/hero"
 import SignupSection from "@/components/signup-section"
 import Features from "@/components/features"
 import HowItWorks from "@/components/how-it-works"
-import Testimonials from "@/components/testimonials"
+// import Testimonials from "@/components/testimonials" // This import will be removed
 import MobileApps from "@/components/mobile-apps"
 import InspirationQuote from "@/components/inspiration-quote"
 import Faq from "@/components/faq"
@@ -17,7 +17,7 @@ export default function Home() {
       <SignupSection />
       <Features />
       <HowItWorks />
-      <Testimonials />
+      {/* <Testimonials /> */} {/* This component usage will be removed */}
       <MobileApps />
       <InspirationQuote />
       <Faq />

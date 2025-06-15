@@ -164,7 +164,7 @@ export default function Hero() {
                 {/* Image Card */}
                 <div className="relative bg-white/95 backdrop-blur-sm rounded-2xl md:rounded-3xl p-4 md:p-6 shadow-xl border border-white/60 transform hover:scale-105 transition-transform duration-500 group">
                   <Image
-                    src="/placeholder.svg?height=400&width=320&text=Spiritual+Connection"
+                    src="/images/spiritual-couple.jpg"
                     alt="Spiritual couple finding meaningful connection through DharmaSaathi"
                     width={320}
                     height={400}

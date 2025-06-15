@@ -18,9 +18,10 @@ export default function Footer() {
       <div className="container px-4 md:px-6 py-12 md:py-16">
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-6">
-            <div className="flex items-center space-x-3">
-              <Image src="/logo.png" alt="DharmaSaathi Logo" width={40} height={40} className="rounded-lg" />
-              <span className="text-2xl font-bold text-primary">DharmaSaathi</span>
+            <div className="flex items-center">
+              {" "}
+              {/* Removed space-x-3 */}
+              <Image src="/logo.png" alt="DharmaSaathi Logo" width={120} height={40} className="rounded-lg" />
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed">
               Connecting spiritual souls on their sacred journey to find true partnership based on shared dharma and

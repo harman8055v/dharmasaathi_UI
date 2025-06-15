@@ -30,22 +30,13 @@ export default function Header() {
       <header className="fixed top-0 w-full z-50 glass-effect border-b">
         <div className="container px-4 md:px-6">
           <div className="flex h-16 items-center justify-between">
-            <div className="flex items-center space-x-2 group cursor-pointer" onClick={() => scrollToSection("hero")}>
+            <div className="flex items-center group cursor-pointer" onClick={() => scrollToSection("hero")}>
               <div className="relative">
                 <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-pink-500 rounded-lg blur-md opacity-0 group-hover:opacity-30 transition-opacity duration-300"></div>
                 <div className="relative bg-white p-2 rounded-lg shadow-sm group-hover:shadow-md transition-all duration-300 transform group-hover:scale-105">
-                  <Image
-                    src="/placeholder.svg?height=32&width=32"
-                    alt="DharmaSaathi Logo"
-                    width={32}
-                    height={32}
-                    className="rounded-md"
-                  />
+                  <Image src="/logo.png" alt="DharmaSaathi Logo" width={120} height={40} className="rounded-md" />
                 </div>
               </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-brand-700 to-primary bg-clip-text text-transparent group-hover:from-brand-800 group-hover:to-primary/90 transition-all duration-300">
-                DharmaSaathi
-              </span>
             </div>
 
             {/* Desktop Navigation */}

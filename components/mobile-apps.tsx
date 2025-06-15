@@ -69,7 +69,7 @@ export default function MobileApps() {
             <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-purple-200/20 rounded-3xl blur-3xl" />
             <div className="relative glass-effect p-6 md:p-8 rounded-3xl">
               <Image
-                src="/placeholder.svg?height=500&width=400"
+                src="/images/app-mockup.jpg"
                 alt="DharmaSaathi Mobile App Preview"
                 width={400}
                 height={500}
