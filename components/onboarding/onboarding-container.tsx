@@ -51,6 +51,7 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
     mobile_number: null, // Add this line
     gender: null,
     birthdate: null,
+    height: null,
     city: null,
     state: null,
     country: "India", // Default to India
@@ -78,6 +79,7 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
         mobile_number: profile.mobile_number || null, // Add this line
         gender: profile.gender || null,
         birthdate: profile.birthdate || null,
+        height: profile.height || null,
         city: profile.city || null,
         state: profile.state || null,
         country: profile.country || "India", // Default to India if not set
@@ -100,7 +102,7 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
       // First stage is now mobile verification
       if (!user?.phone_confirmed_at && !profile.mobile_verified) {
         setStage(1)
-      } else if (!profile.gender || !profile.birthdate) {
+      } else if (!profile.gender || !profile.birthdate || !profile.height) {
         setStage(2)
       } else if (!profile.education || !profile.profession) {
         setStage(3)
@@ -204,7 +206,7 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
         if (!stageData.gender) {
           throw new Error("Please select your gender before proceeding.")
         }
-        if (!stageData.birthdate || !stageData.city || !stageData.state || !stageData.country) {
+        if (!stageData.birthdate || !stageData.height || !stageData.city || !stageData.state || !stageData.country) {
           throw new Error("Please fill in all required fields before proceeding.")
         }
         break

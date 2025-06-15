@@ -9,6 +9,7 @@ export interface OnboardingData {
   // Personal info
   gender: "Male" | "Female" | "Other" | null
   birthdate: string | null
+  height: string | null
   city: string | null
   state: string | null
   country: string | null

@@ -72,9 +72,9 @@ export default function ProfileImageUploader({ userId, currentImages, onImagesUp
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
-      if (file.size > 2 * 1024 * 1024) {
-        // 2MB limit for base64 storage
-        toast.error("Image size should be less than 2MB")
+      if (file.size > 10 * 1024 * 1024) {
+        // 10MB limit
+        toast.error("Image size should be less than 10MB")
         return
       }
 
@@ -134,7 +134,7 @@ export default function ProfileImageUploader({ userId, currentImages, onImagesUp
       <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} className="hidden" />
 
       <p className="text-xs text-gray-500 text-center">
-        Add up to 6 photos. First photo will be your main profile picture. Max 2MB per image.
+        Add up to 6 photos. First photo will be your main profile picture. Max 10MB per image.
       </p>
     </div>
   )
