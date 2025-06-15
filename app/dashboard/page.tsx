@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
+import { debugLog } from "@/lib/logger"
 import { Button } from "@/components/ui/button"
 import { Heart, Settings, User, Shield, Users, Clock, CheckCircle, AlertCircle, Edit, Star, Zap } from "lucide-react"
 import { ReferralProgram } from "@/components/dashboard/referral-program"
@@ -174,7 +175,7 @@ export default function DashboardPage() {
   }
 
   const handleSwipe = (direction: "left" | "right", profileId: string) => {
-    console.log(`Swiped ${direction} on profile ${profileId}`)
+    debugLog(`Swiped ${direction} on profile ${profileId}`)
     // Here you would typically:
     // 1. Send the swipe action to your backend
     // 2. Update user preferences/matches
