@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Star, Sparkles, Crown, Check, Gift } from "lucide-react"
 import MobileNav from "@/components/dashboard/mobile-nav"
 import type { User as SupabaseUser } from "@supabase/supabase-js"
+import { toast, Toaster } from "sonner"
 
 const superLikePackages = [
   { count: 5, price: 499, popular: false },
@@ -26,6 +27,24 @@ export default function StorePage() {
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const router = useRouter()
+
+  async function handlePurchase(amount: number) {
+    try {
+      const res = await fetch("/api/payments/order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: amount * 100 }),
+      })
+      const data = await res.json()
+
+      if (!res.ok) throw new Error(data.error)
+
+      toast.success("Order created. Complete payment in Razorpay.")
+    } catch (err) {
+      console.error(err)
+      toast.error("Failed to start payment. Please try again.")
+    }
+  }
 
   useEffect(() => {
     async function getUser() {
@@ -135,7 +154,10 @@ export default function StorePage() {
                       <span>Read Receipts</span>
                     </li>
                   </ul>
-                  <Button className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600">
+                  <Button
+                    onClick={() => handlePurchase(999)}
+                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                  >
                     Choose Premium Monthly
                   </Button>
                 </CardContent>
@@ -179,7 +201,10 @@ export default function StorePage() {
                       <span>Profile Boost (2x/month)</span>
                     </li>
                   </ul>
-                  <Button className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600">
+                  <Button
+                    onClick={() => handlePurchase(5999)}
+                    className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600"
+                  >
                     Choose Premium Annual
                   </Button>
                 </CardContent>
@@ -209,6 +234,7 @@ export default function StorePage() {
                     <div className="text-2xl font-bold text-blue-600 mb-4">₹{pkg.price}</div>
                     <p className="text-sm text-gray-600 mb-4">₹{Math.round(pkg.price / pkg.count)} per Super Like</p>
                     <Button
+                      onClick={() => handlePurchase(pkg.price)}
                       className={`w-full ${pkg.popular ? "bg-blue-600 hover:bg-blue-700" : "bg-gray-600 hover:bg-gray-700"}`}
                     >
                       Buy Now
@@ -241,6 +267,7 @@ export default function StorePage() {
                     <div className="text-2xl font-bold text-purple-600 mb-4">₹{pkg.price}</div>
                     <p className="text-sm text-gray-600 mb-4">₹{Math.round(pkg.price / pkg.count)} per Highlight</p>
                     <Button
+                      onClick={() => handlePurchase(pkg.price)}
                       className={`w-full ${pkg.popular ? "bg-purple-600 hover:bg-purple-700" : "bg-gray-600 hover:bg-gray-700"}`}
                     >
                       Buy Now
@@ -327,6 +354,7 @@ export default function StorePage() {
           </div>
         </div>
       </main>
+      <Toaster position="top-center" />
     </div>
   )
 }
