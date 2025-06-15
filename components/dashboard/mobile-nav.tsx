@@ -97,11 +97,8 @@ export default function MobileNav({ userProfile }: MobileNavProps) {
       {/* Top Header - Minimal */}
       <header className="fixed top-0 left-0 right-0 z-40 bg-gradient-to-r from-orange-50 to-pink-50 backdrop-blur-md border-b border-orange-100/50">
         <div className="flex items-center justify-between px-4 py-4">
-          {/* Left Spacer */}
-          <div className="w-12"></div>
-
-          {/* Centered Logo */}
-          <div className="flex items-center justify-center flex-1">
+          {/* Logo on left */}
+          <div className="flex items-center">
             <Image src="/logo.png" alt="DharmaSaathi" width={140} height={48} className="h-12 w-auto" />
           </div>
 
@@ -198,47 +195,58 @@ export default function MobileNav({ userProfile }: MobileNavProps) {
         </div>
       </header>
 
-      {/* Bottom Navigation - Fixed to viewport bottom */}
-      <div className="fixed bottom-0 left-0 right-0 z-[99999] p-4 pointer-events-none">
-        <div className="bg-white/95 backdrop-blur-xl border border-orange-200/50 rounded-3xl shadow-2xl shadow-orange-500/20 pointer-events-auto max-w-md mx-auto">
-          <div className="flex items-center justify-around px-2 py-4">
-            {navItems.map((item) => (
-              <button
-                key={item.href}
-                onClick={() => handleNavItemClick(item.href)}
-                className={`relative flex flex-col items-center gap-2 px-4 py-2 rounded-2xl transition-all duration-200 ${
-                  item.active
-                    ? "bg-gradient-to-r from-orange-100 to-pink-100 text-orange-600 shadow-lg shadow-orange-500/20"
-                    : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-                } ${tappedItem === item.href ? "scale-95" : "scale-100"}`}
-              >
-                {/* Active Indicator */}
-                {item.active && (
-                  <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-gradient-to-r from-orange-500 to-pink-500 rounded-full" />
-                )}
-
-                {/* Icon */}
-                <div className="relative">
-                  <item.icon className={`w-6 h-6 ${item.active ? item.color : ""} transition-all duration-200`} />
-
-                  {/* Notification Badge (example for Messages) */}
-                  {item.label === "Messages" && (
-                    <div className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
-                      <span className="text-xs text-white font-bold">3</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Label */}
-                <span
-                  className={`text-xs font-medium transition-all duration-200 ${
-                    item.active ? "text-orange-600" : "text-gray-500"
-                  }`}
+      {/* Bottom Navigation - Mobile Fixed */}
+      <div
+        className="fixed bottom-0 left-0 right-0 z-[99999] pointer-events-none"
+        style={{
+          position: "fixed !important",
+          bottom: "0px !important",
+          left: "0px !important",
+          right: "0px !important",
+          zIndex: 99999,
+        }}
+      >
+        <div className="p-4 pointer-events-none">
+          <div className="bg-white/95 backdrop-blur-xl border border-orange-200/50 rounded-3xl shadow-2xl shadow-orange-500/20 pointer-events-auto max-w-md mx-auto">
+            <div className="flex items-center justify-around px-2 py-4">
+              {navItems.map((item) => (
+                <button
+                  key={item.href}
+                  onClick={() => handleNavItemClick(item.href)}
+                  className={`relative flex flex-col items-center gap-2 px-4 py-2 rounded-2xl transition-all duration-200 ${
+                    item.active
+                      ? "bg-gradient-to-r from-orange-100 to-pink-100 text-orange-600 shadow-lg shadow-orange-500/20"
+                      : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                  } ${tappedItem === item.href ? "scale-95" : "scale-100"}`}
                 >
-                  {item.label}
-                </span>
-              </button>
-            ))}
+                  {/* Active Indicator */}
+                  {item.active && (
+                    <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-gradient-to-r from-orange-500 to-pink-500 rounded-full" />
+                  )}
+
+                  {/* Icon */}
+                  <div className="relative">
+                    <item.icon className={`w-6 h-6 ${item.active ? item.color : ""} transition-all duration-200`} />
+
+                    {/* Notification Badge (example for Messages) */}
+                    {item.label === "Messages" && (
+                      <div className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+                        <span className="text-xs text-white font-bold">3</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Label */}
+                  <span
+                    className={`text-xs font-medium transition-all duration-200 ${
+                      item.active ? "text-orange-600" : "text-gray-500"
+                    }`}
+                  >
+                    {item.label}
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>
