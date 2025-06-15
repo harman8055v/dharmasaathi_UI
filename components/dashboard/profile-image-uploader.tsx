@@ -18,23 +18,25 @@ export default function ProfileImageUploader({ userId, currentImages, onImagesUp
   const [uploading, setUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  const convertToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.readAsDataURL(file)
+      reader.onload = () => resolve(reader.result as string)
+      reader.onerror = (error) => reject(error)
+    })
+  }
+
   const uploadImage = async (file: File) => {
     try {
       setUploading(true)
 
-      const fileExt = file.name.split(".").pop()
-      const fileName = `${userId}-${Date.now()}.${fileExt}`
-      const filePath = `profile-images/${fileName}`
+      // Convert image to base64 for now (alternative to storage)
+      const base64Image = await convertToBase64(file)
 
-      const { error: uploadError } = await supabase.storage.from("user-photos").upload(filePath, file)
-
-      if (uploadError) throw uploadError
-
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from("user-photos").getPublicUrl(filePath)
-
-      const newImages = [...currentImages, publicUrl]
+      // For now, we'll store the base64 image directly in the database
+      // In production, you'd want to use proper file storage
+      const newImages = [...currentImages, base64Image]
 
       // Update user profile with new images
       const { error: updateError } = await supabase.from("users").update({ user_photos: newImages }).eq("id", userId)
@@ -70,11 +72,18 @@ export default function ProfileImageUploader({ userId, currentImages, onImagesUp
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        // 5MB limit
-        toast.error("Image size should be less than 5MB")
+      if (file.size > 2 * 1024 * 1024) {
+        // 2MB limit for base64 storage
+        toast.error("Image size should be less than 2MB")
         return
       }
+
+      // Check if it's a valid image type
+      if (!file.type.startsWith("image/")) {
+        toast.error("Please select a valid image file")
+        return
+      }
+
       uploadImage(file)
     }
   }
@@ -88,6 +97,10 @@ export default function ProfileImageUploader({ userId, currentImages, onImagesUp
               src={imageUrl || "/placeholder.svg"}
               alt={`Profile ${index + 1}`}
               className="w-full h-24 object-cover rounded-lg border-2 border-gray-200"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement
+                target.src = "/placeholder.svg"
+              }}
             />
             <Button
               size="sm"
@@ -121,7 +134,7 @@ export default function ProfileImageUploader({ userId, currentImages, onImagesUp
       <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} className="hidden" />
 
       <p className="text-xs text-gray-500 text-center">
-        Add up to 6 photos. First photo will be your main profile picture.
+        Add up to 6 photos. First photo will be your main profile picture. Max 2MB per image.
       </p>
     </div>
   )
