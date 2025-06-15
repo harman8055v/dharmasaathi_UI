@@ -8,7 +8,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ArrowLeft, Edit, Camera, MapPin, Briefcase, Heart } from "lucide-react"
 import MobileNav from "@/components/dashboard/mobile-nav"
 import ProfileImageUploader from "@/components/dashboard/profile-image-uploader"
-import { Toaster } from "sonner"
 
 export default function ProfilePage() {
   const [user, setUser] = useState<any>(null)
@@ -52,7 +51,10 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading your profile...</p>
+        </div>
       </div>
     )
   }
@@ -70,10 +72,11 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 pb-20">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50">
       <MobileNav userProfile={profile} />
 
-      <main className="pt-20 px-4">
+      {/* Main Content with proper spacing to avoid overlap */}
+      <main className="pt-24 pb-40 px-4 min-h-screen">
         <div className="max-w-2xl mx-auto">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
@@ -238,7 +241,6 @@ export default function ProfilePage() {
           </div>
         </div>
       </main>
-      <Toaster position="top-center" />
     </div>
   )
 }

@@ -8,10 +8,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ArrowLeft, Save, Mail, MapPin, User, Phone, Shield, CheckCircle } from "lucide-react"
+import { ArrowLeft, MapPin, User, Mail, CheckCircle, Phone, Shield, Save } from "lucide-react"
 import MobileNav from "@/components/dashboard/mobile-nav"
 import { toast } from "sonner"
-import { Toaster } from "sonner"
 import { formatMobileNumber, validateMobileNumber } from "@/lib/types/onboarding"
 
 export default function AccountSettingsPage() {
@@ -526,7 +525,6 @@ export default function AccountSettingsPage() {
           </div>
         </div>
       </main>
-      <Toaster position="top-center" />
     </div>
   )
 }

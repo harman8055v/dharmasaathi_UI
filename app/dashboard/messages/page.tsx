@@ -68,10 +68,11 @@ export default function MessagesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 pb-20">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50">
       <MobileNav userProfile={profile} />
 
-      <main className="pt-20 px-4">
+      {/* Main Content with proper spacing to avoid overlap */}
+      <main className="pt-24 pb-40 px-4 min-h-screen">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="text-center mb-8">

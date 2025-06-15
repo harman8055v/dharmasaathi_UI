@@ -9,6 +9,18 @@ import { Star, Sparkles, Crown, Check, Gift } from "lucide-react"
 import MobileNav from "@/components/dashboard/mobile-nav"
 import type { User as SupabaseUser } from "@supabase/supabase-js"
 
+const superLikePackages = [
+  { count: 5, price: 499, popular: false },
+  { count: 15, price: 1299, popular: true },
+  { count: 30, price: 2499, popular: false },
+]
+
+const highlightPackages = [
+  { count: 3, price: 399, popular: false },
+  { count: 10, price: 999, popular: true },
+  { count: 20, price: 1799, popular: false },
+]
+
 export default function StorePage() {
   const [user, setUser] = useState<SupabaseUser | null>(null)
   const [profile, setProfile] = useState<any>(null)
@@ -66,23 +78,12 @@ export default function StorePage() {
     )
   }
 
-  const superLikePackages = [
-    { count: 5, price: 199, popular: false },
-    { count: 15, price: 499, popular: true },
-    { count: 30, price: 899, popular: false },
-  ]
-
-  const highlightPackages = [
-    { count: 3, price: 149, popular: false },
-    { count: 10, price: 399, popular: true },
-    { count: 20, price: 699, popular: false },
-  ]
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 pb-20">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50">
       <MobileNav userProfile={profile} />
 
-      <main className="pt-20 px-4">
+      {/* Main Content with proper spacing to avoid overlap */}
+      <main className="pt-24 pb-40 px-4 min-h-screen">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="text-center mb-8">
