@@ -198,9 +198,9 @@ export default function MobileNav({ userProfile }: MobileNavProps) {
         </div>
       </header>
 
-      {/* Bottom Navigation - Floating with Subtle Animations */}
-      <nav className="fixed bottom-4 left-4 right-4 z-[99999] pointer-events-none">
-        <div className="bg-white/95 backdrop-blur-xl border border-orange-200/50 rounded-3xl shadow-2xl shadow-orange-500/20 pointer-events-auto">
+      {/* Bottom Navigation - Fixed to viewport bottom */}
+      <div className="fixed bottom-0 left-0 right-0 z-[99999] p-4 pointer-events-none">
+        <div className="bg-white/95 backdrop-blur-xl border border-orange-200/50 rounded-3xl shadow-2xl shadow-orange-500/20 pointer-events-auto max-w-md mx-auto">
           <div className="flex items-center justify-around px-2 py-4">
             {navItems.map((item) => (
               <button
@@ -241,10 +241,7 @@ export default function MobileNav({ userProfile }: MobileNavProps) {
             ))}
           </div>
         </div>
-      </nav>
-
-      {/* Bottom Safe Area */}
-      <div className="h-28" />
+      </div>
     </>
   )
 }
