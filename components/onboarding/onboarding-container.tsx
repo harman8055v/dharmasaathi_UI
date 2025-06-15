@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
+import { debugLog } from "@/lib/logger"
 import type { User } from "@supabase/supabase-js"
 import type { OnboardingData, OnboardingProfile } from "@/lib/types/onboarding"
 import { VALID_VALUES, validateEnumField } from "@/lib/types/onboarding"
@@ -132,8 +133,8 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
         // Sanitize the payload - removes null/undefined/empty string values
         const payload = sanitizePayload(stageData)
 
-        console.log("Original stage data:", stageData)
-        console.log("Sanitized payload:", payload)
+        debugLog("Original stage data:", stageData)
+        debugLog("Sanitized payload:", payload)
 
         // Only make the database call if we have data to save
         if (Object.keys(payload).length > 0) {
@@ -151,7 +152,7 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
             throw new Error(`Failed to save data: ${saveError.message}`)
           }
 
-          console.log("Successfully saved data")
+          debugLog("Successfully saved data")
 
           // Update local profile state
           setProfile((prev) => ({ ...prev, ...payload }))
