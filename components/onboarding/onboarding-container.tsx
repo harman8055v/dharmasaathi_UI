@@ -8,6 +8,8 @@ import type { OnboardingData, OnboardingProfile } from "@/lib/types/onboarding"
 import { VALID_VALUES, validateEnumField } from "@/lib/types/onboarding"
 import ProgressBar from "./progress-bar"
 import NavigationButtons from "./navigation-buttons"
+import Image from "next/image"
+import { Card, CardContent } from "@/components/ui/card" // Import Card components
 
 // Dynamic imports for stages
 import SeedStage from "./stages/seed-stage"
@@ -378,6 +380,19 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
               canProceed={true}
             />
           </div>
+
+          {/* Trust Section at the bottom */}
+          <Card className="mt-8 max-w-2xl mx-auto bg-white/80 backdrop-blur-sm border border-white/20 shadow-lg">
+            <CardContent className="flex flex-col items-center justify-center p-6 text-center">
+              <Image src="/logo.png" alt="DharmaSaathi Logo" width={120} height={40} className="mb-4" />
+              <p className="text-sm text-gray-600">
+                {
+                  "Your data is safe with DharmaSaathi. We are committed to protecting your privacy and ensuring a secure experience."
+                }
+              </p>
+              <p className="text-xs text-gray-500 mt-2">{"Learn more about our privacy policy."}</p>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

@@ -8,7 +8,6 @@ import {
   Home,
   User,
   Settings,
-  Search,
   MessageCircle,
   ShoppingBag,
   Menu,
@@ -36,7 +35,7 @@ export default function MobileNav({ userProfile }: MobileNavProps) {
 
   const navItems = [
     { icon: Home, label: "Home", href: "/dashboard", active: pathname === "/dashboard" },
-    { icon: Search, label: "Matches", href: "/dashboard/matches", active: pathname === "/dashboard/matches" },
+    { icon: Heart, label: "Matches", href: "/dashboard/matches", active: pathname === "/dashboard/matches" },
     { icon: MessageCircle, label: "Messages", href: "/dashboard/messages", active: pathname === "/dashboard/messages" },
     {
       icon: ShoppingBag,
@@ -60,9 +59,8 @@ export default function MobileNav({ userProfile }: MobileNavProps) {
       {/* Top Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-orange-100">
         <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-3">
-            <Heart className="w-7 h-7 text-orange-500" />
-            <h1 className="text-xl font-bold text-gray-900">DharmaSaathi</h1>
+          <div className="flex items-center">
+            <img src="/logo.png" alt="DharmaSaathi" className="h-8 w-auto" />
           </div>
 
           <div className="flex items-center gap-3">
@@ -114,14 +112,14 @@ export default function MobileNav({ userProfile }: MobileNavProps) {
         )}
       </header>
 
-      {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-orange-100 safe-area-pb">
-        <div className="flex items-center justify-around px-2 py-2">
+      {/* Bottom Navigation - Floating */}
+      <nav className="fixed bottom-4 left-4 right-4 z-50 bg-white/95 backdrop-blur-md border border-orange-200 rounded-2xl shadow-lg safe-area-pb">
+        <div className="flex items-center justify-around px-2 py-3">
           {navItems.map((item) => (
             <button
               key={item.href}
               onClick={() => router.push(item.href)}
-              className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-all duration-200 ${
+              className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all duration-200 ${
                 item.active ? "bg-orange-100 text-orange-600" : "text-gray-600 hover:text-orange-600 hover:bg-orange-50"
               }`}
             >
