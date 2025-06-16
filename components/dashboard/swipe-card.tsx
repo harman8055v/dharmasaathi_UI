@@ -14,17 +14,19 @@ import {
   Info,
   ChevronLeft,
   ChevronRight,
+  RotateCcw,
 } from "lucide-react"
 import Image from "next/image"
 
 interface SwipeCardProps {
   profile: any
   onSwipe: (direction: "left" | "right" | "superlike", profileId: string) => void
+  onUndo: () => void
   isTop: boolean
   index: number
 }
 
-export default function SwipeCard({ profile, onSwipe, isTop, index }: SwipeCardProps) {
+export default function SwipeCard({ profile, onSwipe, onUndo, isTop, index }: SwipeCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [currentDetailImageIndex, setCurrentDetailImageIndex] = useState(0)
@@ -79,6 +81,13 @@ export default function SwipeCard({ profile, onSwipe, isTop, index }: SwipeCardP
     setAnimatingButton("superlike")
     onSwipe("superlike", profile.id)
     setTimeout(() => setAnimatingButton(null), 500)
+  }
+
+  const handleUndoClick = () => {
+    if (animatingButton) return
+    setAnimatingButton("undo")
+    onUndo()
+    setTimeout(() => setAnimatingButton(null), 300)
   }
 
   const nextImage = () => {
@@ -326,6 +335,22 @@ export default function SwipeCard({ profile, onSwipe, isTop, index }: SwipeCardP
                 transition={{ duration: 0.4 }}
               >
                 <X className="w-6 h-6" />
+              </motion.button>
+
+              {/* Undo Button */}
+              <motion.button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleUndoClick()
+                }}
+                disabled={animatingButton !== null}
+                className="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center text-yellow-500 hover:bg-white transition-colors disabled:opacity-50"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                animate={animatingButton === "undo" ? { scale: [1, 1.2, 1], rotate: [0, 10, -10, 0] } : {}}
+                transition={{ duration: 0.4 }}
+              >
+                <RotateCcw className="w-6 h-6" />
               </motion.button>
             </div>
           </div>
@@ -612,6 +637,22 @@ export default function SwipeCard({ profile, onSwipe, isTop, index }: SwipeCardP
                 transition={{ duration: 0.4 }}
               >
                 <X className="w-7 h-7" />
+              </motion.button>
+
+              {/* Undo Button */}
+              <motion.button
+                onClick={() => {
+                  setIsExpanded(false)
+                  handleUndoClick()
+                }}
+                disabled={animatingButton !== null}
+                className="w-14 h-14 bg-white shadow-xl rounded-full flex items-center justify-center text-yellow-500 hover:bg-yellow-50 transition-colors disabled:opacity-50 border border-gray-200"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                animate={animatingButton === "undo" ? { scale: [1, 1.2, 1], rotate: [0, 10, -10, 0] } : {}}
+                transition={{ duration: 0.4 }}
+              >
+                <RotateCcw className="w-7 h-7" />
               </motion.button>
             </div>
           </motion.div>
