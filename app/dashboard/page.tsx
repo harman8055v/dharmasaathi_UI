@@ -202,11 +202,11 @@ export default function DashboardPage() {
       <MobileNav userProfile={profile} />
 
       {/* Main Content */}
-      <main className={`${!isVerified ? "pt-16 pb-32" : "pt-16 pb-32"} min-h-screen flex flex-col`}>
+      <main className={`${isVerified ? "pt-4 pb-32" : "pt-16 pb-32"} min-h-screen flex flex-col`}>
         {isVerified ? (
           // Verified User - Swipe Interface (No Header)
           <div className="flex-1 flex flex-col">
-            <SwipeStack profiles={profiles} onSwipe={handleSwipe} />
+            <SwipeStack profiles={profiles} onSwipe={handleSwipe} headerless={isVerified} />
           </div>
         ) : (
           // Non-verified User - Original Dashboard

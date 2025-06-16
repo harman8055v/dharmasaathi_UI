@@ -8,14 +8,26 @@ import { Heart, X, Sparkles, Star } from "lucide-react"
 interface SwipeStackProps {
   profiles: any[]
   onSwipe: (direction: "left" | "right" | "superlike", profileId: string) => void
+  headerless?: boolean
 }
 
-export default function SwipeStack({ profiles, onSwipe }: SwipeStackProps) {
+export default function SwipeStack({ profiles, onSwipe, headerless = false }: SwipeStackProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [swipeDirection, setSwipeDirection] = useState<"left" | "right" | "superlike" | null>(null)
   const [isAnimating, setIsAnimating] = useState(false)
+  const [history, setHistory] = useState<number[]>([])
+
+  const showUndo = history.length > 0
 
   const visibleProfiles = profiles.slice(currentIndex, currentIndex + 3)
+
+  const handleUndo = () => {
+    if (isAnimating || history.length === 0) return
+
+    const lastIndex = history[history.length - 1]
+    setHistory((prev) => prev.slice(0, -1))
+    setCurrentIndex(lastIndex)
+  }
 
   const handleSwipe = (direction: "left" | "right" | "superlike", profileId: string) => {
     if (isAnimating) return
@@ -28,6 +40,9 @@ export default function SwipeStack({ profiles, onSwipe }: SwipeStackProps) {
 
     // Animate the swipe
     setTimeout(() => {
+      if (direction === "left" || direction === "right") {
+        setHistory((prev) => [...prev, currentIndex])
+      }
       setCurrentIndex((prev) => prev + 1)
       setSwipeDirection(null)
       setIsAnimating(false)
@@ -66,7 +81,7 @@ export default function SwipeStack({ profiles, onSwipe }: SwipeStackProps) {
   return (
     <div className="flex flex-col h-full">
       {/* Card Stack */}
-      <div className="relative px-4 py-4 h-[calc(100vh-120px)]">
+      <div className={`relative px-4 py-4 ${headerless ? "h-[calc(100vh-80px)]" : "h-[calc(100vh-120px)]"}` }>
         <div className="relative w-full max-w-sm mx-auto h-full">
           <AnimatePresence mode="popLayout">
             {visibleProfiles.map((profile, index) => (
@@ -74,6 +89,8 @@ export default function SwipeStack({ profiles, onSwipe }: SwipeStackProps) {
                 key={`${profile.id}-${currentIndex + index}`}
                 profile={profile}
                 onSwipe={handleSwipe}
+                onUndo={handleUndo}
+                showUndo={showUndo && index === 0}
                 isTop={index === 0}
                 index={index}
               />

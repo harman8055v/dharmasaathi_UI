@@ -28,6 +28,9 @@ export default function MobileNav({ userProfile }: MobileNavProps) {
   const router = useRouter()
   const pathname = usePathname()
 
+  const isVerified = userProfile?.verification_status === "verified"
+  const showHeader = !(pathname === "/dashboard" && isVerified)
+
   const handleSignOut = async () => {
     await supabase.auth.signOut()
     router.push("/")
@@ -95,6 +98,7 @@ export default function MobileNav({ userProfile }: MobileNavProps) {
   return (
     <>
       {/* Top Header - Minimal */}
+      {showHeader && (
       <header className="fixed top-0 left-0 right-0 z-40 bg-gradient-to-r from-orange-50 to-pink-50 backdrop-blur-md border-b border-orange-100/50">
         <div className="flex items-center justify-between px-4 py-4">
           {/* Logo on left */}
@@ -200,6 +204,7 @@ export default function MobileNav({ userProfile }: MobileNavProps) {
           </div>
         </div>
       </header>
+      )}
 
       {/* Bottom Navigation - Mobile Fixed */}
       <div
