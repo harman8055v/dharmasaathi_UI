@@ -17,7 +17,7 @@ interface PaymentModalProps {
     description: string
     features?: string[]
     count?: number
-  }
+  } | null
   onSuccess: () => void
 }
 
@@ -30,6 +30,8 @@ declare global {
 export default function PaymentModal({ isOpen, onClose, item, onSuccess }: PaymentModalProps) {
   const [isProcessing, setIsProcessing] = useState(false)
   const [paymentStep, setPaymentStep] = useState<"details" | "processing" | "success">("details")
+
+  if (!item) return null
 
   const loadRazorpayScript = () => {
     return new Promise((resolve) => {
