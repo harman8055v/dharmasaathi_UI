@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import SwipeCard from "./swipe-card"
-import { Heart, X, Sparkles, Star, RotateCcw } from "lucide-react"
+import { Heart, X, Sparkles, Star } from "lucide-react"
 
 interface SwipeStackProps {
   profiles: any[]
@@ -11,34 +11,43 @@ interface SwipeStackProps {
   headerless?: boolean
 }
 
-export default function SwipeStack({ profiles, onSwipe, headerless = false }: SwipeStackProps) {
+export default function SwipeStack({
+  profiles,
+  onSwipe,
+  headerless = false,
+}: SwipeStackProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [swipeDirection, setSwipeDirection] = useState<"left" | "right" | "superlike" | null>(null)
   const [isAnimating, setIsAnimating] = useState(false)
   const [history, setHistory] = useState<number[]>([])
 
+  // CONFLICT #1 resolved: track undo availability
+  const showUndo = history.length > 0
+
   const visibleProfiles = profiles.slice(currentIndex, currentIndex + 3)
 
   const handleUndo = () => {
     if (isAnimating || history.length === 0) return
-
     const lastIndex = history[history.length - 1]
     setHistory((prev) => prev.slice(0, -1))
     setCurrentIndex(lastIndex)
   }
 
-  const handleSwipe = (direction: "left" | "right" | "superlike", profileId: string) => {
+  const handleSwipe = (
+    direction: "left" | "right" | "superlike",
+    profileId: string
+  ) => {
     if (isAnimating) return
 
     setIsAnimating(true)
     setSwipeDirection(direction)
-
-    // Call the parent onSwipe function
     onSwipe(direction, profileId)
 
-    // Animate the swipe
     setTimeout(() => {
-      setHistory((prev) => [...prev, currentIndex])
+      // CONFLICT #2 resolved: only record left/right swipes
+      if (direction === "left" || direction === "right") {
+        setHistory((prev) => [...prev, currentIndex])
+      }
       setCurrentIndex((prev) => prev + 1)
       setSwipeDirection(null)
       setIsAnimating(false)
@@ -57,10 +66,8 @@ export default function SwipeStack({ profiles, onSwipe, headerless = false }: Sw
           >
             <Sparkles className="w-12 h-12 text-white" />
           </motion.div>
-
           <h3 className="text-2xl font-bold text-gray-900 mb-2">You're all caught up!</h3>
           <p className="text-gray-600 mb-6">Check back later for new profiles</p>
-
           <motion.button
             onClick={() => setCurrentIndex(0)}
             className="px-6 py-3 bg-gradient-to-r from-orange-500 to-pink-500 text-white rounded-full font-semibold hover:from-orange-600 hover:to-pink-600 transition-colors"
@@ -76,8 +83,7 @@ export default function SwipeStack({ profiles, onSwipe, headerless = false }: Sw
 
   return (
     <div className="flex flex-col h-full">
-      {/* Card Stack */}
-      <div className={`relative px-4 py-4 ${headerless ? "h-[calc(100vh-80px)]" : "h-[calc(100vh-120px)]"}` }>
+      <div className={`relative px-4 py-4 ${headerless ? "h-[calc(100vh-80px)]" : "h-[calc(100vh-120px)]"}`}>
         <div className="relative w-full max-w-sm mx-auto h-full">
           <AnimatePresence mode="popLayout">
             {visibleProfiles.map((profile, index) => (
@@ -86,13 +92,14 @@ export default function SwipeStack({ profiles, onSwipe, headerless = false }: Sw
                 profile={profile}
                 onSwipe={handleSwipe}
                 onUndo={handleUndo}
+                // CONFLICT #3 resolved: only top card shows undo
+                showUndo={showUndo && index === 0}
                 isTop={index === 0}
                 index={index}
               />
             ))}
           </AnimatePresence>
 
-          {/* Swipe Animation Overlay */}
           <AnimatePresence>
             {swipeDirection && (
               <motion.div
@@ -107,8 +114,8 @@ export default function SwipeStack({ profiles, onSwipe, headerless = false }: Sw
                     swipeDirection === "right"
                       ? "bg-green-500 text-white"
                       : swipeDirection === "superlike"
-                        ? "bg-blue-500 text-white"
-                        : "bg-red-500 text-white"
+                      ? "bg-blue-500 text-white"
+                      : "bg-red-500 text-white"
                   }`}
                 >
                   {swipeDirection === "right" ? (
