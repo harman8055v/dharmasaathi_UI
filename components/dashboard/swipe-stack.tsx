@@ -111,7 +111,7 @@ export default function SwipeStack({ profiles, onSwipe }: SwipeStackProps) {
 
       {/* Bottom Controls */}
       <div className="px-4 pb-8 mt-auto">
-        <div className="flex items-center justify-center gap-6">
+        <div className="flex items-center justify-center gap-4">
           {/* Undo Button */}
           <motion.button
             onClick={handleUndo}
@@ -144,24 +144,6 @@ export default function SwipeStack({ profiles, onSwipe }: SwipeStackProps) {
           >
             <Heart className="w-8 h-8" />
           </motion.button>
-        </div>
-
-        {/* Progress Indicator */}
-        <div className="mt-6 px-4">
-          <div className="flex items-center justify-between text-sm text-gray-500 mb-2">
-            <span>
-              {currentIndex + 1} of {profiles.length}
-            </span>
-            <span>{profiles.length - currentIndex - 1} remaining</span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <motion.div
-              className="bg-gradient-to-r from-orange-500 to-pink-500 h-2 rounded-full"
-              initial={{ width: 0 }}
-              animate={{ width: `${((currentIndex + 1) / profiles.length) * 100}%` }}
-              transition={{ duration: 0.3 }}
-            />
-          </div>
         </div>
       </div>
     </div>

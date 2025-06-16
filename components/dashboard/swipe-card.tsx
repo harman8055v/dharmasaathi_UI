@@ -4,6 +4,7 @@ import { useState, useRef } from "react"
 import { motion, useMotionValue, useTransform, type PanInfo } from "framer-motion"
 import { Heart, X, MapPin, Briefcase, Calendar, GraduationCap, Sparkles, Star } from "lucide-react"
 import Image from "next/image"
+import { useSwipeable } from "react-swipeable"
 
 interface SwipeCardProps {
   profile: any
@@ -78,6 +79,13 @@ export default function SwipeCard({ profile, onSwipe, isTop, index }: SwipeCardP
   const likeOpacity = useTransform(x, [50, 150], [0, 1])
   const likeRotate = useTransform(x, [50, 150], [0, 30])
 
+  const swipeHandlers = useSwipeable({
+    onSwipedLeft: () => nextImage(),
+    onSwipedRight: () => prevImage(),
+    preventDefaultTouchmoveEvent: true,
+    trackMouse: false,
+  })
+
   if (!isTop && !isExpanded) {
     return (
       <motion.div
@@ -123,7 +131,7 @@ export default function SwipeCard({ profile, onSwipe, isTop, index }: SwipeCardP
         {/* Main Card Content */}
         <div className="relative w-full h-full">
           {/* Image Section */}
-          <div className="relative h-full">
+          <div className="relative h-full" {...swipeHandlers}>
             <Image
               src={getCurrentImage() || "/placeholder.svg"}
               alt={`${profile.first_name} ${profile.last_name}`}
@@ -240,13 +248,52 @@ export default function SwipeCard({ profile, onSwipe, isTop, index }: SwipeCardP
           >
             LIKE
           </motion.div>
+
+          {/* Action Buttons */}
+          <div className="absolute bottom-4 right-4 flex flex-col gap-2">
+            <motion.button
+              onClick={(e) => {
+                e.stopPropagation()
+                handleDislike()
+              }}
+              className="w-12 h-12 rounded-full bg-white/70 hover:bg-white/90 transition-colors flex items-center justify-center shadow-md"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+            >
+              <X className="w-6 h-6 text-gray-700" />
+            </motion.button>
+
+            <motion.button
+              onClick={(e) => {
+                e.stopPropagation()
+                // handleSuperLike() // Implement superlike logic
+              }}
+              className="w-12 h-12 rounded-full bg-white/70 hover:bg-white/90 transition-colors flex items-center justify-center shadow-md"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+            >
+              <Star className="w-6 h-6 text-blue-500" />
+            </motion.button>
+
+            <motion.button
+              onClick={(e) => {
+                e.stopPropagation()
+                handleLike()
+              }}
+              className="w-12 h-12 rounded-full bg-white/70 hover:bg-white/90 transition-colors flex items-center justify-center shadow-md"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+            >
+              <Heart className="w-6 h-6 text-red-500" />
+            </motion.button>
+          </div>
         </div>
       </motion.div>
 
       {/* Expanded Detail View */}
       {isExpanded && (
         <motion.div
-          className="fixed inset-0 bg-black/50 z-50 flex items-end"
+          className="fixed inset-0 bg-black/50 z-[100000] flex items-end"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -447,48 +494,6 @@ export default function SwipeCard({ profile, onSwipe, isTop, index }: SwipeCardP
                   </div>
                 </div>
               )}
-
-              {/* Action Buttons */}
-              <div className="flex gap-4 pt-4">
-                <motion.button
-                  onClick={() => {
-                    setIsExpanded(false)
-                    handleDislike()
-                  }}
-                  className="flex-1 py-4 bg-gray-100 text-gray-700 rounded-2xl font-semibold hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <X className="w-5 h-5" />
-                  Pass
-                </motion.button>
-
-                <motion.button
-                  onClick={() => {
-                    setIsExpanded(false)
-                    // handleSuperLike() // Implement superlike logic
-                  }}
-                  className="flex-1 py-4 bg-blue-500 text-white rounded-2xl font-semibold hover:bg-blue-600 transition-colors flex items-center justify-center gap-2"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <Star className="w-5 h-5" />
-                  Super Like
-                </motion.button>
-
-                <motion.button
-                  onClick={() => {
-                    setIsExpanded(false)
-                    handleLike()
-                  }}
-                  className="flex-1 py-4 bg-gradient-to-r from-orange-500 to-pink-500 text-white rounded-2xl font-semibold hover:from-orange-600 hover:to-pink-600 transition-colors flex items-center justify-center gap-2"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <Heart className="w-5 h-5" />
-                  Like
-                </motion.button>
-              </div>
             </div>
           </motion.div>
         </motion.div>
