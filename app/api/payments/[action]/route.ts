@@ -1,7 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server"
 import Razorpay from "razorpay"
 import crypto from "crypto"
-import { supabase } from "@/lib/supabase"
+import { cookies } from "next/headers"
+import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
 
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID as string,
@@ -10,6 +11,7 @@ const razorpay = new Razorpay({
 
 export async function POST(request: NextRequest, { params }: { params: { action: string } }) {
   const { action } = params
+  const supabase = createRouteHandlerClient({ cookies })
 
   if (action === "order") {
     try {
