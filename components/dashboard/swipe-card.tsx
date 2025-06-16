@@ -66,9 +66,17 @@ export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, 
     }
   }
 
+  const [swipeAnimation, setSwipeAnimation] = useState<"left" | "right" | "up" | null>(null)
+
+  const triggerSwipeAnimation = (direction: "left" | "right" | "up") => {
+    setSwipeAnimation(direction)
+    setTimeout(() => setSwipeAnimation(null), 800)
+  }
+
   const handleLike = () => {
     if (animatingButton) return
     setAnimatingButton("like")
+    triggerSwipeAnimation("right")
     onSwipe("right", profile.id)
     setTimeout(() => setAnimatingButton(null), 500)
   }
@@ -76,6 +84,7 @@ export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, 
   const handleDislike = () => {
     if (animatingButton) return
     setAnimatingButton("dislike")
+    triggerSwipeAnimation("left")
     onSwipe("left", profile.id)
     setTimeout(() => setAnimatingButton(null), 500)
   }
@@ -83,6 +92,7 @@ export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, 
   const handleSuperlike = () => {
     if (animatingButton) return
     setAnimatingButton("superlike")
+    triggerSwipeAnimation("up")
     onSwipe("superlike", profile.id)
     setTimeout(() => setAnimatingButton(null), 500)
   }
@@ -397,6 +407,84 @@ export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, 
           >
             LIKE
           </motion.div>
+
+          {/* Swipe Animation Overlays */}
+          {swipeAnimation && (
+            <motion.div
+              className="absolute inset-0 pointer-events-none z-40"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              {swipeAnimation === "right" && (
+                <motion.div
+                  className="absolute inset-0 bg-green-500/20"
+                  initial={{ x: "-100%" }}
+                  animate={{ x: "100%" }}
+                  transition={{ duration: 0.6, ease: "easeOut" }}
+                >
+                  <motion.div
+                    className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
+                    initial={{ scale: 0, rotate: -45 }}
+                    animate={{ scale: 1.5, rotate: 0 }}
+                    transition={{ duration: 0.4 }}
+                  >
+                    <Heart className="w-16 h-16 text-green-500" fill="currentColor" />
+                  </motion.div>
+                </motion.div>
+              )}
+
+              {swipeAnimation === "left" && (
+                <motion.div
+                  className="absolute inset-0 bg-red-500/20"
+                  initial={{ x: "100%" }}
+                  animate={{ x: "-100%" }}
+                  transition={{ duration: 0.6, ease: "easeOut" }}
+                >
+                  <motion.div
+                    className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
+                    initial={{ scale: 0, rotate: 45 }}
+                    animate={{ scale: 1.5, rotate: 0 }}
+                    transition={{ duration: 0.4 }}
+                  >
+                    <X className="w-16 h-16 text-red-500" />
+                  </motion.div>
+                </motion.div>
+              )}
+
+              {swipeAnimation === "up" && (
+                <motion.div
+                  className="absolute inset-0 bg-blue-500/20"
+                  initial={{ y: "100%" }}
+                  animate={{ y: "-100%" }}
+                  transition={{ duration: 0.8, ease: "easeOut" }}
+                >
+                  <motion.div
+                    className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
+                    initial={{ scale: 0, y: 50 }}
+                    animate={{ scale: 2, y: -100 }}
+                    transition={{ duration: 0.6 }}
+                  >
+                    <Star className="w-12 h-12 text-blue-500" fill="currentColor" />
+                  </motion.div>
+
+                  {/* Superlike trail effect */}
+                  {[...Array(5)].map((_, i) => (
+                    <motion.div
+                      key={i}
+                      className="absolute left-1/2 transform -translate-x-1/2"
+                      style={{ top: `${60 + i * 15}%` }}
+                      initial={{ scale: 0, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ delay: i * 0.1, duration: 0.3 }}
+                    >
+                      <Star className="w-6 h-6 text-blue-400" fill="currentColor" />
+                    </motion.div>
+                  ))}
+                </motion.div>
+              )}
+            </motion.div>
+          )}
         </div>
       </motion.div>
 
@@ -441,11 +529,7 @@ export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, 
                     }}
                   >
                     {profile.user_photos.map((photo: string, idx: number) => (
-                      <div
-                        key={idx}
-                        className="w-full h-full relative flex-shrink-0"
-                        style={{ width: `${100 / profile.user_photos.length}%` }}
-                      >
+                      <div key={idx} className="w-full h-full relative flex-shrink-0" style={{ width: "100vw" }}>
                         <Image
                           src={photo || "/placeholder.svg"}
                           alt={`${profile.first_name} ${profile.last_name} - Photo ${idx + 1}`}
@@ -621,6 +705,7 @@ export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, 
               <motion.button
                 onClick={() => {
                   setIsExpanded(false)
+                  triggerSwipeAnimation("right")
                   handleLike()
                 }}
                 disabled={animatingButton !== null}
@@ -637,6 +722,7 @@ export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, 
               <motion.button
                 onClick={() => {
                   setIsExpanded(false)
+                  triggerSwipeAnimation("up")
                   handleSuperlike()
                 }}
                 disabled={animatingButton !== null}
@@ -653,6 +739,7 @@ export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, 
               <motion.button
                 onClick={() => {
                   setIsExpanded(false)
+                  triggerSwipeAnimation("left")
                   handleDislike()
                 }}
                 disabled={animatingButton !== null}
