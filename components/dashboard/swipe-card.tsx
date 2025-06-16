@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react"
 import { motion, useMotionValue, useTransform, type PanInfo } from "framer-motion"
-import { Heart, X, MapPin, Briefcase, Calendar, GraduationCap, Sparkles, ChevronDown } from "lucide-react"
+import { Heart, X, MapPin, Briefcase, Calendar, GraduationCap, Sparkles, ChevronDown, Star } from "lucide-react"
 import Image from "next/image"
 
 interface SwipeCardProps {
@@ -221,29 +221,6 @@ export default function SwipeCard({ profile, onSwipe, isTop, index }: SwipeCardP
             </div>
           </div>
 
-          {/* Action Buttons */}
-          {!isExpanded && (
-            <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex gap-4 z-20">
-              <motion.button
-                onClick={handleDislike}
-                className="w-16 h-16 bg-white rounded-full shadow-lg flex items-center justify-center text-red-500 hover:bg-red-50 transition-colors"
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-              >
-                <X className="w-8 h-8" />
-              </motion.button>
-
-              <motion.button
-                onClick={handleLike}
-                className="w-16 h-16 bg-white rounded-full shadow-lg flex items-center justify-center text-green-500 hover:bg-green-50 transition-colors"
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-              >
-                <Heart className="w-8 h-8" />
-              </motion.button>
-            </div>
-          )}
-
           {/* Swipe Indicators */}
           <motion.div
             className="absolute top-1/2 left-8 transform -translate-y-1/2 px-4 py-2 bg-red-500 text-white rounded-lg font-bold text-lg"
@@ -277,13 +254,21 @@ export default function SwipeCard({ profile, onSwipe, isTop, index }: SwipeCardP
           onClick={() => setIsExpanded(false)}
         >
           <motion.div
-            className="w-full bg-white rounded-t-3xl max-h-[80vh] overflow-y-auto"
+            className="w-full bg-white rounded-t-3xl max-h-[80vh] overflow-y-auto relative"
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 500 }}
             onClick={(e) => e.stopPropagation()}
           >
+            {/* Close Button */}
+            <button
+              onClick={() => setIsExpanded(false)}
+              className="absolute top-4 right-4 w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors z-20"
+            >
+              <X className="w-6 h-6 text-gray-700" />
+            </button>
+
             <div className="p-6">
               {/* Handle */}
               <div className="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-6" />
@@ -305,6 +290,43 @@ export default function SwipeCard({ profile, onSwipe, isTop, index }: SwipeCardP
                   </h3>
                   <p className="text-gray-600">{calculateAge(profile.birthdate)} years old</p>
                 </div>
+              </div>
+
+              {/* Image Carousel */}
+              <div className="relative mb-6">
+                <Image
+                  src={profile.user_photos?.[currentImageIndex] || "/placeholder.svg"}
+                  alt={`${profile.first_name} ${profile.last_name} - Image ${currentImageIndex + 1}`}
+                  width={500}
+                  height={400}
+                  className="w-full rounded-lg object-cover aspect-[5/4]"
+                />
+                {profile.user_photos && profile.user_photos.length > 1 && (
+                  <>
+                    <button
+                      onClick={prevImage}
+                      className="absolute left-2 top-1/2 transform -translate-y-1/2 w-10 h-10 bg-black/30 rounded-full flex items-center justify-center text-white hover:bg-black/50 transition-colors z-10"
+                    >
+                      ←
+                    </button>
+                    <button
+                      onClick={nextImage}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 w-10 h-10 bg-black/30 rounded-full flex items-center justify-center text-white hover:bg-black/50 transition-colors z-10"
+                    >
+                      →
+                    </button>
+                    <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex gap-2 z-10">
+                      {profile.user_photos.map((_: any, idx: number) => (
+                        <div
+                          key={idx}
+                          className={`w-2 h-2 rounded-full transition-colors ${
+                            idx === currentImageIndex ? "bg-white" : "bg-white/50"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* About Section */}
@@ -358,6 +380,45 @@ export default function SwipeCard({ profile, onSwipe, isTop, index }: SwipeCardP
                     </div>
                   </div>
                 )}
+
+                {profile.height && (
+                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                      className="w-5 h-5 text-gray-500"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M3.75 3h16.5a.75.75 0 01.75.75v16.5a.75.75 0 01-.75.75H3.75a.75.75 0 01-.75-.75V3.75A.75.75 0 013.75 3zM5.25 4.5a.75.75 0 00-.75.75v1.5h15v-1.5a.75.75 0 00-.75-.75H5.25zM4.5 12a.75.75 0 01.75-.75h13.5a.75.75 0 010 1.5H5.25A.75.75 0 014.5 12zm0 5.25a.75.75 0 01.75-.75h13.5a.75.75 0 010 1.5H5.25A.75.75 0 014.5 17.25z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+
+                    <div>
+                      <p className="text-sm text-gray-500">Height</p>
+                      <p className="font-medium">{profile.height}</p>
+                    </div>
+                  </div>
+                )}
+
+                {profile.body_type && (
+                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                      className="w-5 h-5 text-gray-500"
+                    >
+                      <path d="M6.75 2.25A.75.75 0 017.5 3v1.5h9V3a.75.75 0 011.5 0v1.5h.75a3 3 0 013 3V15a3 3 0 01-3 3h-.75v1.5a.75.75 0 01-1.5 0V18h-9v1.5a.75.75 0 01-1.5 0V18H6.75a3 3 0 01-3-3V7.5a3 3 0 013-3h.75V3a.75.75 0 01.75-.75zM7.5 6v9h9V6h-9z" />
+                    </svg>
+                    <div>
+                      <p className="text-sm text-gray-500">Body Type</p>
+                      <p className="font-medium">{profile.body_type}</p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Spiritual Practices */}
@@ -401,6 +462,19 @@ export default function SwipeCard({ profile, onSwipe, isTop, index }: SwipeCardP
                 >
                   <X className="w-5 h-5" />
                   Pass
+                </motion.button>
+
+                <motion.button
+                  onClick={() => {
+                    setIsExpanded(false)
+                    // handleSuperLike() // Implement superlike logic
+                  }}
+                  className="flex-1 py-4 bg-blue-500 text-white rounded-2xl font-semibold hover:bg-blue-600 transition-colors flex items-center justify-center gap-2"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <Star className="w-5 h-5" />
+                  Super Like
                 </motion.button>
 
                 <motion.button
