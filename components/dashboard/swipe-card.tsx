@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useRef } from "react"
 import { motion, useMotionValue, useTransform, type PanInfo } from "framer-motion"
 import {
@@ -442,7 +444,7 @@ export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, 
                       <div
                         key={idx}
                         className="w-full h-full relative flex-shrink-0"
-                        style={{ width: "100%" }}
+                        style={{ width: `${100 / profile.user_photos.length}%` }}
                       >
                         <Image
                           src={photo || "/placeholder.svg"}
@@ -680,7 +682,6 @@ export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, 
                   <RotateCcw className="w-7 h-7" />
                 </motion.button>
               )}
-
             </div>
           </motion.div>
         </motion.div>
