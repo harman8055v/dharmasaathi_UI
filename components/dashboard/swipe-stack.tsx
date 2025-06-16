@@ -72,8 +72,8 @@ export default function SwipeStack({ profiles, onSwipe }: SwipeStackProps) {
   return (
     <div className="flex flex-col h-full">
       {/* Card Stack */}
-      <div className="relative px-4 py-8 h-[calc(100vh-200px)]">
-        <div className="relative w-full max-w-sm mx-auto h-full min-h-[600px]">
+      <div className="relative px-4 py-4 h-[calc(100vh-280px)]">
+        <div className="relative w-full max-w-sm mx-auto h-full">
           <AnimatePresence mode="popLayout">
             {visibleProfiles.map((profile, index) => (
               <SwipeCard
@@ -110,7 +110,7 @@ export default function SwipeStack({ profiles, onSwipe }: SwipeStackProps) {
       </div>
 
       {/* Bottom Controls */}
-      <div className="px-4 pb-8">
+      <div className="px-4 pb-8 mt-auto">
         <div className="flex items-center justify-center gap-6">
           {/* Undo Button */}
           <motion.button

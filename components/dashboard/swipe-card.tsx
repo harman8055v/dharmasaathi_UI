@@ -107,7 +107,7 @@ export default function SwipeCard({ profile, onSwipe, isTop, index }: SwipeCardP
     <>
       <motion.div
         ref={cardRef}
-        className="absolute inset-0 bg-white rounded-3xl shadow-2xl border border-gray-200 cursor-grab active:cursor-grabbing overflow-hidden cursor-pointer"
+        className="absolute inset-0 bg-white rounded-3xl shadow-2xl border border-gray-200 cursor-pointer overflow-hidden"
         style={{
           x,
           y: isExpanded ? y : 0,
@@ -136,13 +136,19 @@ export default function SwipeCard({ profile, onSwipe, isTop, index }: SwipeCardP
             {profile.user_photos && profile.user_photos.length > 1 && (
               <>
                 <button
-                  onClick={prevImage}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    prevImage()
+                  }}
                   className="absolute left-4 top-1/2 transform -translate-y-1/2 w-10 h-10 bg-black/30 rounded-full flex items-center justify-center text-white hover:bg-black/50 transition-colors z-10"
                 >
                   ←
                 </button>
                 <button
-                  onClick={nextImage}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    nextImage()
+                  }}
                   className="absolute right-4 top-1/2 transform -translate-y-1/2 w-10 h-10 bg-black/30 rounded-full flex items-center justify-center text-white hover:bg-black/50 transition-colors z-10"
                 >
                   →
@@ -169,19 +175,19 @@ export default function SwipeCard({ profile, onSwipe, isTop, index }: SwipeCardP
             <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
               <div className="flex items-end justify-between">
                 <div className="flex-1">
-                  <h2 className="text-2xl font-bold mb-1">
+                  <h2 className="text-2xl font-bold mb-2">
                     {profile.first_name} {profile.last_name}
                   </h2>
 
-                  <div className="space-y-1 mb-2">
-                    <div className="flex items-center gap-1 text-white/90 text-sm">
-                      <Calendar className="w-3 h-3" />
+                  <div className="space-y-1 mb-3">
+                    <div className="flex items-center gap-2 text-white/90 text-sm">
+                      <Calendar className="w-4 h-4" />
                       <span>{calculateAge(profile.birthdate)} years old</span>
                     </div>
 
                     {profile.city && profile.state && (
-                      <div className="flex items-center gap-1 text-white/90 text-sm">
-                        <MapPin className="w-3 h-3" />
+                      <div className="flex items-center gap-2 text-white/90 text-sm">
+                        <MapPin className="w-4 h-4" />
                         <span>
                           {profile.city}, {profile.state}
                         </span>
@@ -189,22 +195,22 @@ export default function SwipeCard({ profile, onSwipe, isTop, index }: SwipeCardP
                     )}
 
                     {profile.profession && (
-                      <div className="flex items-center gap-1 text-white/90 text-sm">
-                        <Briefcase className="w-3 h-3" />
+                      <div className="flex items-center gap-2 text-white/90 text-sm">
+                        <Briefcase className="w-4 h-4" />
                         <span>{profile.profession}</span>
                       </div>
                     )}
                   </div>
 
                   {/* Quick Info Tags */}
-                  <div className="flex flex-wrap gap-1 mb-2">
+                  <div className="flex flex-wrap gap-2">
                     {profile.diet && (
-                      <span className="px-2 py-0.5 bg-white/20 rounded-full text-xs backdrop-blur-sm">
+                      <span className="px-2 py-1 bg-white/20 rounded-full text-xs backdrop-blur-sm">
                         {profile.diet}
                       </span>
                     )}
                     {profile.education && (
-                      <span className="px-2 py-0.5 bg-white/20 rounded-full text-xs backdrop-blur-sm">
+                      <span className="px-2 py-1 bg-white/20 rounded-full text-xs backdrop-blur-sm">
                         {profile.education}
                       </span>
                     )}
