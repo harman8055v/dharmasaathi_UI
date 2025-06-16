@@ -33,6 +33,8 @@ export default function DashboardPage() {
       profession: "Software Engineer",
       education: "B.Tech Computer Science",
       diet: "Vegetarian",
+      gender: "Female",
+      mother_tongue: "Hindi",
       about_me:
         "Passionate about spirituality and technology. Love practicing yoga and meditation daily. Looking for someone who shares similar values and interests in personal growth.",
       user_photos: ["/abstract-spiritual-avatar-1.png", "/abstract-spiritual-avatar-2.png"],
@@ -49,6 +51,8 @@ export default function DashboardPage() {
       profession: "Doctor",
       education: "MBBS",
       diet: "Vegetarian",
+      gender: "Male",
+      mother_tongue: "Gujarati",
       about_me:
         "Dedicated to serving others through medicine and spirituality. Believe in the power of compassion and mindfulness in healing.",
       user_photos: ["/abstract-spiritual-avatar-3.png", "/abstract-spiritual-avatar-4.png"],
@@ -65,6 +69,8 @@ export default function DashboardPage() {
       profession: "Teacher",
       education: "M.Ed",
       diet: "Vegan",
+      gender: "Female",
+      mother_tongue: "Telugu",
       about_me:
         "Teaching is my passion, and I believe in nurturing young minds with spiritual values. Love nature, books, and meaningful conversations.",
       user_photos: ["/abstract-spiritual-avatar-2.png", "/abstract-spiritual-avatar-1.png"],
@@ -174,12 +180,13 @@ export default function DashboardPage() {
     )
   }
 
-  const handleSwipe = (direction: "left" | "right", profileId: string) => {
+  const handleSwipe = (direction: "left" | "right" | "superlike", profileId: string) => {
     debugLog(`Swiped ${direction} on profile ${profileId}`)
     // Here you would typically:
     // 1. Send the swipe action to your backend
     // 2. Update user preferences/matches
     // 3. Handle match notifications if it's a mutual like
+    // 4. Handle superlike logic (special notifications, premium feature tracking, etc.)
   }
 
   if (loading) {
@@ -194,7 +201,7 @@ export default function DashboardPage() {
   }
 
   const profileCompleteness = calculateProfileCompleteness()
-  const isVerified = profile?.verification_status === 'verified'
+  const isVerified = profile?.verification_status === "verified"
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50">
