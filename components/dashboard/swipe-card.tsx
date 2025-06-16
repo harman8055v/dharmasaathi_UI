@@ -525,11 +525,10 @@ export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, 
                     className="flex h-full transition-transform duration-300 ease-out"
                     style={{
                       transform: `translateX(-${currentDetailImageIndex * 100}%)`,
-                      width: `${profile.user_photos.length * 100}%`,
                     }}
                   >
                     {profile.user_photos.map((photo: string, idx: number) => (
-                      <div key={idx} className="w-full h-full relative flex-shrink-0" style={{ width: "100vw" }}>
+                      <div key={idx} className="w-full h-full relative flex-shrink-0">
                         <Image
                           src={photo || "/placeholder.svg"}
                           alt={`${profile.first_name} ${profile.last_name} - Photo ${idx + 1}`}
