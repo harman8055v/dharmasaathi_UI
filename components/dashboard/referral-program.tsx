@@ -1,143 +1,122 @@
-"use client";
+"use client"
 
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { supabase } from "@/lib/supabase";
-import {
-  Users,
-  Copy,
-  CheckCircle,
-  Gift,
-  Zap,
-  Crown,
-  Share2,
-  ExternalLink,
-  Trophy,
-  Clock,
-} from "lucide-react";
+import { useState, useEffect } from "react"
+import { Button } from "@/components/ui/button"
+import { supabase } from "@/lib/supabase"
+import { Users, Copy, CheckCircle, Gift, Zap, Crown, Share2, ExternalLink, Trophy, Clock } from "lucide-react"
 
 interface ReferralProgramProps {
-  userId: string;
-  userProfile: any;
+  userId: string
+  userProfile: any
 }
 
 export function ReferralProgram({ userId, userProfile }: ReferralProgramProps) {
-  const [referralCode, setReferralCode] = useState<string>("");
-  const [referralCount, setReferralCount] = useState<number>(0);
-  const [copied, setCopied] = useState(false);
-  const [rewards, setRewards] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string>("");
+  const [referralCode, setReferralCode] = useState<string>("")
+  const [referralCount, setReferralCount] = useState<number>(0)
+  const [copied, setCopied] = useState(false)
+  const [rewards, setRewards] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string>("")
 
   useEffect(() => {
-    fetchReferralData();
-  }, [userId]);
+    fetchReferralData()
+  }, [userId])
 
   const fetchReferralData = async () => {
     try {
-      setError("");
+      setError("")
 
       // First, check if referral columns exist by trying to fetch them
       const { data: userData, error: userError } = await supabase
         .from("users")
         .select("referral_code, referral_count, fast_track_verification")
         .eq("id", userId)
-        .single();
+        .single()
 
       if (userError) {
         // If columns don't exist, we'll handle it gracefully
-        if (
-          userError.message?.includes("column") &&
-          userError.message?.includes("does not exist")
-        ) {
-          console.warn(
-            "Referral columns not yet created. Please run the referral system setup script.",
-          );
-          setError(
-            "Referral system is being set up. Please refresh the page in a moment.",
-          );
-          setLoading(false);
-          return;
+        if (userError.message?.includes("column") && userError.message?.includes("does not exist")) {
+          console.warn("Referral columns not yet created. Please run the referral system setup script.")
+          setError("Referral system is being set up. Please refresh the page in a moment.")
+          setLoading(false)
+          return
         }
-        throw userError;
+        throw userError
       }
 
       // Generate referral code if it doesn't exist
-      let currentReferralCode = userData.referral_code;
+      let currentReferralCode = userData.referral_code
       if (!currentReferralCode) {
-        currentReferralCode = await generateReferralCode();
+        currentReferralCode = await generateReferralCode()
 
         // Update user with new referral code
         const { error: updateError } = await supabase
           .from("users")
           .update({ referral_code: currentReferralCode })
-          .eq("id", userId);
+          .eq("id", userId)
 
         if (updateError) {
-          console.error("Error updating referral code:", updateError);
+          console.error("Error updating referral code:", updateError)
         }
       }
 
-      setReferralCode(currentReferralCode || "");
-      setReferralCount(userData.referral_count || 0);
+      setReferralCode(currentReferralCode || "")
+      setReferralCount(userData.referral_count || 0)
 
       // Get user's rewards
       const { data: rewardsData, error: rewardsError } = await supabase
         .from("referral_rewards")
         .select("*")
         .eq("user_id", userId)
-        .eq("status", "active");
+        .eq("status", "active")
 
       if (!rewardsError) {
-        setRewards(rewardsData || []);
+        setRewards(rewardsData || [])
       }
 
-      setLoading(false);
+      setLoading(false)
     } catch (error: any) {
-      console.error("Error fetching referral data:", error);
-      setError("Unable to load referral data. Please try refreshing the page.");
-      setLoading(false);
+      console.error("Error fetching referral data:", error)
+      setError("Unable to load referral data. Please try refreshing the page.")
+      setLoading(false)
     }
-  };
+  }
 
   const generateReferralCode = async (): Promise<string> => {
     // Generate a simple referral code based on user ID and timestamp
-    const timestamp = Date.now().toString(36);
-    const userIdShort = userId.slice(-4);
-    return `${userIdShort}${timestamp}`.toUpperCase().slice(0, 8);
-  };
+    const timestamp = Date.now().toString(36)
+    const userIdShort = userId.slice(-4)
+    return `${userIdShort}${timestamp}`.toUpperCase().slice(0, 8)
+  }
 
   const generateReferralLink = () => {
-    const baseUrl =
-      typeof window !== "undefined"
-        ? window.location.origin
-        : "https://dharmasaathi.com";
-    return `${baseUrl}?ref=${referralCode}`;
-  };
+    const baseUrl = typeof window !== "undefined" ? window.location.origin : "https://dharmasaathi.com"
+    return `${baseUrl}?ref=${referralCode}`
+  }
 
   const copyReferralLink = async () => {
-    const link = generateReferralLink();
+    const link = generateReferralLink()
     try {
-      await navigator.clipboard.writeText(link);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      await navigator.clipboard.writeText(link)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
     } catch (error) {
-      console.error("Failed to copy:", error);
+      console.error("Failed to copy:", error)
       // Fallback for older browsers
-      const textArea = document.createElement("textarea");
-      textArea.value = link;
-      document.body.appendChild(textArea);
-      textArea.select();
-      document.execCommand("copy");
-      document.body.removeChild(textArea);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      const textArea = document.createElement("textarea")
+      textArea.value = link
+      document.body.appendChild(textArea)
+      textArea.select()
+      document.execCommand("copy")
+      document.body.removeChild(textArea)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
     }
-  };
+  }
 
   const shareReferralLink = async () => {
-    const link = generateReferralLink();
-    const text = `Join me on DharmaSaathi - India's premier spiritual matrimony platform! 🕉️ Find your spiritual life partner.`;
+    const link = generateReferralLink()
+    const text = `Join me on DharmaSaathi - India's premier spiritual matrimony platform! 🕉️ Find your spiritual life partner.`
 
     if (navigator.share) {
       try {
@@ -145,22 +124,21 @@ export function ReferralProgram({ userId, userProfile }: ReferralProgramProps) {
           title: "Join DharmaSaathi - Find Your Spiritual Life Partner",
           text: text,
           url: link,
-        });
+        })
       } catch (error) {
-        console.error("Error sharing:", error);
-        copyReferralLink();
+        console.error("Error sharing:", error)
+        copyReferralLink()
       }
     } else {
-      copyReferralLink();
+      copyReferralLink()
     }
-  };
+  }
 
-  const fastVerification = referralCount >= 4;
-  const sangamReward = referralCount >= 10;
-  const samarpanReward = referralCount >= 20;
-  const progressPercentage = Math.min((referralCount / 20) * 100, 100);
-  const getRemainingReferrals = (target: number) =>
-    Math.max(0, target - referralCount);
+  const fastVerification = referralCount >= 4
+  const sangamReward = referralCount >= 10
+  const samarpanReward = referralCount >= 20
+  const progressPercentage = Math.min((referralCount / 20) * 100, 100)
+  const getRemainingReferrals = (target: number) => Math.max(0, target - referralCount)
 
   if (loading) {
     return (
@@ -171,7 +149,7 @@ export function ReferralProgram({ userId, userProfile }: ReferralProgramProps) {
           <div className="h-4 bg-gray-200 rounded w-2/3"></div>
         </div>
       </div>
-    );
+    )
   }
 
   if (error) {
@@ -182,9 +160,7 @@ export function ReferralProgram({ userId, userProfile }: ReferralProgramProps) {
             <Users className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
           </div>
           <div className="flex-1">
-            <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">
-              Referral Program
-            </h3>
+            <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">Referral Program</h3>
             <p className="text-sm sm:text-base text-gray-700 mb-4">
               The referral system database needs to be initialized.
             </p>
@@ -194,9 +170,7 @@ export function ReferralProgram({ userId, userProfile }: ReferralProgramProps) {
         <div className="bg-white/70 rounded-lg p-4 mb-4">
           <div className="flex items-center gap-2 mb-2">
             <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
-            <span className="text-sm font-medium text-gray-700">
-              Database Setup Required
-            </span>
+            <span className="text-sm font-medium text-gray-700">Database Setup Required</span>
           </div>
           <p className="text-xs text-gray-600 mb-3">
             Please run the SQL script:{" "}
@@ -205,15 +179,13 @@ export function ReferralProgram({ userId, userProfile }: ReferralProgramProps) {
             </code>
           </p>
           <p className="text-xs text-gray-500">
-            This will create the necessary database tables and columns for
-            referral tracking, rewards, and user referral codes.
+            This will create the necessary database tables and columns for referral tracking, rewards, and user referral
+            codes.
           </p>
         </div>
 
         <div className="text-center">
-          <p className="text-sm text-gray-600 mb-3">
-            Once the database is set up, you'll be able to:
-          </p>
+          <p className="text-sm text-gray-600 mb-3">Once the database is set up, you'll be able to:</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-gray-600 mb-4">
             <div className="flex items-center gap-2">
               <div className="w-1 h-1 bg-purple-500 rounded-full"></div>
@@ -242,7 +214,7 @@ export function ReferralProgram({ userId, userProfile }: ReferralProgramProps) {
           </Button>
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -253,10 +225,8 @@ export function ReferralProgram({ userId, userProfile }: ReferralProgramProps) {
         </div>
         <div className="flex-1">
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
-            <h3 className="text-lg sm:text-xl font-bold text-gray-900">
-              Referral Program
-            </h3>
-            {isEligibleForRewards && (
+            <h3 className="text-lg sm:text-xl font-bold text-gray-900">Referral Program</h3>
+            {(fastVerification || sangamReward || samarpanReward) && (
               <div className="flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-yellow-100 to-orange-100 text-orange-800 text-xs font-medium rounded-full w-fit">
                 <Crown className="w-3 h-3" />
                 <span>Rewards Unlocked!</span>
@@ -264,8 +234,7 @@ export function ReferralProgram({ userId, userProfile }: ReferralProgramProps) {
             )}
           </div>
           <p className="text-sm sm:text-base text-gray-700 mb-4">
-            Invite friends to boost your verification speed and earn premium
-            benefits!
+            Invite friends to boost your verification speed and earn premium benefits!
           </p>
         </div>
       </div>
@@ -273,12 +242,8 @@ export function ReferralProgram({ userId, userProfile }: ReferralProgramProps) {
       {/* Progress Section */}
       <div className="bg-white/70 rounded-lg p-4 mb-4">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-gray-700">
-            Progress to Rewards
-          </span>
-          <span className="text-sm font-bold text-purple-600">
-            {referralCount}/20 referrals
-          </span>
+          <span className="text-sm font-medium text-gray-700">Progress to Rewards</span>
+          <span className="text-sm font-bold text-purple-600">{referralCount}/20 referrals</span>
         </div>
         <div className="w-full bg-gray-200 rounded-full h-3 mb-2">
           <div
@@ -318,9 +283,7 @@ export function ReferralProgram({ userId, userProfile }: ReferralProgramProps) {
 
         <div
           className={`p-3 rounded-lg border-2 transition-all ${
-            sangamReward
-              ? "bg-green-50 border-green-200 text-green-800"
-              : "bg-gray-50 border-gray-200 text-gray-600"
+            sangamReward ? "bg-green-50 border-green-200 text-green-800" : "bg-gray-50 border-gray-200 text-gray-600"
           }
         `}
         >
@@ -333,9 +296,7 @@ export function ReferralProgram({ userId, userProfile }: ReferralProgramProps) {
 
         <div
           className={`p-3 rounded-lg border-2 transition-all ${
-            samarpanReward
-              ? "bg-green-50 border-green-200 text-green-800"
-              : "bg-gray-50 border-gray-200 text-gray-600"
+            samarpanReward ? "bg-green-50 border-green-200 text-green-800" : "bg-gray-50 border-gray-200 text-gray-600"
           }
         `}
         >
@@ -350,20 +311,13 @@ export function ReferralProgram({ userId, userProfile }: ReferralProgramProps) {
       {/* Referral Link Section */}
       {referralCode && (
         <div className="bg-white/70 rounded-lg p-4 mb-4">
-          <h4 className="font-semibold text-gray-900 mb-2 text-sm sm:text-base">
-            Your Referral Link
-          </h4>
+          <h4 className="font-semibold text-gray-900 mb-2 text-sm sm:text-base">Your Referral Link</h4>
           <div className="flex flex-col sm:flex-row gap-2">
             <div className="flex-1 p-2 bg-gray-100 rounded-md text-sm text-gray-700 font-mono break-all">
               {generateReferralLink()}
             </div>
             <div className="flex gap-2">
-              <Button
-                onClick={copyReferralLink}
-                size="sm"
-                variant="outline"
-                className="flex-1 sm:flex-none"
-              >
+              <Button onClick={copyReferralLink} size="sm" variant="outline" className="flex-1 sm:flex-none">
                 {copied ? (
                   <>
                     <CheckCircle className="w-4 h-4 mr-1" />
@@ -394,13 +348,11 @@ export function ReferralProgram({ userId, userProfile }: ReferralProgramProps) {
         <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
           <div className="flex items-center gap-2 mb-2">
             <Trophy className="w-5 h-5 text-green-600" />
-            <h4 className="font-semibold text-green-800">
-              Successful Referrals
-            </h4>
+            <h4 className="font-semibold text-green-800">Successful Referrals</h4>
           </div>
           <p className="text-sm text-green-700">
-            🎉 You've successfully referred <strong>{referralCount}</strong>{" "}
-            {referralCount === 1 ? "person" : "people"} to DharmaSaathi!
+            🎉 You've successfully referred <strong>{referralCount}</strong> {referralCount === 1 ? "person" : "people"}{" "}
+            to DharmaSaathi!
           </p>
         </div>
       )}
@@ -408,8 +360,7 @@ export function ReferralProgram({ userId, userProfile }: ReferralProgramProps) {
       {/* Call to Action */}
       <div className="text-center">
         <p className="text-sm text-gray-600 mb-3">
-          Share with friends, family, and your spiritual community to help them
-          find their perfect match!
+          Share with friends, family, and your spiritual community to help them find their perfect match!
         </p>
         <div className="flex flex-col sm:flex-row gap-2 justify-center">
           <Button
@@ -436,21 +387,14 @@ export function ReferralProgram({ userId, userProfile }: ReferralProgramProps) {
           </div>
           <div className="space-y-2">
             {rewards.map((reward) => (
-              <div
-                key={reward.id}
-                className="flex items-center justify-between text-sm"
-              >
+              <div key={reward.id} className="flex items-center justify-between text-sm">
                 <span className="text-yellow-700">
-                  {reward.reward_type === "premium_days" &&
-                    `${reward.reward_value} Days Premium`}
-                  {reward.reward_type === "fast_verification" &&
-                    "Fast Track Verification"}
+                  {reward.reward_type === "premium_days" && `${reward.reward_value} Days Premium`}
+                  {reward.reward_type === "fast_verification" && "Fast Track Verification"}
                 </span>
                 <div className="flex items-center gap-1 text-yellow-600">
                   <Clock className="w-3 h-3" />
-                  <span className="text-xs">
-                    Expires {new Date(reward.expires_at).toLocaleDateString()}
-                  </span>
+                  <span className="text-xs">Expires {new Date(reward.expires_at).toLocaleDateString()}</span>
                 </div>
               </div>
             ))}
@@ -458,5 +402,5 @@ export function ReferralProgram({ userId, userProfile }: ReferralProgramProps) {
         </div>
       )}
     </div>
-  );
+  )
 }
