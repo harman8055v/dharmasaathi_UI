@@ -2,7 +2,19 @@
 
 import { useState, useRef } from "react"
 import { motion, useMotionValue, useTransform, type PanInfo } from "framer-motion"
-import { Heart, X, MapPin, Briefcase, Calendar, GraduationCap, Sparkles, Star, Info } from "lucide-react"
+import {
+  Heart,
+  X,
+  MapPin,
+  Briefcase,
+  Calendar,
+  GraduationCap,
+  Sparkles,
+  Star,
+  Info,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react"
 import Image from "next/image"
 
 interface SwipeCardProps {
@@ -16,7 +28,7 @@ export default function SwipeCard({ profile, onSwipe, isTop, index }: SwipeCardP
   const [isExpanded, setIsExpanded] = useState(false)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [currentDetailImageIndex, setCurrentDetailImageIndex] = useState(0)
-  const [isAnimating, setIsAnimating] = useState(false)
+  const [animatingButton, setAnimatingButton] = useState<string | null>(null)
   const cardRef = useRef<HTMLDivElement>(null)
   const x = useMotionValue(0)
   const y = useMotionValue(0)
@@ -49,24 +61,24 @@ export default function SwipeCard({ profile, onSwipe, isTop, index }: SwipeCardP
   }
 
   const handleLike = () => {
-    if (isAnimating) return
-    setIsAnimating(true)
+    if (animatingButton) return
+    setAnimatingButton("like")
     onSwipe("right", profile.id)
-    setTimeout(() => setIsAnimating(false), 500)
+    setTimeout(() => setAnimatingButton(null), 500)
   }
 
   const handleDislike = () => {
-    if (isAnimating) return
-    setIsAnimating(true)
+    if (animatingButton) return
+    setAnimatingButton("dislike")
     onSwipe("left", profile.id)
-    setTimeout(() => setIsAnimating(false), 500)
+    setTimeout(() => setAnimatingButton(null), 500)
   }
 
   const handleSuperlike = () => {
-    if (isAnimating) return
-    setIsAnimating(true)
+    if (animatingButton) return
+    setAnimatingButton("superlike")
     onSwipe("superlike", profile.id)
-    setTimeout(() => setIsAnimating(false), 500)
+    setTimeout(() => setAnimatingButton(null), 500)
   }
 
   const nextImage = () => {
@@ -274,11 +286,11 @@ export default function SwipeCard({ profile, onSwipe, isTop, index }: SwipeCardP
                   e.stopPropagation()
                   handleLike()
                 }}
-                disabled={isAnimating}
+                disabled={animatingButton !== null}
                 className="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center text-green-500 hover:bg-white transition-colors disabled:opacity-50"
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
-                animate={isAnimating ? { scale: [1, 1.3, 1], rotate: [0, 15, -15, 0] } : {}}
+                animate={animatingButton === "like" ? { scale: [1, 1.3, 1], rotate: [0, 15, -15, 0] } : {}}
                 transition={{ duration: 0.5 }}
               >
                 <Heart className="w-6 h-6" />
@@ -290,11 +302,11 @@ export default function SwipeCard({ profile, onSwipe, isTop, index }: SwipeCardP
                   e.stopPropagation()
                   handleSuperlike()
                 }}
-                disabled={isAnimating}
+                disabled={animatingButton !== null}
                 className="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center text-blue-500 hover:bg-white transition-colors disabled:opacity-50"
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
-                animate={isAnimating ? { scale: [1, 1.4, 1], y: [0, -10, 0] } : {}}
+                animate={animatingButton === "superlike" ? { scale: [1, 1.4, 1], y: [0, -10, 0] } : {}}
                 transition={{ duration: 0.6 }}
               >
                 <Star className="w-6 h-6" />
@@ -306,11 +318,11 @@ export default function SwipeCard({ profile, onSwipe, isTop, index }: SwipeCardP
                   e.stopPropagation()
                   handleDislike()
                 }}
-                disabled={isAnimating}
+                disabled={animatingButton !== null}
                 className="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center text-red-500 hover:bg-white transition-colors disabled:opacity-50"
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
-                animate={isAnimating ? { scale: [1, 1.2, 1], rotate: [0, -15, 15, 0] } : {}}
+                animate={animatingButton === "dislike" ? { scale: [1, 1.2, 1], rotate: [0, -15, 15, 0] } : {}}
                 transition={{ duration: 0.4 }}
               >
                 <X className="w-6 h-6" />
@@ -408,26 +420,26 @@ export default function SwipeCard({ profile, onSwipe, isTop, index }: SwipeCardP
                     />
                   </div>
 
-                  {/* Photo Navigation Arrows */}
+                  {/* Better Photo Navigation Arrows */}
                   {profile.user_photos.length > 1 && (
                     <>
                       <motion.button
                         onClick={prevDetailImage}
                         disabled={currentDetailImageIndex === 0}
-                        className="absolute left-4 top-1/2 transform -translate-y-1/2 w-12 h-12 bg-black/30 rounded-full flex items-center justify-center text-white hover:bg-black/50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed z-20"
+                        className="absolute left-4 top-1/2 transform -translate-y-1/2 w-14 h-14 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center text-gray-700 hover:bg-white shadow-lg transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed z-20"
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
                       >
-                        ←
+                        <ChevronLeft className="w-7 h-7" />
                       </motion.button>
                       <motion.button
                         onClick={nextDetailImage}
                         disabled={currentDetailImageIndex === profile.user_photos.length - 1}
-                        className="absolute right-4 top-1/2 transform -translate-y-1/2 w-12 h-12 bg-black/30 rounded-full flex items-center justify-center text-white hover:bg-black/50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed z-20"
+                        className="absolute right-4 top-1/2 transform -translate-y-1/2 w-14 h-14 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center text-gray-700 hover:bg-white shadow-lg transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed z-20"
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
                       >
-                        →
+                        <ChevronRight className="w-7 h-7" />
                       </motion.button>
                     </>
                   )}
@@ -552,77 +564,55 @@ export default function SwipeCard({ profile, onSwipe, isTop, index }: SwipeCardP
               </div>
             </div>
 
-            {/* Beautiful Bottom Action Buttons */}
-            <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-white via-white to-white/95 backdrop-blur-sm border-t border-gray-100 p-6 z-30">
-              <div className="flex gap-4 max-w-sm mx-auto">
-                {/* Pass Button */}
-                <motion.button
-                  onClick={() => {
-                    setIsExpanded(false)
-                    handleDislike()
-                  }}
-                  disabled={isAnimating}
-                  className="flex-1 relative overflow-hidden group"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <div className="absolute inset-0 bg-gradient-to-r from-red-500 to-pink-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300 rounded-2xl" />
-                  <div className="relative py-4 px-6 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-2xl font-semibold transition-all duration-300 flex items-center justify-center gap-2 border-2 border-gray-200 hover:border-red-200">
-                    <X className="w-5 h-5" />
-                    <span>Pass</span>
-                  </div>
-                </motion.button>
+            {/* Same Circular Action Buttons as Card */}
+            <div className="fixed bottom-6 right-6 flex flex-col gap-3 z-30">
+              {/* Like Button */}
+              <motion.button
+                onClick={() => {
+                  setIsExpanded(false)
+                  handleLike()
+                }}
+                disabled={animatingButton !== null}
+                className="w-14 h-14 bg-white shadow-xl rounded-full flex items-center justify-center text-green-500 hover:bg-green-50 transition-colors disabled:opacity-50 border border-gray-200"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                animate={animatingButton === "like" ? { scale: [1, 1.3, 1], rotate: [0, 15, -15, 0] } : {}}
+                transition={{ duration: 0.5 }}
+              >
+                <Heart className="w-7 h-7" />
+              </motion.button>
 
-                {/* Super Like Button */}
-                <motion.button
-                  onClick={() => {
-                    setIsExpanded(false)
-                    handleSuperlike()
-                  }}
-                  disabled={isAnimating}
-                  className="flex-1 relative overflow-hidden group"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl" />
-                  <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl group-hover:from-blue-600 group-hover:to-purple-600 transition-all duration-300" />
-                  <div className="relative py-4 px-6 text-white rounded-2xl font-semibold flex items-center justify-center gap-2 shadow-lg">
-                    <motion.div
-                      animate={{ rotate: [0, 15, -15, 0] }}
-                      transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY, repeatDelay: 3 }}
-                    >
-                      <Star className="w-5 h-5" />
-                    </motion.div>
-                    <span>Super Like</span>
-                  </div>
-                  <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl" />
-                </motion.button>
+              {/* Super Like Button */}
+              <motion.button
+                onClick={() => {
+                  setIsExpanded(false)
+                  handleSuperlike()
+                }}
+                disabled={animatingButton !== null}
+                className="w-14 h-14 bg-white shadow-xl rounded-full flex items-center justify-center text-blue-500 hover:bg-blue-50 transition-colors disabled:opacity-50 border border-gray-200"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                animate={animatingButton === "superlike" ? { scale: [1, 1.4, 1], y: [0, -10, 0] } : {}}
+                transition={{ duration: 0.6 }}
+              >
+                <Star className="w-7 h-7" />
+              </motion.button>
 
-                {/* Like Button */}
-                <motion.button
-                  onClick={() => {
-                    setIsExpanded(false)
-                    handleLike()
-                  }}
-                  disabled={isAnimating}
-                  className="flex-1 relative overflow-hidden group"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <div className="absolute inset-0 bg-gradient-to-r from-green-600 to-emerald-600 rounded-2xl" />
-                  <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl group-hover:from-green-600 group-hover:to-emerald-600 transition-all duration-300" />
-                  <div className="relative py-4 px-6 text-white rounded-2xl font-semibold flex items-center justify-center gap-2 shadow-lg">
-                    <motion.div
-                      animate={{ scale: [1, 1.2, 1] }}
-                      transition={{ duration: 1.5, repeat: Number.POSITIVE_INFINITY, repeatDelay: 2 }}
-                    >
-                      <Heart className="w-5 h-5" />
-                    </motion.div>
-                    <span>Like</span>
-                  </div>
-                  <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl" />
-                </motion.button>
-              </div>
+              {/* Dislike Button */}
+              <motion.button
+                onClick={() => {
+                  setIsExpanded(false)
+                  handleDislike()
+                }}
+                disabled={animatingButton !== null}
+                className="w-14 h-14 bg-white shadow-xl rounded-full flex items-center justify-center text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50 border border-gray-200"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                animate={animatingButton === "dislike" ? { scale: [1, 1.2, 1], rotate: [0, -15, 15, 0] } : {}}
+                transition={{ duration: 0.4 }}
+              >
+                <X className="w-7 h-7" />
+              </motion.button>
             </div>
           </motion.div>
         </motion.div>

@@ -198,14 +198,14 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50">
-      {/* Mobile Navigation - Hidden for verified users on swiping interface */}
-      {!isVerified && <MobileNav userProfile={profile} />}
+      {/* Mobile Navigation */}
+      <MobileNav userProfile={profile} />
 
       {/* Main Content */}
-      <main className={`${!isVerified ? "pt-16 pb-32" : "pb-0"} min-h-screen flex flex-col`}>
+      <main className={`${!isVerified ? "pt-16 pb-32" : "pt-16 pb-32"} min-h-screen flex flex-col`}>
         {isVerified ? (
-          // Verified User - Swipe Interface
-          <div className="flex-1 flex flex-col mt-4">
+          // Verified User - Swipe Interface (No Header)
+          <div className="flex-1 flex flex-col">
             <SwipeStack profiles={profiles} onSwipe={handleSwipe} />
           </div>
         ) : (
