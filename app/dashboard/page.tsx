@@ -194,14 +194,15 @@ export default function DashboardPage() {
   }
 
   const profileCompleteness = calculateProfileCompleteness()
-  const isVerified = profile?.verification_status === 'verified'
+  const isVerified = profile?.verification_status === "verified"
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50">
-      <MobileNav userProfile={profile} />
+      {/* Mobile Navigation - Hidden for verified users on swiping interface */}
+      {!isVerified && <MobileNav userProfile={profile} />}
 
       {/* Main Content */}
-      <main className="pt-16 pb-32 min-h-screen flex flex-col">
+      <main className={`${!isVerified ? "pt-16 pb-32" : "pb-0"} min-h-screen flex flex-col`}>
         {isVerified ? (
           // Verified User - Swipe Interface
           <div className="flex-1 flex flex-col mt-4">

@@ -16,6 +16,7 @@ export default function SwipeCard({ profile, onSwipe, isTop, index }: SwipeCardP
   const [isExpanded, setIsExpanded] = useState(false)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [currentDetailImageIndex, setCurrentDetailImageIndex] = useState(0)
+  const [isAnimating, setIsAnimating] = useState(false)
   const cardRef = useRef<HTMLDivElement>(null)
   const x = useMotionValue(0)
   const y = useMotionValue(0)
@@ -48,15 +49,24 @@ export default function SwipeCard({ profile, onSwipe, isTop, index }: SwipeCardP
   }
 
   const handleLike = () => {
+    if (isAnimating) return
+    setIsAnimating(true)
     onSwipe("right", profile.id)
+    setTimeout(() => setIsAnimating(false), 500)
   }
 
   const handleDislike = () => {
+    if (isAnimating) return
+    setIsAnimating(true)
     onSwipe("left", profile.id)
+    setTimeout(() => setIsAnimating(false), 500)
   }
 
   const handleSuperlike = () => {
+    if (isAnimating) return
+    setIsAnimating(true)
     onSwipe("superlike", profile.id)
+    setTimeout(() => setIsAnimating(false), 500)
   }
 
   const nextImage = () => {
@@ -264,9 +274,12 @@ export default function SwipeCard({ profile, onSwipe, isTop, index }: SwipeCardP
                   e.stopPropagation()
                   handleLike()
                 }}
-                className="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center text-green-500 hover:bg-white transition-colors"
+                disabled={isAnimating}
+                className="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center text-green-500 hover:bg-white transition-colors disabled:opacity-50"
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
+                animate={isAnimating ? { scale: [1, 1.3, 1], rotate: [0, 15, -15, 0] } : {}}
+                transition={{ duration: 0.5 }}
               >
                 <Heart className="w-6 h-6" />
               </motion.button>
@@ -277,9 +290,12 @@ export default function SwipeCard({ profile, onSwipe, isTop, index }: SwipeCardP
                   e.stopPropagation()
                   handleSuperlike()
                 }}
-                className="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center text-blue-500 hover:bg-white transition-colors"
+                disabled={isAnimating}
+                className="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center text-blue-500 hover:bg-white transition-colors disabled:opacity-50"
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
+                animate={isAnimating ? { scale: [1, 1.4, 1], y: [0, -10, 0] } : {}}
+                transition={{ duration: 0.6 }}
               >
                 <Star className="w-6 h-6" />
               </motion.button>
@@ -290,18 +306,21 @@ export default function SwipeCard({ profile, onSwipe, isTop, index }: SwipeCardP
                   e.stopPropagation()
                   handleDislike()
                 }}
-                className="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center text-red-500 hover:bg-white transition-colors"
+                disabled={isAnimating}
+                className="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center text-red-500 hover:bg-white transition-colors disabled:opacity-50"
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
+                animate={isAnimating ? { scale: [1, 1.2, 1], rotate: [0, -15, 15, 0] } : {}}
+                transition={{ duration: 0.4 }}
               >
                 <X className="w-6 h-6" />
               </motion.button>
             </div>
           </div>
 
-          {/* Swipe Indicators */}
+          {/* Enhanced Swipe Indicators */}
           <motion.div
-            className="absolute top-1/2 left-8 transform -translate-y-1/2 px-4 py-2 bg-red-500 text-white rounded-lg font-bold text-lg"
+            className="absolute top-1/2 left-8 transform -translate-y-1/2 px-6 py-3 bg-red-500 text-white rounded-2xl font-bold text-xl shadow-2xl border-4 border-white"
             style={{
               opacity: nopeOpacity,
               rotate: nopeRotate,
@@ -311,7 +330,7 @@ export default function SwipeCard({ profile, onSwipe, isTop, index }: SwipeCardP
           </motion.div>
 
           <motion.div
-            className="absolute top-1/2 right-8 transform -translate-y-1/2 px-4 py-2 bg-green-500 text-white rounded-lg font-bold text-lg"
+            className="absolute top-1/2 right-8 transform -translate-y-1/2 px-6 py-3 bg-green-500 text-white rounded-2xl font-bold text-xl shadow-2xl border-4 border-white"
             style={{
               opacity: likeOpacity,
               rotate: likeRotate,
@@ -347,33 +366,22 @@ export default function SwipeCard({ profile, onSwipe, isTop, index }: SwipeCardP
               <X className="w-6 h-6" />
             </button>
 
-            <div className="pb-24">
-              {/* Swipeable Photo Gallery */}
+            <div className="pb-32">
+              {/* Optimized Swipeable Photo Gallery */}
               {profile.user_photos && profile.user_photos.length > 0 && (
-                <div className="relative h-[50vh] bg-gray-100">
-                  <motion.div
-                    className="flex h-full"
-                    drag="x"
-                    dragConstraints={{ left: -(profile.user_photos.length - 1) * window.innerWidth, right: 0 }}
-                    dragElastic={0.1}
-                    onDragEnd={(event, info) => {
-                      const threshold = 100
-                      if (info.offset.x > threshold && currentDetailImageIndex > 0) {
-                        prevDetailImage()
-                      } else if (
-                        info.offset.x < -threshold &&
-                        currentDetailImageIndex < profile.user_photos.length - 1
-                      ) {
-                        nextDetailImage()
-                      }
+                <div className="relative h-[50vh] bg-gray-100 overflow-hidden">
+                  <div
+                    className="flex h-full transition-transform duration-300 ease-out"
+                    style={{
+                      transform: `translateX(-${currentDetailImageIndex * 100}%)`,
+                      width: `${profile.user_photos.length * 100}%`,
                     }}
                   >
                     {profile.user_photos.map((photo: string, idx: number) => (
-                      <motion.div
+                      <div
                         key={idx}
-                        className="min-w-full h-full relative"
-                        animate={{ x: -currentDetailImageIndex * 100 + "%" }}
-                        transition={{ type: "spring", stiffness: 400, damping: 40 }}
+                        className="w-full h-full relative flex-shrink-0"
+                        style={{ width: `${100 / profile.user_photos.length}%` }}
                       >
                         <Image
                           src={photo || "/placeholder.svg"}
@@ -382,39 +390,59 @@ export default function SwipeCard({ profile, onSwipe, isTop, index }: SwipeCardP
                           className="object-cover"
                           priority={idx === 0}
                         />
-                      </motion.div>
+                      </div>
                     ))}
-                  </motion.div>
+                  </div>
+
+                  {/* Touch/Swipe Areas for Navigation */}
+                  <div className="absolute inset-0 flex">
+                    <button
+                      onClick={prevDetailImage}
+                      disabled={currentDetailImageIndex === 0}
+                      className="flex-1 opacity-0 disabled:cursor-not-allowed"
+                    />
+                    <button
+                      onClick={nextDetailImage}
+                      disabled={currentDetailImageIndex === profile.user_photos.length - 1}
+                      className="flex-1 opacity-0 disabled:cursor-not-allowed"
+                    />
+                  </div>
 
                   {/* Photo Navigation Arrows */}
                   {profile.user_photos.length > 1 && (
                     <>
-                      <button
+                      <motion.button
                         onClick={prevDetailImage}
                         disabled={currentDetailImageIndex === 0}
-                        className="absolute left-4 top-1/2 transform -translate-y-1/2 w-12 h-12 bg-black/30 rounded-full flex items-center justify-center text-white hover:bg-black/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed z-20"
+                        className="absolute left-4 top-1/2 transform -translate-y-1/2 w-12 h-12 bg-black/30 rounded-full flex items-center justify-center text-white hover:bg-black/50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed z-20"
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
                       >
                         ←
-                      </button>
-                      <button
+                      </motion.button>
+                      <motion.button
                         onClick={nextDetailImage}
                         disabled={currentDetailImageIndex === profile.user_photos.length - 1}
-                        className="absolute right-4 top-1/2 transform -translate-y-1/2 w-12 h-12 bg-black/30 rounded-full flex items-center justify-center text-white hover:bg-black/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed z-20"
+                        className="absolute right-4 top-1/2 transform -translate-y-1/2 w-12 h-12 bg-black/30 rounded-full flex items-center justify-center text-white hover:bg-black/50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed z-20"
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
                       >
                         →
-                      </button>
+                      </motion.button>
                     </>
                   )}
 
                   {/* Photo Navigation Dots */}
                   <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-3 z-20">
                     {profile.user_photos.map((_: any, idx: number) => (
-                      <button
+                      <motion.button
                         key={idx}
                         onClick={() => setCurrentDetailImageIndex(idx)}
                         className={`w-3 h-3 rounded-full transition-all duration-300 ${
                           idx === currentDetailImageIndex ? "bg-white scale-125" : "bg-white/60"
                         }`}
+                        whileHover={{ scale: 1.2 }}
+                        whileTap={{ scale: 0.9 }}
                       />
                     ))}
                   </div>
@@ -524,46 +552,75 @@ export default function SwipeCard({ profile, onSwipe, isTop, index }: SwipeCardP
               </div>
             </div>
 
-            {/* Bottom Action Buttons */}
-            <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 z-30">
+            {/* Beautiful Bottom Action Buttons */}
+            <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-white via-white to-white/95 backdrop-blur-sm border-t border-gray-100 p-6 z-30">
               <div className="flex gap-4 max-w-sm mx-auto">
+                {/* Pass Button */}
                 <motion.button
                   onClick={() => {
                     setIsExpanded(false)
                     handleDislike()
                   }}
-                  className="flex-1 py-4 bg-gray-100 text-gray-700 rounded-2xl font-semibold hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
+                  disabled={isAnimating}
+                  className="flex-1 relative overflow-hidden group"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  <X className="w-5 h-5" />
-                  Pass
+                  <div className="absolute inset-0 bg-gradient-to-r from-red-500 to-pink-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300 rounded-2xl" />
+                  <div className="relative py-4 px-6 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-2xl font-semibold transition-all duration-300 flex items-center justify-center gap-2 border-2 border-gray-200 hover:border-red-200">
+                    <X className="w-5 h-5" />
+                    <span>Pass</span>
+                  </div>
                 </motion.button>
 
+                {/* Super Like Button */}
                 <motion.button
                   onClick={() => {
                     setIsExpanded(false)
                     handleSuperlike()
                   }}
-                  className="flex-1 py-4 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-2xl font-semibold hover:from-blue-600 hover:to-purple-600 transition-colors flex items-center justify-center gap-2"
+                  disabled={isAnimating}
+                  className="flex-1 relative overflow-hidden group"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  <Star className="w-5 h-5" />
-                  Super Like
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl group-hover:from-blue-600 group-hover:to-purple-600 transition-all duration-300" />
+                  <div className="relative py-4 px-6 text-white rounded-2xl font-semibold flex items-center justify-center gap-2 shadow-lg">
+                    <motion.div
+                      animate={{ rotate: [0, 15, -15, 0] }}
+                      transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY, repeatDelay: 3 }}
+                    >
+                      <Star className="w-5 h-5" />
+                    </motion.div>
+                    <span>Super Like</span>
+                  </div>
+                  <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl" />
                 </motion.button>
 
+                {/* Like Button */}
                 <motion.button
                   onClick={() => {
                     setIsExpanded(false)
                     handleLike()
                   }}
-                  className="flex-1 py-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-2xl font-semibold hover:from-green-600 hover:to-emerald-600 transition-colors flex items-center justify-center gap-2"
+                  disabled={isAnimating}
+                  className="flex-1 relative overflow-hidden group"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  <Heart className="w-5 h-5" />
-                  Like
+                  <div className="absolute inset-0 bg-gradient-to-r from-green-600 to-emerald-600 rounded-2xl" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl group-hover:from-green-600 group-hover:to-emerald-600 transition-all duration-300" />
+                  <div className="relative py-4 px-6 text-white rounded-2xl font-semibold flex items-center justify-center gap-2 shadow-lg">
+                    <motion.div
+                      animate={{ scale: [1, 1.2, 1] }}
+                      transition={{ duration: 1.5, repeat: Number.POSITIVE_INFINITY, repeatDelay: 2 }}
+                    >
+                      <Heart className="w-5 h-5" />
+                    </motion.div>
+                    <span>Like</span>
+                  </div>
+                  <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl" />
                 </motion.button>
               </div>
             </div>
