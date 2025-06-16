@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
+import { debugLog } from "@/lib/logger"
 import type { User } from "@supabase/supabase-js"
 import type { OnboardingData, OnboardingProfile } from "@/lib/types/onboarding"
 import { VALID_VALUES, validateEnumField } from "@/lib/types/onboarding"
@@ -51,6 +52,7 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
     mobile_number: null, // Add this line
     gender: null,
     birthdate: null,
+    height: null,
     city: null,
     state: null,
     country: "India", // Default to India
@@ -78,6 +80,7 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
         mobile_number: profile.mobile_number || null, // Add this line
         gender: profile.gender || null,
         birthdate: profile.birthdate || null,
+        height: profile.height || null,
         city: profile.city || null,
         state: profile.state || null,
         country: profile.country || "India", // Default to India if not set
@@ -100,7 +103,7 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
       // First stage is now mobile verification
       if (!user?.phone_confirmed_at && !profile.mobile_verified) {
         setStage(1)
-      } else if (!profile.gender || !profile.birthdate) {
+      } else if (!profile.gender || !profile.birthdate || !profile.height) {
         setStage(2)
       } else if (!profile.education || !profile.profession) {
         setStage(3)
@@ -132,8 +135,8 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
         // Sanitize the payload - removes null/undefined/empty string values
         const payload = sanitizePayload(stageData)
 
-        console.log("Original stage data:", stageData)
-        console.log("Sanitized payload:", payload)
+        debugLog("Original stage data:", stageData)
+        debugLog("Sanitized payload:", payload)
 
         // Only make the database call if we have data to save
         if (Object.keys(payload).length > 0) {
@@ -151,7 +154,7 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
             throw new Error(`Failed to save data: ${saveError.message}`)
           }
 
-          console.log("Successfully saved data")
+          debugLog("Successfully saved data")
 
           // Update local profile state
           setProfile((prev) => ({ ...prev, ...payload }))
@@ -204,7 +207,7 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
         if (!stageData.gender) {
           throw new Error("Please select your gender before proceeding.")
         }
-        if (!stageData.birthdate || !stageData.city || !stageData.state || !stageData.country) {
+        if (!stageData.birthdate || !stageData.height || !stageData.city || !stageData.state || !stageData.country) {
           throw new Error("Please fill in all required fields before proceeding.")
         }
         break

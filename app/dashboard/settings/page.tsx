@@ -8,7 +8,32 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ArrowLeft, MapPin, User, Mail, CheckCircle, Phone, Shield, Save } from "lucide-react"
+import { useStates, useCities } from "@/lib/hooks/useLocations"
+import { SPIRITUAL_ORGS } from "@/lib/constants/spiritual-orgs"
+import { DAILY_PRACTICES } from "@/lib/constants/daily-practices"
+import {
+  ArrowLeft,
+  MapPin,
+  User,
+  Mail,
+  CheckCircle,
+  Phone,
+  Shield,
+  Save,
+  Briefcase,
+  Heart,
+  Trash2,
+  Ban,
+} from "lucide-react"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 import MobileNav from "@/components/dashboard/mobile-nav"
 import { toast } from "sonner"
 import { formatMobileNumber, validateMobileNumber } from "@/lib/types/onboarding"
@@ -28,6 +53,15 @@ export default function AccountSettingsPage() {
   const [verifyingOtp, setVerifyingOtp] = useState(false)
   const [resendTimer, setResendTimer] = useState(0)
 
+  const [deactivateOpen, setDeactivateOpen] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [processingDeactivate, setProcessingDeactivate] = useState(false)
+  const [processingDelete, setProcessingDelete] = useState(false)
+
+  const statesList = useStates()
+  const selectedState = statesList.find((s) => s.name === formData.state)
+  const citiesList = useCities(selectedState?.state_code || null)
+
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
@@ -37,8 +71,51 @@ export default function AccountSettingsPage() {
     state: "",
     country: "",
     birthdate: "",
+    height: "",
     gender: "",
+    education: "",
+    profession: "",
+    annual_income: "",
+    diet: "",
+    temple_visit_freq: "",
+    vanaprastha_interest: "",
+    artha_vs_moksha: "",
+    spiritual_org: [],
+    daily_practices: [],
   })
+
+  const educationLevels = [
+    "High School",
+    "Diploma",
+    "Bachelor's Degree",
+    "Master's Degree",
+    "Doctorate",
+    "Professional Degree",
+    "Other",
+  ]
+
+  const incomeRanges = [
+    "Less than ₹5,00,000",
+    "₹5,00,000 - ₹10,00,000",
+    "₹10,00,000 - ₹15,00,000",
+    "₹15,00,000 - ₹25,00,000",
+    "₹25,00,000 - ₹50,00,000",
+    "₹50,00,000 - ₹75,00,000",
+    "₹75,00,000 - ₹1,00,00,000",
+    "More than ₹1,00,00,000",
+    "Prefer not to say",
+  ]
+
+  const dietOptions = [
+    "Vegetarian",
+    "Vegan",
+    "Eggetarian",
+    "Non-Vegetarian",
+  ]
+
+  const templeFreqOptions = ["Daily", "Weekly", "Monthly", "Rarely", "Never"]
+  const vanaprasthaOptions = ["yes", "no", "open"]
+  const arthaMokshaOptions = ["Artha-focused", "Moksha-focused", "Balance"]
 
   useEffect(() => {
     async function getUser() {
@@ -70,7 +147,17 @@ export default function AccountSettingsPage() {
           state: profileData.state || "",
           country: profileData.country || "",
           birthdate: profileData.birthdate || "",
+          height: profileData.height || "",
           gender: profileData.gender || "",
+          education: profileData.education || "",
+          profession: profileData.profession || "",
+          annual_income: profileData.annual_income || "",
+          diet: profileData.diet || "",
+          temple_visit_freq: profileData.temple_visit_freq || "",
+          vanaprastha_interest: profileData.vanaprastha_interest || "",
+          artha_vs_moksha: profileData.artha_vs_moksha || "",
+          spiritual_org: profileData.spiritual_org || [],
+          daily_practices: profileData.daily_practices || [],
         })
         setNewMobileNumber(profileData.mobile_number || "")
         setLoading(false)
@@ -229,6 +316,58 @@ export default function AccountSettingsPage() {
     setResendTimer(0)
   }
 
+  const handleDeactivateAccount = async () => {
+    if (!user) return
+    setProcessingDeactivate(true)
+    try {
+      const { error } = await supabase
+        .from("users")
+        .update({
+          account_status: "deactivated",
+          deactivated_at: new Date().toISOString(),
+        })
+        .eq("id", user.id)
+
+      if (error) throw error
+
+      toast.success("Account deactivated")
+      await supabase.auth.signOut()
+      router.push("/")
+    } catch (error) {
+      console.error("Deactivate error:", error)
+      toast.error("Failed to deactivate account")
+    } finally {
+      setProcessingDeactivate(false)
+      setDeactivateOpen(false)
+    }
+  }
+
+  const handleDeleteAccount = async () => {
+    if (!user) return
+    setProcessingDelete(true)
+    try {
+      const { error } = await supabase
+        .from("users")
+        .update({
+          account_status: "deleted",
+          deactivated_at: new Date().toISOString(),
+        })
+        .eq("id", user.id)
+
+      if (error) throw error
+
+      toast.success("Account deleted")
+      await supabase.auth.signOut()
+      router.push("/")
+    } catch (error) {
+      console.error("Delete error:", error)
+      toast.error("Failed to delete account")
+    } finally {
+      setProcessingDelete(false)
+      setDeleteOpen(false)
+    }
+  }
+
   const handleSave = async () => {
     setSaving(true)
     try {
@@ -255,7 +394,7 @@ export default function AccountSettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 pb-20">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 pb-40">
       <MobileNav userProfile={profile} />
 
       <main className="pt-20 px-4">
@@ -327,6 +466,15 @@ export default function AccountSettingsPage() {
                     type="date"
                     value={formData.birthdate}
                     onChange={(e) => setFormData({ ...formData, birthdate: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="height">Height (cm)</Label>
+                  <Input
+                    id="height"
+                    type="number"
+                    value={formData.height}
+                    onChange={(e) => setFormData({ ...formData, height: e.target.value })}
                   />
                 </div>
               </CardContent>
@@ -480,8 +628,14 @@ export default function AccountSettingsPage() {
                     id="city"
                     value={formData.city}
                     onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                    placeholder="Enter city"
+                    placeholder="Select city"
+                    list="city-list"
                   />
+                  <datalist id="city-list">
+                    {citiesList.map((c) => (
+                      <option key={c.id} value={c.name} />
+                    ))}
+                  </datalist>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -491,8 +645,14 @@ export default function AccountSettingsPage() {
                       id="state"
                       value={formData.state}
                       onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                      placeholder="Enter state"
+                      placeholder="Select state"
+                      list="state-list"
                     />
+                    <datalist id="state-list">
+                      {statesList.map((s) => (
+                        <option key={s.id} value={s.name} />
+                      ))}
+                    </datalist>
                   </div>
                   <div>
                     <Label htmlFor="country">Country</Label>
@@ -503,6 +663,196 @@ export default function AccountSettingsPage() {
                       placeholder="Enter country"
                     />
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Professional Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Briefcase className="w-5 h-5" />
+                  Professional Information
+                </CardTitle>
+                <CardDescription>Update your work and education details</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="education">Education</Label>
+                  <Select
+                    value={formData.education}
+                    onValueChange={(value) => setFormData({ ...formData, education: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select education level" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {educationLevels.map((level) => (
+                        <SelectItem key={level} value={level}>
+                          {level}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="profession">Profession</Label>
+                  <Input
+                    id="profession"
+                    value={formData.profession}
+                    onChange={(e) => setFormData({ ...formData, profession: e.target.value })}
+                    placeholder="Enter profession"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="annual_income">Annual Income</Label>
+                  <Select
+                    value={formData.annual_income}
+                    onValueChange={(value) => setFormData({ ...formData, annual_income: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select income range" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {incomeRanges.map((range) => (
+                        <SelectItem key={range} value={range}>
+                          {range}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Spiritual Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Heart className="w-5 h-5" />
+                  Spiritual Information
+                </CardTitle>
+                <CardDescription>Share your spiritual preferences</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label>Spiritual Organizations</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {SPIRITUAL_ORGS.map((org) => (
+                      <button
+                        key={org}
+                        type="button"
+                        onClick={() => {
+                          const arr = formData.spiritual_org.includes(org)
+                            ? formData.spiritual_org.filter((o: string) => o !== org)
+                            : [...formData.spiritual_org, org]
+                          setFormData({ ...formData, spiritual_org: arr })
+                        }}
+                        className={`px-3 py-1 text-sm rounded-full ${formData.spiritual_org.includes(org) ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
+                      >
+                        {org}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <Label>Daily Practices</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {DAILY_PRACTICES.map((p) => (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => {
+                          const arr = formData.daily_practices.includes(p)
+                            ? formData.daily_practices.filter((d: string) => d !== p)
+                            : [...formData.daily_practices, p]
+                          setFormData({ ...formData, daily_practices: arr })
+                        }}
+                        className={`px-3 py-1 text-sm rounded-full ${formData.daily_practices.includes(p) ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
+                      >
+                        {p}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="diet">Diet</Label>
+                  <Select
+                    value={formData.diet}
+                    onValueChange={(value) => setFormData({ ...formData, diet: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select diet" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {dietOptions.map((option) => (
+                        <SelectItem key={option} value={option}>
+                          {option}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="temple_visit_freq">Temple Visit Frequency</Label>
+                  <Select
+                    value={formData.temple_visit_freq}
+                    onValueChange={(value) => setFormData({ ...formData, temple_visit_freq: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select frequency" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {templeFreqOptions.map((option) => (
+                        <SelectItem key={option} value={option}>
+                          {option}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="vanaprastha_interest">Interest in Vanaprastha</Label>
+                  <Select
+                    value={formData.vanaprastha_interest}
+                    onValueChange={(value) => setFormData({ ...formData, vanaprastha_interest: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select interest" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {vanaprasthaOptions.map((option) => (
+                        <SelectItem key={option} value={option}>
+                          {option}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="artha_vs_moksha">Artha vs Moksha</Label>
+                  <Select
+                    value={formData.artha_vs_moksha}
+                    onValueChange={(value) => setFormData({ ...formData, artha_vs_moksha: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select preference" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {arthaMokshaOptions.map((option) => (
+                        <SelectItem key={option} value={option}>
+                          {option}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </CardContent>
             </Card>
@@ -522,6 +872,66 @@ export default function AccountSettingsPage() {
                 Please verify your new mobile number before saving changes
               </p>
             )}
+
+            {/* Deactivate Account */}
+            <Dialog open={deactivateOpen} onOpenChange={setDeactivateOpen}>
+              <DialogTrigger asChild>
+                <Button variant="secondary" className="w-full mt-6">
+                  <Ban className="w-4 h-4 mr-2" />
+                  Deactivate Account
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Deactivate Account</DialogTitle>
+                  <DialogDescription>
+                    Are you sure you want to deactivate your account?
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setDeactivateOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleDeactivateAccount}
+                    disabled={processingDeactivate}
+                    variant="destructive"
+                  >
+                    {processingDeactivate ? "Processing..." : "Deactivate"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            {/* Delete Account */}
+            <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+              <DialogTrigger asChild>
+                <Button variant="destructive" className="w-full mt-2">
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete Account
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Delete Account</DialogTitle>
+                  <DialogDescription>
+                    This will permanently delete your account. Continue?
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setDeleteOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleDeleteAccount}
+                    disabled={processingDelete}
+                    variant="destructive"
+                  >
+                    {processingDelete ? "Deleting..." : "Delete"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
       </main>

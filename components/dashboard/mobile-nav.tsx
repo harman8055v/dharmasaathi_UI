@@ -28,6 +28,9 @@ export default function MobileNav({ userProfile }: MobileNavProps) {
   const router = useRouter()
   const pathname = usePathname()
 
+  const isVerified = userProfile?.verification_status === "verified"
+  const showHeader = !(pathname === "/dashboard" && isVerified)
+
   const handleSignOut = async () => {
     await supabase.auth.signOut()
     router.push("/")
@@ -95,6 +98,7 @@ export default function MobileNav({ userProfile }: MobileNavProps) {
   return (
     <>
       {/* Top Header - Minimal */}
+      {showHeader && (
       <header className="fixed top-0 left-0 right-0 z-40 bg-gradient-to-r from-orange-50 to-pink-50 backdrop-blur-md border-b border-orange-100/50">
         <div className="flex items-center justify-between px-4 py-4">
           {/* Logo on left */}
@@ -133,7 +137,7 @@ export default function MobileNav({ userProfile }: MobileNavProps) {
             {isProfileMenuOpen && (
               <>
                 <div className="fixed inset-0 z-30" onClick={() => setIsProfileMenuOpen(false)} />
-                <div className="absolute top-full right-0 mt-2 w-64 bg-white/95 backdrop-blur-md border border-orange-200 rounded-2xl shadow-2xl z-40 overflow-hidden animate-in slide-in-from-top-2 duration-200">
+                <div className="absolute top-full right-0 mt-2 w-64 bg-white backdrop-blur-md border border-orange-200 rounded-2xl shadow-2xl z-40 overflow-hidden animate-in slide-in-from-top-2 duration-200">
                   {/* User Info */}
                   <div className="p-4 bg-gradient-to-r from-orange-50 to-pink-50 border-b border-orange-100">
                     <div className="flex items-center gap-3">
@@ -151,7 +155,13 @@ export default function MobileNav({ userProfile }: MobileNavProps) {
                           {userProfile?.first_name} {userProfile?.last_name}
                         </p>
                         <p className="text-sm text-gray-600">
-                          {userProfile?.fast_track_verification ? "Fast Track Verification" : "Profile Under Review"}
+                          {userProfile?.verification_status === 'verified'
+                            ? 'Verified'
+                            : userProfile?.verification_status === 'rejected'
+                            ? 'Verification Rejected'
+                            : userProfile?.fast_track_verification
+                            ? 'Fast Track Verification'
+                            : 'Profile Under Review'}
                         </p>
                       </div>
                     </div>
@@ -194,6 +204,7 @@ export default function MobileNav({ userProfile }: MobileNavProps) {
           </div>
         </div>
       </header>
+      )}
 
       {/* Bottom Navigation - Mobile Fixed */}
       <div

@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS users (
   partner_expectations TEXT,
   user_photos TEXT[],
   email_verified BOOLEAN DEFAULT FALSE,
+  verification_status TEXT DEFAULT 'pending' CHECK (verification_status IN ('pending','verified','rejected')),
   onboarding_completed BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -105,10 +106,12 @@ ALTER TABLE users ADD CONSTRAINT users_mobile_number_check
 -- Add indexes for performance
 CREATE INDEX IF NOT EXISTS idx_users_mobile_number ON users(mobile_number);
 CREATE INDEX IF NOT EXISTS idx_users_email_verified ON users(email_verified);
+CREATE INDEX IF NOT EXISTS idx_users_verification_status ON users(verification_status);
 CREATE INDEX IF NOT EXISTS idx_users_onboarding_completed ON users(onboarding_completed);
 
 -- Add comments explaining the fields
 COMMENT ON COLUMN users.email_verified IS 'Whether the user has verified their email address during onboarding';
+COMMENT ON COLUMN users.verification_status IS 'Account review status: pending, verified, or rejected';
 COMMENT ON COLUMN users.mobile_number IS 'User mobile/phone number with country code (optional)';
 COMMENT ON CONSTRAINT users_gender_check ON users IS 'Ensures gender is either NULL or one of: Male, Female, Other';
 COMMENT ON CONSTRAINT users_diet_check ON users IS 'Ensures diet is either NULL or one of: Vegetarian, Vegan, Eggetarian, Non-Vegetarian';

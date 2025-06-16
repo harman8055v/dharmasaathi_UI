@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Star, Sparkles, Crown, Check, Gift } from "lucide-react"
+import { Star, Sparkles, Crown, Check, Gift, Shield } from "lucide-react"
 import MobileNav from "@/components/dashboard/mobile-nav"
+import PaymentModal from "@/components/payment/payment-modal"
 import type { User as SupabaseUser } from "@supabase/supabase-js"
+import { Toaster } from "sonner"
 
 const superLikePackages = [
   { count: 5, price: 499, popular: false },
@@ -25,45 +27,65 @@ export default function StorePage() {
   const [user, setUser] = useState<SupabaseUser | null>(null)
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [paymentModal, setPaymentModal] = useState<{
+    isOpen: boolean
+    item: any
+  }>({
+    isOpen: false,
+    item: null,
+  })
   const router = useRouter()
 
-  useEffect(() => {
-    async function getUser() {
-      try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser()
+  const openPaymentModal = (item: any) => {
+    setPaymentModal({ isOpen: true, item })
+  }
 
-        if (!user) {
-          router.push("/")
-          return
-        }
+  const closePaymentModal = () => {
+    setPaymentModal({ isOpen: false, item: null })
+  }
 
-        setUser(user)
+  const handlePaymentSuccess = () => {
+    // Refresh user data to show updated credits/status
+    getUser()
+  }
 
-        // Fetch user profile data
-        const { data: profileData, error } = await supabase.from("users").select("*").eq("id", user.id).single()
+  async function getUser() {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
 
-        if (error) {
-          console.error("Error fetching user profile:", error)
-          router.push("/onboarding")
-          return
-        }
-
-        // If user hasn't completed onboarding, redirect to onboarding
-        if (!profileData?.onboarding_completed) {
-          router.push("/onboarding")
-          return
-        }
-
-        setProfile(profileData)
-        setLoading(false)
-      } catch (error) {
-        console.error("Error in auth check:", error)
+      if (!user) {
         router.push("/")
+        return
       }
-    }
 
+      setUser(user)
+
+      // Fetch user profile data
+      const { data: profileData, error } = await supabase.from("users").select("*").eq("id", user.id).single()
+
+      if (error) {
+        console.error("Error fetching user profile:", error)
+        router.push("/onboarding")
+        return
+      }
+
+      // If user hasn't completed onboarding, redirect to onboarding
+      if (!profileData?.onboarding_completed) {
+        router.push("/onboarding")
+        return
+      }
+
+      setProfile(profileData)
+      setLoading(false)
+    } catch (error) {
+      console.error("Error in auth check:", error)
+      router.push("/")
+    }
+  }
+
+  useEffect(() => {
     getUser()
   }, [router])
 
@@ -89,6 +111,44 @@ export default function StorePage() {
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">DharmaSaathi Store 🛍️</h1>
             <p className="text-gray-600">Enhance your spiritual matchmaking journey</p>
+
+            {/* Current Status */}
+            <div className="mt-4 flex justify-center gap-4 text-sm">
+              <div className="bg-white/80 px-3 py-1 rounded-full">
+                <span className="text-gray-600">Super Likes: </span>
+                <span className="font-semibold text-orange-600">{profile?.super_likes_count || 0}</span>
+              </div>
+              <div className="bg-white/80 px-3 py-1 rounded-full">
+                <span className="text-gray-600">Highlights: </span>
+                <span className="font-semibold text-purple-600">{profile?.message_highlights_count || 0}</span>
+              </div>
+              {profile?.account_status === "premium" && (
+                <div className="bg-gradient-to-r from-yellow-400 to-orange-400 text-white px-3 py-1 rounded-full">
+                  <Crown className="w-4 h-4 inline mr-1" />
+                  Premium Active
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Trust Banner */}
+          <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 mb-8 border border-green-200">
+            <div className="flex items-center justify-center gap-4 text-sm text-gray-700">
+              <div className="flex items-center gap-2">
+                <Shield className="w-4 h-4 text-green-600" />
+                <span>Secure Payments</span>
+              </div>
+              <div className="w-1 h-4 bg-gray-300"></div>
+              <div className="flex items-center gap-2">
+                <Check className="w-4 h-4 text-green-600" />
+                <span>Instant Activation</span>
+              </div>
+              <div className="w-1 h-4 bg-gray-300"></div>
+              <div className="flex items-center gap-2">
+                <Gift className="w-4 h-4 text-green-600" />
+                <span>No Hidden Charges</span>
+              </div>
+            </div>
           </div>
 
           {/* Premium Plans */}
@@ -135,8 +195,27 @@ export default function StorePage() {
                       <span>Read Receipts</span>
                     </li>
                   </ul>
-                  <Button className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600">
-                    Choose Premium Monthly
+                  <Button
+                    onClick={() =>
+                      openPaymentModal({
+                        type: "plan",
+                        name: "Premium Monthly",
+                        price: 999,
+                        description: "1 month of premium access",
+                        features: [
+                          "Unlimited Super Likes",
+                          "Priority Profile Visibility",
+                          "Advanced Matching Filters",
+                          "Message Highlights (10/month)",
+                          "See Who Liked You",
+                          "Read Receipts",
+                        ],
+                      })
+                    }
+                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                    disabled={profile?.account_status === "premium"}
+                  >
+                    {profile?.account_status === "premium" ? "Already Premium" : "Choose Premium Monthly"}
                   </Button>
                 </CardContent>
               </Card>
@@ -179,8 +258,26 @@ export default function StorePage() {
                       <span>Profile Boost (2x/month)</span>
                     </li>
                   </ul>
-                  <Button className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600">
-                    Choose Premium Annual
+                  <Button
+                    onClick={() =>
+                      openPaymentModal({
+                        type: "plan",
+                        name: "Premium Annual",
+                        price: 5999,
+                        description: "12 months of premium access",
+                        features: [
+                          "Everything in Premium Monthly",
+                          "Unlimited Message Highlights",
+                          "Priority Customer Support",
+                          "Exclusive Events Access",
+                          "Profile Boost (2x/month)",
+                        ],
+                      })
+                    }
+                    className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600"
+                    disabled={profile?.account_status === "premium"}
+                  >
+                    {profile?.account_status === "premium" ? "Already Premium" : "Choose Premium Annual"}
                   </Button>
                 </CardContent>
               </Card>
@@ -209,6 +306,15 @@ export default function StorePage() {
                     <div className="text-2xl font-bold text-blue-600 mb-4">₹{pkg.price}</div>
                     <p className="text-sm text-gray-600 mb-4">₹{Math.round(pkg.price / pkg.count)} per Super Like</p>
                     <Button
+                      onClick={() =>
+                        openPaymentModal({
+                          type: "superlike",
+                          name: `${pkg.count} Super Likes`,
+                          price: pkg.price,
+                          description: `Get ${pkg.count} Super Likes to stand out`,
+                          count: pkg.count,
+                        })
+                      }
                       className={`w-full ${pkg.popular ? "bg-blue-600 hover:bg-blue-700" : "bg-gray-600 hover:bg-gray-700"}`}
                     >
                       Buy Now
@@ -241,6 +347,15 @@ export default function StorePage() {
                     <div className="text-2xl font-bold text-purple-600 mb-4">₹{pkg.price}</div>
                     <p className="text-sm text-gray-600 mb-4">₹{Math.round(pkg.price / pkg.count)} per Highlight</p>
                     <Button
+                      onClick={() =>
+                        openPaymentModal({
+                          type: "highlight",
+                          name: `${pkg.count} Message Highlights`,
+                          price: pkg.price,
+                          description: `Get ${pkg.count} Message Highlights to stand out`,
+                          count: pkg.count,
+                        })
+                      }
                       className={`w-full ${pkg.popular ? "bg-purple-600 hover:bg-purple-700" : "bg-gray-600 hover:bg-gray-700"}`}
                     >
                       Buy Now
@@ -327,6 +442,18 @@ export default function StorePage() {
           </div>
         </div>
       </main>
+
+      {/* Payment Modal */}
+      {paymentModal.item && (
+        <PaymentModal
+          isOpen={paymentModal.isOpen}
+          onClose={closePaymentModal}
+          item={paymentModal.item}
+          onSuccess={handlePaymentSuccess}
+        />
+      )}
+
+      <Toaster position="top-center" />
     </div>
   )
 }

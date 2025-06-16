@@ -144,6 +144,7 @@ export default function SignupSection() {
             full_name: `${formData.firstName} ${formData.lastName}`,
             mobile_number: formData.mobileNumber,
             email_verified: !!authData.user.email_confirmed_at,
+            verification_status: 'pending',
             onboarding_completed: false,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),

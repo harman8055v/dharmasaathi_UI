@@ -136,7 +136,7 @@ DharmaSaathi is India’s first spiritual matrimony and conscious dating platfor
 PRD.md — Product Requirements Document (full MVP spec)
 AGENTS.md — Agent/dev guide for Codex and contributors
 db_schema.md — Database schema (Supabase/PostgreSQL)
-.env.example — Example environment variable file
+.env.local — Environment variables for development
 
 
 ---
@@ -154,11 +154,17 @@ npm install
 
 **3. Set up environment variables
 
-Copy .env.example to .env.local and fill in your actual keys:
+Create a `.env.local` file and fill in your actual keys:
 
 \`\`\`
 NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+# Razorpay credentials for payments
+RAZORPAY_KEY_ID=your-razorpay-key-id
+RAZORPAY_KEY_SECRET=your-razorpay-key-secret
+NEXT_PUBLIC_RAZORPAY_KEY_ID=your-razorpay-key-id
+# Enable extra logging locally
+NEXT_PUBLIC_DEBUG=false
 # (Do NOT expose secret keys on frontend!)
 \`\`\`
 

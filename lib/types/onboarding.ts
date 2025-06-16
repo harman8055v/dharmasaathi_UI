@@ -9,6 +9,7 @@ export interface OnboardingData {
   // Personal info
   gender: "Male" | "Female" | "Other" | null
   birthdate: string | null
+  height: string | null
   city: string | null
   state: string | null
   country: string | null
@@ -41,6 +42,7 @@ export interface OnboardingProfile extends OnboardingData {
   first_name?: string
   last_name?: string
   mobile_number?: string
+  verification_status?: 'pending' | 'verified' | 'rejected'
   onboarding_completed?: boolean
   updated_at?: string
 }
