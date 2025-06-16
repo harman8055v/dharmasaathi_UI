@@ -2,9 +2,8 @@
 
 import { useState, useRef } from "react"
 import { motion, useMotionValue, useTransform, type PanInfo } from "framer-motion"
-import { Heart, X, MapPin, Briefcase, Calendar, GraduationCap, Sparkles, Star } from "lucide-react"
+import { Heart, X, MapPin, Briefcase, Calendar, GraduationCap, Sparkles, Star, Info } from "lucide-react"
 import Image from "next/image"
-import { useSwipeable } from "react-swipeable"
 
 interface SwipeCardProps {
   profile: any
@@ -16,6 +15,7 @@ interface SwipeCardProps {
 export default function SwipeCard({ profile, onSwipe, isTop, index }: SwipeCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
+  const [photoSwipeX, setPhotoSwipeX] = useState(0)
   const cardRef = useRef<HTMLDivElement>(null)
   const x = useMotionValue(0)
   const y = useMotionValue(0)
@@ -74,17 +74,18 @@ export default function SwipeCard({ profile, onSwipe, isTop, index }: SwipeCardP
     return "/placeholder.svg"
   }
 
+  const handlePhotoSwipe = (direction: "left" | "right") => {
+    if (direction === "right") {
+      nextImage()
+    } else {
+      prevImage()
+    }
+  }
+
   const nopeOpacity = useTransform(x, [-150, -50], [1, 0])
   const nopeRotate = useTransform(x, [-150, -50], [-30, 0])
   const likeOpacity = useTransform(x, [50, 150], [0, 1])
   const likeRotate = useTransform(x, [50, 150], [0, 30])
-
-  const swipeHandlers = useSwipeable({
-    onSwipedLeft: () => nextImage(),
-    onSwipedRight: () => prevImage(),
-    preventDefaultTouchmoveEvent: true,
-    trackMouse: false,
-  })
 
   if (!isTop && !isExpanded) {
     return (
@@ -115,7 +116,7 @@ export default function SwipeCard({ profile, onSwipe, isTop, index }: SwipeCardP
     <>
       <motion.div
         ref={cardRef}
-        className="absolute inset-0 bg-white rounded-3xl shadow-2xl border border-gray-200 cursor-pointer overflow-hidden"
+        className="absolute inset-0 bg-white rounded-3xl shadow-2xl border border-gray-200 overflow-hidden"
         style={{
           x,
           y: isExpanded ? y : 0,
@@ -126,12 +127,11 @@ export default function SwipeCard({ profile, onSwipe, isTop, index }: SwipeCardP
         drag={false}
         whileTap={{ scale: isExpanded ? 1 : 0.95 }}
         layout
-        onClick={() => setIsExpanded(true)}
       >
         {/* Main Card Content */}
         <div className="relative w-full h-full">
           {/* Image Section */}
-          <div className="relative h-full" {...swipeHandlers}>
+          <div className="relative h-full">
             <Image
               src={getCurrentImage() || "/placeholder.svg"}
               alt={`${profile.first_name} ${profile.last_name}`}
@@ -226,6 +226,61 @@ export default function SwipeCard({ profile, onSwipe, isTop, index }: SwipeCardP
                 </div>
               </div>
             </div>
+
+            {/* Action Buttons - Right Bottom Corner */}
+            <div className="absolute bottom-4 right-4 flex flex-col gap-3 z-20">
+              {/* View Profile Button */}
+              <motion.button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setIsExpanded(true)
+                }}
+                className="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center text-gray-700 hover:bg-white transition-colors"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+              >
+                <Info className="w-6 h-6" />
+              </motion.button>
+
+              {/* Dislike Button */}
+              <motion.button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleDislike()
+                }}
+                className="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center text-red-500 hover:bg-white transition-colors"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+              >
+                <X className="w-6 h-6" />
+              </motion.button>
+
+              {/* Super Like Button */}
+              <motion.button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  // handleSuperLike()
+                }}
+                className="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center text-blue-500 hover:bg-white transition-colors"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+              >
+                <Star className="w-6 h-6" />
+              </motion.button>
+
+              {/* Like Button */}
+              <motion.button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleLike()
+                }}
+                className="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center text-green-500 hover:bg-white transition-colors"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+              >
+                <Heart className="w-6 h-6" />
+              </motion.button>
+            </div>
           </div>
 
           {/* Swipe Indicators */}
@@ -248,45 +303,6 @@ export default function SwipeCard({ profile, onSwipe, isTop, index }: SwipeCardP
           >
             LIKE
           </motion.div>
-
-          {/* Action Buttons */}
-          <div className="absolute bottom-4 right-4 flex flex-col gap-2">
-            <motion.button
-              onClick={(e) => {
-                e.stopPropagation()
-                handleDislike()
-              }}
-              className="w-12 h-12 rounded-full bg-white/70 hover:bg-white/90 transition-colors flex items-center justify-center shadow-md"
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-            >
-              <X className="w-6 h-6 text-gray-700" />
-            </motion.button>
-
-            <motion.button
-              onClick={(e) => {
-                e.stopPropagation()
-                // handleSuperLike() // Implement superlike logic
-              }}
-              className="w-12 h-12 rounded-full bg-white/70 hover:bg-white/90 transition-colors flex items-center justify-center shadow-md"
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-            >
-              <Star className="w-6 h-6 text-blue-500" />
-            </motion.button>
-
-            <motion.button
-              onClick={(e) => {
-                e.stopPropagation()
-                handleLike()
-              }}
-              className="w-12 h-12 rounded-full bg-white/70 hover:bg-white/90 transition-colors flex items-center justify-center shadow-md"
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-            >
-              <Heart className="w-6 h-6 text-red-500" />
-            </motion.button>
-          </div>
         </div>
       </motion.div>
 
@@ -300,7 +316,7 @@ export default function SwipeCard({ profile, onSwipe, isTop, index }: SwipeCardP
           onClick={() => setIsExpanded(false)}
         >
           <motion.div
-            className="w-full bg-white rounded-t-3xl max-h-[80vh] overflow-y-auto relative"
+            className="w-full bg-white rounded-t-3xl max-h-[85vh] overflow-y-auto relative"
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
@@ -315,7 +331,7 @@ export default function SwipeCard({ profile, onSwipe, isTop, index }: SwipeCardP
               <X className="w-6 h-6 text-gray-700" />
             </button>
 
-            <div className="p-6">
+            <div className="p-6 pb-20">
               {/* Handle */}
               <div className="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-6" />
 
@@ -338,42 +354,54 @@ export default function SwipeCard({ profile, onSwipe, isTop, index }: SwipeCardP
                 </div>
               </div>
 
-              {/* Image Carousel */}
-              <div className="relative mb-6">
-                <Image
-                  src={profile.user_photos?.[currentImageIndex] || "/placeholder.svg"}
-                  alt={`${profile.first_name} ${profile.last_name} - Image ${currentImageIndex + 1}`}
-                  width={500}
-                  height={400}
-                  className="w-full rounded-lg object-cover aspect-[5/4]"
-                />
-                {profile.user_photos && profile.user_photos.length > 1 && (
-                  <>
-                    <button
-                      onClick={prevImage}
-                      className="absolute left-2 top-1/2 transform -translate-y-1/2 w-10 h-10 bg-black/30 rounded-full flex items-center justify-center text-white hover:bg-black/50 transition-colors z-10"
-                    >
-                      ←
-                    </button>
-                    <button
-                      onClick={nextImage}
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 w-10 h-10 bg-black/30 rounded-full flex items-center justify-center text-white hover:bg-black/50 transition-colors z-10"
-                    >
-                      →
-                    </button>
-                    <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex gap-2 z-10">
-                      {profile.user_photos.map((_: any, idx: number) => (
-                        <div
-                          key={idx}
-                          className={`w-2 h-2 rounded-full transition-colors ${
-                            idx === currentImageIndex ? "bg-white" : "bg-white/50"
-                          }`}
+              {/* Swipeable Photo Gallery */}
+              {profile.user_photos && profile.user_photos.length > 0 && (
+                <div className="relative mb-6">
+                  <motion.div
+                    className="flex"
+                    drag="x"
+                    dragConstraints={{ left: -(profile.user_photos.length - 1) * 300, right: 0 }}
+                    onDragEnd={(event, info) => {
+                      const threshold = 50
+                      if (info.offset.x > threshold) {
+                        prevImage()
+                      } else if (info.offset.x < -threshold) {
+                        nextImage()
+                      }
+                    }}
+                  >
+                    {profile.user_photos.map((photo: string, idx: number) => (
+                      <motion.div
+                        key={idx}
+                        className="min-w-full relative"
+                        animate={{ x: -currentImageIndex * 100 + "%" }}
+                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                      >
+                        <Image
+                          src={photo || "/placeholder.svg"}
+                          alt={`${profile.first_name} ${profile.last_name} - Photo ${idx + 1}`}
+                          width={500}
+                          height={400}
+                          className="w-full rounded-lg object-cover aspect-[5/4]"
                         />
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
+                      </motion.div>
+                    ))}
+                  </motion.div>
+
+                  {/* Photo Navigation Dots */}
+                  <div className="flex justify-center gap-2 mt-4">
+                    {profile.user_photos.map((_: any, idx: number) => (
+                      <button
+                        key={idx}
+                        onClick={() => setCurrentImageIndex(idx)}
+                        className={`w-3 h-3 rounded-full transition-colors ${
+                          idx === currentImageIndex ? "bg-orange-500" : "bg-gray-300"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* About Section */}
               {profile.about_me && (
@@ -423,45 +451,6 @@ export default function SwipeCard({ profile, onSwipe, isTop, index }: SwipeCardP
                     <div>
                       <p className="text-sm text-gray-500">Diet</p>
                       <p className="font-medium">{profile.diet}</p>
-                    </div>
-                  </div>
-                )}
-
-                {profile.height && (
-                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="currentColor"
-                      className="w-5 h-5 text-gray-500"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M3.75 3h16.5a.75.75 0 01.75.75v16.5a.75.75 0 01-.75.75H3.75a.75.75 0 01-.75-.75V3.75A.75.75 0 013.75 3zM5.25 4.5a.75.75 0 00-.75.75v1.5h15v-1.5a.75.75 0 00-.75-.75H5.25zM4.5 12a.75.75 0 01.75-.75h13.5a.75.75 0 010 1.5H5.25A.75.75 0 014.5 12zm0 5.25a.75.75 0 01.75-.75h13.5a.75.75 0 010 1.5H5.25A.75.75 0 014.5 17.25z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-
-                    <div>
-                      <p className="text-sm text-gray-500">Height</p>
-                      <p className="font-medium">{profile.height}</p>
-                    </div>
-                  </div>
-                )}
-
-                {profile.body_type && (
-                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="currentColor"
-                      className="w-5 h-5 text-gray-500"
-                    >
-                      <path d="M6.75 2.25A.75.75 0 017.5 3v1.5h9V3a.75.75 0 011.5 0v1.5h.75a3 3 0 013 3V15a3 3 0 01-3 3h-.75v1.5a.75.75 0 01-1.5 0V18h-9v1.5a.75.75 0 01-1.5 0V18H6.75a3 3 0 01-3-3V7.5a3 3 0 013-3h.75V3a.75.75 0 01.75-.75zM7.5 6v9h9V6h-9z" />
-                    </svg>
-                    <div>
-                      <p className="text-sm text-gray-500">Body Type</p>
-                      <p className="font-medium">{profile.body_type}</p>
                     </div>
                   </div>
                 )}

@@ -72,7 +72,7 @@ export default function SwipeStack({ profiles, onSwipe }: SwipeStackProps) {
   return (
     <div className="flex flex-col h-full">
       {/* Card Stack */}
-      <div className="relative px-4 py-4 h-[calc(100vh-280px)]">
+      <div className="relative px-4 py-4 h-[calc(100vh-200px)]">
         <div className="relative w-full max-w-sm mx-auto h-full">
           <AnimatePresence mode="popLayout">
             {visibleProfiles.map((profile, index) => (
