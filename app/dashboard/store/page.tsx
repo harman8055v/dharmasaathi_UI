@@ -444,12 +444,14 @@ export default function StorePage() {
       </main>
 
       {/* Payment Modal */}
-      <PaymentModal
-        isOpen={paymentModal.isOpen}
-        onClose={closePaymentModal}
-        item={paymentModal.item}
-        onSuccess={handlePaymentSuccess}
-      />
+      {paymentModal.item && (
+        <PaymentModal
+          isOpen={paymentModal.isOpen}
+          onClose={closePaymentModal}
+          item={paymentModal.item}
+          onSuccess={handlePaymentSuccess}
+        />
+      )}
 
       <Toaster position="top-center" />
     </div>
