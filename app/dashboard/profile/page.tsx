@@ -1,52 +1,63 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { supabase } from "@/lib/supabase"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ArrowLeft, Edit, Camera, MapPin, Briefcase, Heart } from "lucide-react"
-import MobileNav from "@/components/dashboard/mobile-nav"
-import ProfileImageUploader from "@/components/dashboard/profile-image-uploader"
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  ArrowLeft,
+  Edit,
+  Camera,
+  MapPin,
+  Briefcase,
+  Heart,
+} from "lucide-react";
+import MobileNav from "@/components/dashboard/mobile-nav";
+import ProfileImageUploader from "@/components/dashboard/profile-image-uploader";
 
 export default function ProfilePage() {
-  const [user, setUser] = useState<any>(null)
-  const [profile, setProfile] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
-  const router = useRouter()
-  const [userImages, setUserImages] = useState<string[]>([])
+  const [user, setUser] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+  const [userImages, setUserImages] = useState<string[]>([]);
 
   useEffect(() => {
     async function getUser() {
       try {
         const {
           data: { user },
-        } = await supabase.auth.getUser()
+        } = await supabase.auth.getUser();
         if (!user) {
-          router.push("/")
-          return
+          router.push("/");
+          return;
         }
 
-        setUser(user)
+        setUser(user);
 
-        const { data: profileData, error } = await supabase.from("users").select("*").eq("id", user.id).single()
+        const { data: profileData, error } = await supabase
+          .from("users")
+          .select("*")
+          .eq("id", user.id)
+          .single();
 
         if (error) {
-          console.error("Error fetching profile:", error)
-          return
+          console.error("Error fetching profile:", error);
+          return;
         }
 
-        setProfile(profileData)
-        setUserImages(profileData.user_photos || [])
-        setLoading(false)
+        setProfile(profileData);
+        setUserImages(profileData.user_photos || []);
+        setLoading(false);
       } catch (error) {
-        console.error("Error:", error)
-        router.push("/")
+        console.error("Error:", error);
+        router.push("/");
       }
     }
 
-    getUser()
-  }, [router])
+    getUser();
+  }, [router]);
 
   if (loading) {
     return (
@@ -56,20 +67,23 @@ export default function ProfilePage() {
           <p className="text-gray-600">Loading your profile...</p>
         </div>
       </div>
-    )
+    );
   }
 
   const calculateAge = (birthdate: string) => {
-    if (!birthdate) return "N/A"
-    const today = new Date()
-    const birth = new Date(birthdate)
-    let age = today.getFullYear() - birth.getFullYear()
-    const monthDiff = today.getMonth() - birth.getMonth()
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-      age--
+    if (!birthdate) return "N/A";
+    const today = new Date();
+    const birth = new Date(birthdate);
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+    if (
+      monthDiff < 0 ||
+      (monthDiff === 0 && today.getDate() < birth.getDate())
+    ) {
+      age--;
     }
-    return age
-  }
+    return age;
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50">
@@ -81,7 +95,12 @@ export default function ProfilePage() {
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <Button variant="ghost" size="sm" onClick={() => router.back()} className="p-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => router.back()}
+                className="p-2"
+              >
                 <ArrowLeft className="w-5 h-5" />
               </Button>
               <div>
@@ -160,17 +179,23 @@ export default function ProfilePage() {
                   <div>
                     <p className="text-sm text-gray-500">Date of Birth</p>
                     <p className="font-medium">
-                      {profile?.birthdate ? new Date(profile.birthdate).toLocaleDateString() : "Not specified"}
+                      {profile?.birthdate
+                        ? new Date(profile.birthdate).toLocaleDateString()
+                        : "Not specified"}
                     </p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Height</p>
-                    <p className="font-medium">{profile?.height || "Not specified"}</p>
+                    <p className="font-medium">
+                      {profile?.height || "Not specified"}
+                    </p>
                   </div>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Mother Tongue</p>
-                  <p className="font-medium">{profile?.mother_tongue || "Not specified"}</p>
+                  <p className="font-medium">
+                    {profile?.mother_tongue || "Not specified"}
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -186,11 +211,15 @@ export default function ProfilePage() {
               <CardContent className="space-y-4">
                 <div>
                   <p className="text-sm text-gray-500">Education</p>
-                  <p className="font-medium">{profile?.education || "Not specified"}</p>
+                  <p className="font-medium">
+                    {profile?.education || "Not specified"}
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Profession</p>
-                  <p className="font-medium">{profile?.profession || "Not specified"}</p>
+                  <p className="font-medium">
+                    {profile?.profession || "Not specified"}
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -206,21 +235,34 @@ export default function ProfilePage() {
               <CardContent className="space-y-4">
                 <div>
                   <p className="text-sm text-gray-500">Diet</p>
-                  <p className="font-medium">{profile?.diet || "Not specified"}</p>
+                  <p className="font-medium">
+                    {profile?.diet || "Not specified"}
+                  </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">Temple Visit Frequency</p>
-                  <p className="font-medium">{profile?.temple_visit_freq || "Not specified"}</p>
+                  <p className="text-sm text-gray-500">
+                    Temple Visit Frequency
+                  </p>
+                  <p className="font-medium">
+                    {profile?.temple_visit_freq || "Not specified"}
+                  </p>
                 </div>
                 {profile?.spiritual_org && profile.spiritual_org.length > 0 && (
                   <div>
-                    <p className="text-sm text-gray-500">Spiritual Organizations</p>
+                    <p className="text-sm text-gray-500">
+                      Spiritual Organizations
+                    </p>
                     <div className="flex flex-wrap gap-2 mt-1">
-                      {profile.spiritual_org.map((org: string, index: number) => (
-                        <span key={index} className="px-2 py-1 bg-orange-100 text-orange-700 text-sm rounded-full">
-                          {org}
-                        </span>
-                      ))}
+                      {profile.spiritual_org.map(
+                        (org: string, index: number) => (
+                          <span
+                            key={index}
+                            className="px-2 py-1 bg-orange-100 text-orange-700 text-sm rounded-full"
+                          >
+                            {org}
+                          </span>
+                        ),
+                      )}
                     </div>
                   </div>
                 )}
@@ -234,7 +276,23 @@ export default function ProfilePage() {
                   <CardTitle>About Me</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-700 leading-relaxed">{profile.about_me}</p>
+                  <p className="text-gray-700 leading-relaxed">
+                    {profile.about_me}
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Favourite Quote */}
+            {profile?.favorite_quote && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Favourite Quote</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-700 italic">
+                    "{profile.favorite_quote}"
+                  </p>
                 </CardContent>
               </Card>
             )}
@@ -242,5 +300,5 @@ export default function ProfilePage() {
         </div>
       </main>
     </div>
-  )
+  );
 }

@@ -1,143 +1,166 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useState } from "react"
-import { Loader2, Upload, X } from 'lucide-react'
-import Image from "next/image"
-import type { OnboardingData } from "@/lib/types/onboarding"
+import type React from "react";
+import { useState } from "react";
+import { Loader2, Upload, X } from "lucide-react";
+import Image from "next/image";
+import type { OnboardingData } from "@/lib/types/onboarding";
 
 interface FullBloomStageProps {
-  formData: OnboardingData
-  onChange: (updates: Partial<OnboardingData>) => void
-  onNext: (updates: Partial<OnboardingData>) => void // Changed
-  isLoading: boolean
-  error?: string | null
+  formData: OnboardingData;
+  onChange: (updates: Partial<OnboardingData>) => void;
+  onNext: (updates: Partial<OnboardingData>) => void; // Changed
+  isLoading: boolean;
+  error?: string | null;
 }
 
-export default function FullBloomStage({ formData, onChange, onNext, isLoading, error }: FullBloomStageProps) {
+export default function FullBloomStage({
+  formData,
+  onChange,
+  onNext,
+  isLoading,
+  error,
+}: FullBloomStageProps) {
   // Destructure with null defaults
-  const { about_me = null, partner_expectations = null, user_photos = [] } = formData
+  const {
+    about_me = null,
+    partner_expectations = null,
+    user_photos = [],
+    favorite_quote = null,
+  } = formData;
 
   const [localFormData, setLocalFormData] = useState({
     about_me: about_me || "",
     partner_expectations: partner_expectations || "",
-  })
-  const [photos, setPhotos] = useState<File[]>([])
-  const [photoUrls, setPhotoUrls] = useState<string[]>(user_photos)
-  const [uploading, setUploading] = useState(false)
-  const [errors, setErrors] = useState<Record<string, string>>({})
+    favorite_quote: favorite_quote || "",
+  });
+  const [photos, setPhotos] = useState<File[]>([]);
+  const [photoUrls, setPhotoUrls] = useState<string[]>(user_photos);
+  const [uploading, setUploading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setLocalFormData((prev) => ({ ...prev, [name]: value }))
+  const handleChange = (
+    e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>,
+  ) => {
+    const { name, value } = e.target;
+    setLocalFormData((prev) => ({ ...prev, [name]: value }));
 
     // Clear errors
     if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }))
+      setErrors((prev) => ({ ...prev, [name]: "" }));
     }
-  }
+  };
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      const newPhotos = Array.from(e.target.files)
+      const newPhotos = Array.from(e.target.files);
       if (photoUrls.length + photos.length + newPhotos.length <= 6) {
-        setPhotos((prev) => [...prev, ...newPhotos])
+        setPhotos((prev) => [...prev, ...newPhotos]);
       } else {
-        alert("You can upload a maximum of 6 photos")
+        alert("You can upload a maximum of 6 photos");
       }
     }
-  }
+  };
 
   const handleRemovePhoto = (index: number) => {
-    setPhotos((prev) => prev.filter((_, i) => i !== index))
-  }
+    setPhotos((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const handleRemoveUploadedPhoto = (url: string) => {
-    setPhotoUrls((prev) => prev.filter((photoUrl) => photoUrl !== url))
-  }
+    setPhotoUrls((prev) => prev.filter((photoUrl) => photoUrl !== url));
+  };
 
   const uploadPhotos = async () => {
-    if (photos.length === 0) return photoUrls
+    if (photos.length === 0) return photoUrls;
 
-    setUploading(true)
-    const uploadedUrls = [...photoUrls]
+    setUploading(true);
+    const uploadedUrls = [...photoUrls];
 
     try {
       for (const photo of photos) {
         // Simulate upload delay
-        await new Promise((resolve) => setTimeout(resolve, 500))
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         // Simulate URL generation
-        const url = URL.createObjectURL(photo)
-        uploadedUrls.push(url)
+        const url = URL.createObjectURL(photo);
+        uploadedUrls.push(url);
       }
 
-      return uploadedUrls
+      return uploadedUrls;
     } catch (error) {
-      console.error("Error uploading photos:", error)
-      return photoUrls
+      console.error("Error uploading photos:", error);
+      return photoUrls;
     } finally {
-      setUploading(false)
+      setUploading(false);
     }
-  }
+  };
 
   const validateForm = () => {
-    const newErrors: Record<string, string> = {}
+    const newErrors: Record<string, string> = {};
 
     if (!localFormData.about_me.trim()) {
-      newErrors.about_me = "Please tell us about yourself"
+      newErrors.about_me = "Please tell us about yourself";
     }
 
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (!validateForm()) {
-      return
+      return;
     }
 
     try {
-      const uploadedPhotoUrls = await uploadPhotos()
+      const uploadedPhotoUrls = await uploadPhotos();
 
       const dataToSave: Partial<OnboardingData> = {
         about_me: localFormData.about_me.trim() || null,
         partner_expectations: localFormData.partner_expectations.trim() || null,
+        favorite_quote: localFormData.favorite_quote.trim() || null,
         user_photos: uploadedPhotoUrls,
-      }
+      };
 
       // Pass the data directly to onNext, which will handle saving and moving to the next stage
-      onNext(dataToSave)
+      onNext(dataToSave);
     } catch (error) {
-      console.error("Error submitting form:", error)
+      console.error("Error submitting form:", error);
       // You might want to set a local error state here if photo upload fails
     }
-  }
+  };
 
   const handleSkip = () => {
     const dataToSave: Partial<OnboardingData> = {
       about_me: null,
       partner_expectations: null,
+      favorite_quote: null,
       user_photos: [],
-    }
-    onChange(dataToSave) // Update local form data
-    onNext(dataToSave) // Trigger save and next stage
-  }
+    };
+    onChange(dataToSave); // Update local form data
+    onNext(dataToSave); // Trigger save and next stage
+  };
 
   return (
     <div className="space-y-6">
       <div className="text-center mb-6">
         <div className="text-4xl mb-4">🌸</div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Your blossom is complete—add the finishing touches!</h2>
-        <p className="text-gray-600">Share your story and what you're looking for in a partner</p>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          Your blossom is complete—add the finishing touches!
+        </h2>
+        <p className="text-gray-600">
+          Share your story and what you're looking for in a partner
+        </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* About Me */}
         <div className="space-y-2">
-          <label htmlFor="about_me" className="block text-sm font-medium text-foreground">
+          <label
+            htmlFor="about_me"
+            className="block text-sm font-medium text-foreground"
+          >
             About Me *
           </label>
           <textarea
@@ -151,12 +174,17 @@ export default function FullBloomStage({ formData, onChange, onNext, isLoading, 
               errors.about_me ? "border-red-300" : ""
             }`}
           />
-          {errors.about_me && <p className="text-red-500 text-sm">{errors.about_me}</p>}
+          {errors.about_me && (
+            <p className="text-red-500 text-sm">{errors.about_me}</p>
+          )}
         </div>
 
         {/* Partner Expectations */}
         <div className="space-y-2">
-          <label htmlFor="partner_expectations" className="block text-sm font-medium text-foreground">
+          <label
+            htmlFor="partner_expectations"
+            className="block text-sm font-medium text-foreground"
+          >
             Partner Expectations
           </label>
           <textarea
@@ -170,16 +198,45 @@ export default function FullBloomStage({ formData, onChange, onNext, isLoading, 
           />
         </div>
 
+        {/* Favorite Quote */}
+        <div className="space-y-2">
+          <label
+            htmlFor="favorite_quote"
+            className="block text-sm font-medium text-foreground"
+          >
+            Favorite Spiritual Quote (optional)
+          </label>
+          <input
+            id="favorite_quote"
+            name="favorite_quote"
+            type="text"
+            value={localFormData.favorite_quote}
+            onChange={handleChange}
+            placeholder="Share a quote that inspires you"
+            className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
+          />
+        </div>
+
         {/* Photo Upload */}
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-foreground">Upload Photos (Max 6)</label>
+          <label className="block text-sm font-medium text-foreground">
+            Upload Photos (Max 6)
+          </label>
 
           {/* Photo Grid */}
           <div className="grid grid-cols-3 gap-2 mb-4">
             {/* Existing Photos */}
             {photoUrls.map((url, index) => (
-              <div key={`uploaded-${index}`} className="relative aspect-square bg-muted rounded-md overflow-hidden">
-                <Image src={url || "/placeholder.svg"} alt={`User photo ${index + 1}`} fill className="object-cover" />
+              <div
+                key={`uploaded-${index}`}
+                className="relative aspect-square bg-muted rounded-md overflow-hidden"
+              >
+                <Image
+                  src={url || "/placeholder.svg"}
+                  alt={`User photo ${index + 1}`}
+                  fill
+                  className="object-cover"
+                />
                 <button
                   type="button"
                   onClick={() => handleRemoveUploadedPhoto(url)}
@@ -192,7 +249,10 @@ export default function FullBloomStage({ formData, onChange, onNext, isLoading, 
 
             {/* New Photos */}
             {photos.map((photo, index) => (
-              <div key={`new-${index}`} className="relative aspect-square bg-muted rounded-md overflow-hidden">
+              <div
+                key={`new-${index}`}
+                className="relative aspect-square bg-muted rounded-md overflow-hidden"
+              >
                 <Image
                   src={URL.createObjectURL(photo) || "/placeholder.svg"}
                   alt={`New photo ${index + 1}`}
@@ -214,7 +274,13 @@ export default function FullBloomStage({ formData, onChange, onNext, isLoading, 
               <label className="aspect-square flex flex-col items-center justify-center border-2 border-dashed border-input rounded-md cursor-pointer hover:bg-muted/50">
                 <Upload className="h-6 w-6 text-muted-foreground mb-1" />
                 <span className="text-xs text-muted-foreground">Upload</span>
-                <input type="file" accept="image/*" onChange={handlePhotoChange} className="hidden" multiple />
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoChange}
+                  className="hidden"
+                  multiple
+                />
               </label>
             )}
           </div>
@@ -254,5 +320,5 @@ export default function FullBloomStage({ formData, onChange, onNext, isLoading, 
         </div>
       </form>
     </div>
-  )
+  );
 }

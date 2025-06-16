@@ -1,16 +1,28 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { supabase } from "@/lib/supabase"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useStates, useCities } from "@/lib/hooks/useLocations"
-import { SPIRITUAL_ORGS } from "@/lib/constants/spiritual-orgs"
-import { DAILY_PRACTICES } from "@/lib/constants/daily-practices"
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useStates, useCities } from "@/lib/hooks/useLocations";
+import { SPIRITUAL_ORGS } from "@/lib/constants/spiritual-orgs";
+import { DAILY_PRACTICES } from "@/lib/constants/daily-practices";
 import {
   ArrowLeft,
   MapPin,
@@ -24,7 +36,7 @@ import {
   Heart,
   Trash2,
   Ban,
-} from "lucide-react"
+} from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -33,34 +45,39 @@ import {
   DialogTitle,
   DialogDescription,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import MobileNav from "@/components/dashboard/mobile-nav"
-import { toast } from "sonner"
-import { formatMobileNumber, validateMobileNumber } from "@/lib/types/onboarding"
+} from "@/components/ui/dialog";
+import MobileNav from "@/components/dashboard/mobile-nav";
+import { toast } from "sonner";
+import {
+  formatMobileNumber,
+  validateMobileNumber,
+} from "@/lib/types/onboarding";
 
 export default function AccountSettingsPage() {
-  const [user, setUser] = useState<any>(null)
-  const [profile, setProfile] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const router = useRouter()
+  const [user, setUser] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const router = useRouter();
 
   // Mobile verification states
-  const [mobileVerificationStep, setMobileVerificationStep] = useState<"edit" | "verify">("edit")
-  const [newMobileNumber, setNewMobileNumber] = useState("")
-  const [otp, setOtp] = useState("")
-  const [sendingOtp, setSendingOtp] = useState(false)
-  const [verifyingOtp, setVerifyingOtp] = useState(false)
-  const [resendTimer, setResendTimer] = useState(0)
+  const [mobileVerificationStep, setMobileVerificationStep] = useState<
+    "edit" | "verify"
+  >("edit");
+  const [newMobileNumber, setNewMobileNumber] = useState("");
+  const [otp, setOtp] = useState("");
+  const [sendingOtp, setSendingOtp] = useState(false);
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
+  const [resendTimer, setResendTimer] = useState(0);
 
-  const [deactivateOpen, setDeactivateOpen] = useState(false)
-  const [deleteOpen, setDeleteOpen] = useState(false)
-  const [processingDeactivate, setProcessingDeactivate] = useState(false)
-  const [processingDelete, setProcessingDelete] = useState(false)
+  const [deactivateOpen, setDeactivateOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [processingDeactivate, setProcessingDeactivate] = useState(false);
+  const [processingDelete, setProcessingDelete] = useState(false);
 
-  const statesList = useStates()
-  const selectedState = statesList.find((s) => s.name === formData.state)
-  const citiesList = useCities(selectedState?.state_code || null)
+  const statesList = useStates();
+  const selectedState = statesList.find((s) => s.name === formData.state);
+  const citiesList = useCities(selectedState?.state_code || null);
 
   const [formData, setFormData] = useState({
     first_name: "",
@@ -82,7 +99,8 @@ export default function AccountSettingsPage() {
     artha_vs_moksha: "",
     spiritual_org: [],
     daily_practices: [],
-  })
+    favorite_quote: "",
+  });
 
   const educationLevels = [
     "High School",
@@ -92,7 +110,7 @@ export default function AccountSettingsPage() {
     "Doctorate",
     "Professional Degree",
     "Other",
-  ]
+  ];
 
   const incomeRanges = [
     "Less than ₹5,00,000",
@@ -104,40 +122,39 @@ export default function AccountSettingsPage() {
     "₹75,00,000 - ₹1,00,00,000",
     "More than ₹1,00,00,000",
     "Prefer not to say",
-  ]
+  ];
 
-  const dietOptions = [
-    "Vegetarian",
-    "Vegan",
-    "Eggetarian",
-    "Non-Vegetarian",
-  ]
+  const dietOptions = ["Vegetarian", "Vegan", "Eggetarian", "Non-Vegetarian"];
 
-  const templeFreqOptions = ["Daily", "Weekly", "Monthly", "Rarely", "Never"]
-  const vanaprasthaOptions = ["yes", "no", "open"]
-  const arthaMokshaOptions = ["Artha-focused", "Moksha-focused", "Balance"]
+  const templeFreqOptions = ["Daily", "Weekly", "Monthly", "Rarely", "Never"];
+  const vanaprasthaOptions = ["yes", "no", "open"];
+  const arthaMokshaOptions = ["Artha-focused", "Moksha-focused", "Balance"];
 
   useEffect(() => {
     async function getUser() {
       try {
         const {
           data: { user },
-        } = await supabase.auth.getUser()
+        } = await supabase.auth.getUser();
         if (!user) {
-          router.push("/")
-          return
+          router.push("/");
+          return;
         }
 
-        setUser(user)
+        setUser(user);
 
-        const { data: profileData, error } = await supabase.from("users").select("*").eq("id", user.id).single()
+        const { data: profileData, error } = await supabase
+          .from("users")
+          .select("*")
+          .eq("id", user.id)
+          .single();
 
         if (error) {
-          console.error("Error fetching profile:", error)
-          return
+          console.error("Error fetching profile:", error);
+          return;
         }
 
-        setProfile(profileData)
+        setProfile(profileData);
         setFormData({
           first_name: profileData.first_name || "",
           last_name: profileData.last_name || "",
@@ -158,85 +175,89 @@ export default function AccountSettingsPage() {
           artha_vs_moksha: profileData.artha_vs_moksha || "",
           spiritual_org: profileData.spiritual_org || [],
           daily_practices: profileData.daily_practices || [],
-        })
-        setNewMobileNumber(profileData.mobile_number || "")
-        setLoading(false)
+          favorite_quote: profileData.favorite_quote || "",
+        });
+        setNewMobileNumber(profileData.mobile_number || "");
+        setLoading(false);
       } catch (error) {
-        console.error("Error:", error)
-        router.push("/")
+        console.error("Error:", error);
+        router.push("/");
       }
     }
 
-    getUser()
-  }, [router])
+    getUser();
+  }, [router]);
 
   const handleMobileNumberChange = (value: string) => {
-    const formatted = formatMobileNumber(value)
-    setNewMobileNumber(formatted)
-  }
+    const formatted = formatMobileNumber(value);
+    setNewMobileNumber(formatted);
+  };
 
   const handleSendOtp = async () => {
     if (!validateMobileNumber(newMobileNumber)) {
-      toast.error("Please enter a valid mobile number (e.g., +919876543210)")
-      return
+      toast.error("Please enter a valid mobile number (e.g., +919876543210)");
+      return;
     }
 
     if (newMobileNumber === formData.mobile_number) {
-      toast.error("Please enter a different mobile number")
-      return
+      toast.error("Please enter a different mobile number");
+      return;
     }
 
-    setSendingOtp(true)
+    setSendingOtp(true);
     try {
       // Update the user's phone number in auth.users table - same as onboarding
-      const { data: updateData, error: updateError } = await supabase.auth.updateUser({
-        phone: newMobileNumber,
-      })
+      const { data: updateData, error: updateError } =
+        await supabase.auth.updateUser({
+          phone: newMobileNumber,
+        });
 
-      if (updateError) throw updateError
+      if (updateError) throw updateError;
 
-      setMobileVerificationStep("verify")
-      setResendTimer(60)
-      toast.success(`OTP sent to ${newMobileNumber}`)
+      setMobileVerificationStep("verify");
+      setResendTimer(60);
+      toast.success(`OTP sent to ${newMobileNumber}`);
 
       // Start countdown timer
       const timer = setInterval(() => {
         setResendTimer((prev) => {
           if (prev <= 1) {
-            clearInterval(timer)
-            return 0
+            clearInterval(timer);
+            return 0;
           }
-          return prev - 1
-        })
-      }, 1000)
+          return prev - 1;
+        });
+      }, 1000);
     } catch (error: any) {
-      console.error("Send OTP error:", error)
+      console.error("Send OTP error:", error);
       if (error.message?.includes("Signups not allowed")) {
-        toast.error("OTP service is currently unavailable. Please try again later.")
+        toast.error(
+          "OTP service is currently unavailable. Please try again later.",
+        );
       } else {
-        toast.error("Failed to send OTP. Please try again.")
+        toast.error("Failed to send OTP. Please try again.");
       }
     } finally {
-      setSendingOtp(false)
+      setSendingOtp(false);
     }
-  }
+  };
 
   const handleVerifyOtp = async () => {
     if (!otp || otp.length !== 6) {
-      toast.error("Please enter a valid 6-digit OTP")
-      return
+      toast.error("Please enter a valid 6-digit OTP");
+      return;
     }
 
-    setVerifyingOtp(true)
+    setVerifyingOtp(true);
     try {
       // Verify OTP using the same method as onboarding
       const { data, error: verifyError } = await supabase.auth.verifyOtp({
         phone: newMobileNumber,
         token: otp,
         type: "phone_change",
-      })
+      });
 
-      if (verifyError) throw verifyError
+      if (verifyError) throw verifyError;
 
       if (data.user) {
         // Update the mobile_verified status in users table
@@ -247,78 +268,87 @@ export default function AccountSettingsPage() {
             mobile_verified: true,
             updated_at: new Date().toISOString(),
           })
-          .eq("id", data.user.id)
+          .eq("id", data.user.id);
 
         if (updateError) {
-          console.error("Error updating mobile_verified status:", updateError)
-          toast.error("OTP verified, but failed to update profile. Please contact support.")
-          return
+          console.error("Error updating mobile_verified status:", updateError);
+          toast.error(
+            "OTP verified, but failed to update profile. Please contact support.",
+          );
+          return;
         }
 
         // Update form data and reset verification state
-        setFormData({ ...formData, mobile_number: newMobileNumber })
-        setMobileVerificationStep("edit")
-        setOtp("")
-        toast.success("Mobile number verified and updated successfully!")
+        setFormData({ ...formData, mobile_number: newMobileNumber });
+        setMobileVerificationStep("edit");
+        setOtp("");
+        toast.success("Mobile number verified and updated successfully!");
 
         // Update profile state
-        setProfile({ ...profile, mobile_number: newMobileNumber, mobile_verified: true })
+        setProfile({
+          ...profile,
+          mobile_number: newMobileNumber,
+          mobile_verified: true,
+        });
       }
     } catch (error: any) {
-      console.error("Verify OTP error:", error)
-      if (error.message?.includes("Invalid token") || error.message?.includes("invalid")) {
-        toast.error("Invalid OTP. Please check and try again.")
+      console.error("Verify OTP error:", error);
+      if (
+        error.message?.includes("Invalid token") ||
+        error.message?.includes("invalid")
+      ) {
+        toast.error("Invalid OTP. Please check and try again.");
       } else if (error.message?.includes("expired")) {
-        toast.error("OTP has expired. Please request a new one.")
+        toast.error("OTP has expired. Please request a new one.");
       } else {
-        toast.error("Failed to verify OTP. Please try again.")
+        toast.error("Failed to verify OTP. Please try again.");
       }
     } finally {
-      setVerifyingOtp(false)
+      setVerifyingOtp(false);
     }
-  }
+  };
 
   const handleResendOtp = async () => {
-    if (resendTimer > 0) return
+    if (resendTimer > 0) return;
 
-    setSendingOtp(true)
+    setSendingOtp(true);
     try {
       const { error } = await supabase.auth.updateUser({
         phone: newMobileNumber,
-      })
+      });
 
-      if (error) throw error
+      if (error) throw error;
 
-      setResendTimer(60)
+      setResendTimer(60);
       const timer = setInterval(() => {
         setResendTimer((prev) => {
           if (prev <= 1) {
-            clearInterval(timer)
-            return 0
+            clearInterval(timer);
+            return 0;
           }
-          return prev - 1
-        })
-      }, 1000)
+          return prev - 1;
+        });
+      }, 1000);
 
-      toast.success("OTP resent successfully")
+      toast.success("OTP resent successfully");
     } catch (error: any) {
-      console.error("Resend OTP error:", error)
-      toast.error("Failed to resend OTP. Please try again.")
+      console.error("Resend OTP error:", error);
+      toast.error("Failed to resend OTP. Please try again.");
     } finally {
-      setSendingOtp(false)
+      setSendingOtp(false);
     }
-  }
+  };
 
   const cancelMobileVerification = () => {
-    setMobileVerificationStep("edit")
-    setNewMobileNumber(formData.mobile_number)
-    setOtp("")
-    setResendTimer(0)
-  }
+    setMobileVerificationStep("edit");
+    setNewMobileNumber(formData.mobile_number);
+    setOtp("");
+    setResendTimer(0);
+  };
 
   const handleDeactivateAccount = async () => {
-    if (!user) return
-    setProcessingDeactivate(true)
+    if (!user) return;
+    setProcessingDeactivate(true);
     try {
       const { error } = await supabase
         .from("users")
@@ -326,25 +356,25 @@ export default function AccountSettingsPage() {
           account_status: "deactivated",
           deactivated_at: new Date().toISOString(),
         })
-        .eq("id", user.id)
+        .eq("id", user.id);
 
-      if (error) throw error
+      if (error) throw error;
 
-      toast.success("Account deactivated")
-      await supabase.auth.signOut()
-      router.push("/")
+      toast.success("Account deactivated");
+      await supabase.auth.signOut();
+      router.push("/");
     } catch (error) {
-      console.error("Deactivate error:", error)
-      toast.error("Failed to deactivate account")
+      console.error("Deactivate error:", error);
+      toast.error("Failed to deactivate account");
     } finally {
-      setProcessingDeactivate(false)
-      setDeactivateOpen(false)
+      setProcessingDeactivate(false);
+      setDeactivateOpen(false);
     }
-  }
+  };
 
   const handleDeleteAccount = async () => {
-    if (!user) return
-    setProcessingDelete(true)
+    if (!user) return;
+    setProcessingDelete(true);
     try {
       const { error } = await supabase
         .from("users")
@@ -352,45 +382,48 @@ export default function AccountSettingsPage() {
           account_status: "deleted",
           deactivated_at: new Date().toISOString(),
         })
-        .eq("id", user.id)
+        .eq("id", user.id);
 
-      if (error) throw error
+      if (error) throw error;
 
-      toast.success("Account deleted")
-      await supabase.auth.signOut()
-      router.push("/")
+      toast.success("Account deleted");
+      await supabase.auth.signOut();
+      router.push("/");
     } catch (error) {
-      console.error("Delete error:", error)
-      toast.error("Failed to delete account")
+      console.error("Delete error:", error);
+      toast.error("Failed to delete account");
     } finally {
-      setProcessingDelete(false)
-      setDeleteOpen(false)
+      setProcessingDelete(false);
+      setDeleteOpen(false);
     }
-  }
+  };
 
   const handleSave = async () => {
-    setSaving(true)
+    setSaving(true);
     try {
-      const { error } = await supabase.from("users").update(formData).eq("id", user.id)
+      const { error } = await supabase
+        .from("users")
+        .update(formData)
+        .eq("id", user.id);
 
-      if (error) throw error
+      if (error) throw error;
 
-      toast.success("Account settings updated successfully!")
-      setProfile({ ...profile, ...formData })
+      toast.success("Account settings updated successfully!");
+      setProfile({ ...profile, ...formData });
     } catch (error) {
-      console.error("Error updating profile:", error)
-      toast.error("Failed to update account settings. Please try again.")
+      console.error("Error updating profile:", error);
+      toast.error("Failed to update account settings. Please try again.");
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
-  }
+  };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
       </div>
-    )
+    );
   }
 
   return (
@@ -401,11 +434,18 @@ export default function AccountSettingsPage() {
         <div className="max-w-2xl mx-auto">
           {/* Header */}
           <div className="flex items-center gap-3 mb-6">
-            <Button variant="ghost" size="sm" onClick={() => router.back()} className="p-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => router.back()}
+              className="p-2"
+            >
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Account Settings</h1>
+              <h1 className="text-2xl font-bold text-gray-900">
+                Account Settings
+              </h1>
               <p className="text-gray-600">Manage your personal information</p>
             </div>
           </div>
@@ -418,7 +458,9 @@ export default function AccountSettingsPage() {
                   <User className="w-5 h-5" />
                   Personal Information
                 </CardTitle>
-                <CardDescription>Update your basic personal details</CardDescription>
+                <CardDescription>
+                  Update your basic personal details
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
@@ -427,7 +469,9 @@ export default function AccountSettingsPage() {
                     <Input
                       id="first_name"
                       value={formData.first_name}
-                      onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, first_name: e.target.value })
+                      }
                       placeholder="Enter first name"
                     />
                   </div>
@@ -436,7 +480,9 @@ export default function AccountSettingsPage() {
                     <Input
                       id="last_name"
                       value={formData.last_name}
-                      onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, last_name: e.target.value })
+                      }
                       placeholder="Enter last name"
                     />
                   </div>
@@ -446,7 +492,9 @@ export default function AccountSettingsPage() {
                   <Label htmlFor="gender">Gender</Label>
                   <Select
                     value={formData.gender}
-                    onValueChange={(value) => setFormData({ ...formData, gender: value })}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, gender: value })
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select gender" />
@@ -465,7 +513,9 @@ export default function AccountSettingsPage() {
                     id="birthdate"
                     type="date"
                     value={formData.birthdate}
-                    onChange={(e) => setFormData({ ...formData, birthdate: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, birthdate: e.target.value })
+                    }
                   />
                 </div>
                 <div>
@@ -474,7 +524,9 @@ export default function AccountSettingsPage() {
                     id="height"
                     type="number"
                     value={formData.height}
-                    onChange={(e) => setFormData({ ...formData, height: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, height: e.target.value })
+                    }
                   />
                 </div>
               </CardContent>
@@ -487,7 +539,9 @@ export default function AccountSettingsPage() {
                   <Mail className="w-5 h-5" />
                   Contact Information
                 </CardTitle>
-                <CardDescription>Manage your email and phone number</CardDescription>
+                <CardDescription>
+                  Manage your email and phone number
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
@@ -496,14 +550,19 @@ export default function AccountSettingsPage() {
                     id="email"
                     type="email"
                     value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
                     placeholder="Enter email address"
                   />
                 </div>
 
                 {/* Mobile Number with OTP Verification */}
                 <div>
-                  <Label htmlFor="mobile_number" className="flex items-center gap-2">
+                  <Label
+                    htmlFor="mobile_number"
+                    className="flex items-center gap-2"
+                  >
                     Mobile Number
                     {formData.mobile_number && profile?.mobile_verified && (
                       <span className="flex items-center gap-1 text-xs text-green-600">
@@ -523,38 +582,48 @@ export default function AccountSettingsPage() {
                           id="mobile_number"
                           type="tel"
                           value={newMobileNumber}
-                          onChange={(e) => handleMobileNumberChange(e.target.value)}
+                          onChange={(e) =>
+                            handleMobileNumberChange(e.target.value)
+                          }
                           placeholder="+91 98765 43210"
                           className="pl-10"
                         />
                       </div>
-                      <p className="mt-1 text-xs text-gray-500">Include country code (e.g., +91 for India)</p>
-                      {newMobileNumber !== formData.mobile_number && newMobileNumber && (
-                        <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                          <Shield className="w-4 h-4 text-amber-600" />
-                          <div className="flex-1">
-                            <p className="text-sm text-amber-800">Mobile number change requires verification</p>
+                      <p className="mt-1 text-xs text-gray-500">
+                        Include country code (e.g., +91 for India)
+                      </p>
+                      {newMobileNumber !== formData.mobile_number &&
+                        newMobileNumber && (
+                          <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                            <Shield className="w-4 h-4 text-amber-600" />
+                            <div className="flex-1">
+                              <p className="text-sm text-amber-800">
+                                Mobile number change requires verification
+                              </p>
+                            </div>
+                            <Button
+                              onClick={handleSendOtp}
+                              disabled={sendingOtp}
+                              size="sm"
+                              className="bg-amber-600 hover:bg-amber-700"
+                            >
+                              {sendingOtp ? "Sending..." : "Verify"}
+                            </Button>
                           </div>
-                          <Button
-                            onClick={handleSendOtp}
-                            disabled={sendingOtp}
-                            size="sm"
-                            className="bg-amber-600 hover:bg-amber-700"
-                          >
-                            {sendingOtp ? "Sending..." : "Verify"}
-                          </Button>
-                        </div>
-                      )}
+                        )}
                     </div>
                   ) : (
                     <div className="space-y-4">
                       <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
                         <div className="flex items-center gap-2 mb-2">
                           <Phone className="w-4 h-4 text-green-600" />
-                          <span className="text-sm font-medium text-green-800">Verify New Mobile Number</span>
+                          <span className="text-sm font-medium text-green-800">
+                            Verify New Mobile Number
+                          </span>
                         </div>
                         <p className="text-sm text-green-700 mb-3">
-                          We've sent a 6-digit code to: <strong>{newMobileNumber}</strong>
+                          We've sent a 6-digit code to:{" "}
+                          <strong>{newMobileNumber}</strong>
                         </p>
 
                         <div className="space-y-3">
@@ -564,7 +633,9 @@ export default function AccountSettingsPage() {
                             pattern="[0-9]*"
                             maxLength={6}
                             value={otp}
-                            onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                            onChange={(e) =>
+                              setOtp(e.target.value.replace(/\D/g, ""))
+                            }
                             placeholder="Enter 6-digit OTP"
                             className="text-center text-lg tracking-widest"
                             autoFocus
@@ -578,7 +649,11 @@ export default function AccountSettingsPage() {
                             >
                               {verifyingOtp ? "Verifying..." : "Verify OTP"}
                             </Button>
-                            <Button onClick={cancelMobileVerification} variant="outline" className="flex-1">
+                            <Button
+                              onClick={cancelMobileVerification}
+                              variant="outline"
+                              className="flex-1"
+                            >
                               Cancel
                             </Button>
                           </div>
@@ -590,7 +665,9 @@ export default function AccountSettingsPage() {
                               disabled={resendTimer > 0 || sendingOtp}
                               className="text-sm text-green-600 hover:text-green-700 font-medium disabled:text-gray-400 disabled:cursor-not-allowed"
                             >
-                              {resendTimer > 0 ? `Resend OTP in ${resendTimer}s` : "Resend OTP"}
+                              {resendTimer > 0
+                                ? `Resend OTP in ${resendTimer}s`
+                                : "Resend OTP"}
                             </button>
                           </div>
                         </div>
@@ -599,8 +676,8 @@ export default function AccountSettingsPage() {
                       <button
                         type="button"
                         onClick={() => {
-                          setMobileVerificationStep("edit")
-                          setOtp("")
+                          setMobileVerificationStep("edit");
+                          setOtp("");
                         }}
                         className="w-full text-sm text-blue-600 hover:text-blue-700 underline"
                       >
@@ -627,7 +704,9 @@ export default function AccountSettingsPage() {
                   <Input
                     id="city"
                     value={formData.city}
-                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, city: e.target.value })
+                    }
                     placeholder="Select city"
                     list="city-list"
                   />
@@ -644,7 +723,9 @@ export default function AccountSettingsPage() {
                     <Input
                       id="state"
                       value={formData.state}
-                      onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, state: e.target.value })
+                      }
                       placeholder="Select state"
                       list="state-list"
                     />
@@ -659,7 +740,9 @@ export default function AccountSettingsPage() {
                     <Input
                       id="country"
                       value={formData.country}
-                      onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, country: e.target.value })
+                      }
                       placeholder="Enter country"
                     />
                   </div>
@@ -674,14 +757,18 @@ export default function AccountSettingsPage() {
                   <Briefcase className="w-5 h-5" />
                   Professional Information
                 </CardTitle>
-                <CardDescription>Update your work and education details</CardDescription>
+                <CardDescription>
+                  Update your work and education details
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
                   <Label htmlFor="education">Education</Label>
                   <Select
                     value={formData.education}
-                    onValueChange={(value) => setFormData({ ...formData, education: value })}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, education: value })
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select education level" />
@@ -701,7 +788,9 @@ export default function AccountSettingsPage() {
                   <Input
                     id="profession"
                     value={formData.profession}
-                    onChange={(e) => setFormData({ ...formData, profession: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, profession: e.target.value })
+                    }
                     placeholder="Enter profession"
                   />
                 </div>
@@ -710,7 +799,9 @@ export default function AccountSettingsPage() {
                   <Label htmlFor="annual_income">Annual Income</Label>
                   <Select
                     value={formData.annual_income}
-                    onValueChange={(value) => setFormData({ ...formData, annual_income: value })}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, annual_income: value })
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select income range" />
@@ -734,7 +825,9 @@ export default function AccountSettingsPage() {
                   <Heart className="w-5 h-5" />
                   Spiritual Information
                 </CardTitle>
-                <CardDescription>Share your spiritual preferences</CardDescription>
+                <CardDescription>
+                  Share your spiritual preferences
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
@@ -746,11 +839,13 @@ export default function AccountSettingsPage() {
                         type="button"
                         onClick={() => {
                           const arr = formData.spiritual_org.includes(org)
-                            ? formData.spiritual_org.filter((o: string) => o !== org)
-                            : [...formData.spiritual_org, org]
-                          setFormData({ ...formData, spiritual_org: arr })
+                            ? formData.spiritual_org.filter(
+                                (o: string) => o !== org,
+                              )
+                            : [...formData.spiritual_org, org];
+                          setFormData({ ...formData, spiritual_org: arr });
                         }}
-                        className={`px-3 py-1 text-sm rounded-full ${formData.spiritual_org.includes(org) ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
+                        className={`px-3 py-1 text-sm rounded-full ${formData.spiritual_org.includes(org) ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
                       >
                         {org}
                       </button>
@@ -767,11 +862,13 @@ export default function AccountSettingsPage() {
                         type="button"
                         onClick={() => {
                           const arr = formData.daily_practices.includes(p)
-                            ? formData.daily_practices.filter((d: string) => d !== p)
-                            : [...formData.daily_practices, p]
-                          setFormData({ ...formData, daily_practices: arr })
+                            ? formData.daily_practices.filter(
+                                (d: string) => d !== p,
+                              )
+                            : [...formData.daily_practices, p];
+                          setFormData({ ...formData, daily_practices: arr });
                         }}
-                        className={`px-3 py-1 text-sm rounded-full ${formData.daily_practices.includes(p) ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
+                        className={`px-3 py-1 text-sm rounded-full ${formData.daily_practices.includes(p) ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
                       >
                         {p}
                       </button>
@@ -783,7 +880,9 @@ export default function AccountSettingsPage() {
                   <Label htmlFor="diet">Diet</Label>
                   <Select
                     value={formData.diet}
-                    onValueChange={(value) => setFormData({ ...formData, diet: value })}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, diet: value })
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select diet" />
@@ -799,10 +898,14 @@ export default function AccountSettingsPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="temple_visit_freq">Temple Visit Frequency</Label>
+                  <Label htmlFor="temple_visit_freq">
+                    Temple Visit Frequency
+                  </Label>
                   <Select
                     value={formData.temple_visit_freq}
-                    onValueChange={(value) => setFormData({ ...formData, temple_visit_freq: value })}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, temple_visit_freq: value })
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select frequency" />
@@ -818,10 +921,14 @@ export default function AccountSettingsPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="vanaprastha_interest">Interest in Vanaprastha</Label>
+                  <Label htmlFor="vanaprastha_interest">
+                    Interest in Vanaprastha
+                  </Label>
                   <Select
                     value={formData.vanaprastha_interest}
-                    onValueChange={(value) => setFormData({ ...formData, vanaprastha_interest: value })}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, vanaprastha_interest: value })
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select interest" />
@@ -840,7 +947,9 @@ export default function AccountSettingsPage() {
                   <Label htmlFor="artha_vs_moksha">Artha vs Moksha</Label>
                   <Select
                     value={formData.artha_vs_moksha}
-                    onValueChange={(value) => setFormData({ ...formData, artha_vs_moksha: value })}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, artha_vs_moksha: value })
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select preference" />
@@ -853,6 +962,23 @@ export default function AccountSettingsPage() {
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="favorite_quote">
+                    Favourite Spiritual Quote
+                  </Label>
+                  <Input
+                    id="favorite_quote"
+                    value={formData.favorite_quote}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        favorite_quote: e.target.value,
+                      })
+                    }
+                    placeholder="Optional"
+                  />
                 </div>
               </CardContent>
             </Card>
@@ -889,7 +1015,10 @@ export default function AccountSettingsPage() {
                   </DialogDescription>
                 </DialogHeader>
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setDeactivateOpen(false)}>
+                  <Button
+                    variant="outline"
+                    onClick={() => setDeactivateOpen(false)}
+                  >
                     Cancel
                   </Button>
                   <Button
@@ -919,7 +1048,10 @@ export default function AccountSettingsPage() {
                   </DialogDescription>
                 </DialogHeader>
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setDeleteOpen(false)}>
+                  <Button
+                    variant="outline"
+                    onClick={() => setDeleteOpen(false)}
+                  >
                     Cancel
                   </Button>
                   <Button
@@ -936,5 +1068,5 @@ export default function AccountSettingsPage() {
         </div>
       </main>
     </div>
-  )
+  );
 }
