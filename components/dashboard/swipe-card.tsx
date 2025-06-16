@@ -22,33 +22,25 @@ interface SwipeCardProps {
   profile: any
   onSwipe: (direction: "left" | "right" | "superlike", profileId: string) => void
   onUndo: () => void
-  showUndo?: boolean           // NEW — controls undo-button visibility
+  showUndo?: boolean
   isTop: boolean
   index: number
 }
 
-export default function SwipeCard({
-  profile,
-  onSwipe,
-  onUndo,
-  showUndo = false,            // default false
-  isTop,
-  index,
-}: SwipeCardProps) {
+export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, isTop, index }: SwipeCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [currentDetailImageIndex, setCurrentDetailImageIndex] = useState(0)
   const [animatingButton, setAnimatingButton] = useState<string | null>(null)
   const [touchStartX, setTouchStartX] = useState<number | null>(null)
   const cardRef = useRef<HTMLDivElement>(null)
-
   const x = useMotionValue(0)
   const y = useMotionValue(0)
+
   const rotateRaw = useTransform(x, [-300, 300], [-30, 30])
   const opacity = useTransform(x, [-300, -150, 0, 150, 300], [0, 1, 1, 1, 0])
-  const rotate = rotateRaw
 
-  /* ------------------------ helpers & handlers ------------------------ */
+  const rotate = rotateRaw
 
   const calculateAge = (birthdate: string) => {
     if (!birthdate) return "N/A"
@@ -56,162 +48,357 @@ export default function SwipeCard({
     const birth = new Date(birthdate)
     let age = today.getFullYear() - birth.getFullYear()
     const monthDiff = today.getMonth() - birth.getMonth()
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) age--
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age--
+    }
     return age
   }
 
-  const handleDragEnd = (_: any, info: PanInfo) => {
+  const handleDragEnd = (event: any, info: PanInfo) => {
     const threshold = 150
     const velocity = info.velocity.x
+
     if (Math.abs(info.offset.x) > threshold || Math.abs(velocity) > 500) {
       const direction = info.offset.x > 0 ? "right" : "left"
       onSwipe(direction, profile.id)
     }
   }
 
-  const triggerButton = (kind: "like" | "dislike" | "superlike" | "undo") => {
+  const handleLike = () => {
     if (animatingButton) return
-    setAnimatingButton(kind)
-    if (kind === "undo") onUndo()
-    else onSwipe(kind === "like" ? "right" : kind === "dislike" ? "left" : "superlike", profile.id)
-    setTimeout(() => setAnimatingButton(null), kind === "undo" ? 300 : 500)
+    setAnimatingButton("like")
+    onSwipe("right", profile.id)
+    setTimeout(() => setAnimatingButton(null), 500)
   }
 
-  /* ----------------------- image helpers ----------------------- */
+  const handleDislike = () => {
+    if (animatingButton) return
+    setAnimatingButton("dislike")
+    onSwipe("left", profile.id)
+    setTimeout(() => setAnimatingButton(null), 500)
+  }
 
-  const nextImage = () =>
-    profile.user_photos?.length > 1 &&
-    setCurrentImageIndex((p) => (p + 1) % profile.user_photos.length)
+  const handleSuperlike = () => {
+    if (animatingButton) return
+    setAnimatingButton("superlike")
+    onSwipe("superlike", profile.id)
+    setTimeout(() => setAnimatingButton(null), 500)
+  }
 
-  const prevImage = () =>
-    profile.user_photos?.length > 1 &&
-    setCurrentImageIndex((p) => (p - 1 + profile.user_photos.length) % profile.user_photos.length)
+  const handleUndoClick = () => {
+    if (animatingButton) return
+    setAnimatingButton("undo")
+    onUndo()
+    setTimeout(() => setAnimatingButton(null), 300)
+  }
 
-  const nextDetailImage = () =>
-    profile.user_photos?.length > 1 &&
-    setCurrentDetailImageIndex((p) => (p + 1) % profile.user_photos.length)
+  const nextImage = () => {
+    if (profile.user_photos && profile.user_photos.length > 1) {
+      setCurrentImageIndex((prev) => (prev + 1) % profile.user_photos.length)
+    }
+  }
 
-  const prevDetailImage = () =>
-    profile.user_photos?.length > 1 &&
-    setCurrentDetailImageIndex((p) => (p - 1 + profile.user_photos.length) % profile.user_photos.length)
+  const prevImage = () => {
+    if (profile.user_photos && profile.user_photos.length > 1) {
+      setCurrentImageIndex((prev) => (prev - 1 + profile.user_photos.length) % profile.user_photos.length)
+    }
+  }
 
-  const handleTouchStart = (e: React.TouchEvent) => setTouchStartX(e.touches[0].clientX)
+  const nextDetailImage = () => {
+    if (profile.user_photos && profile.user_photos.length > 1) {
+      setCurrentDetailImageIndex((prev) => (prev + 1) % profile.user_photos.length)
+    }
+  }
+
+  const prevDetailImage = () => {
+    if (profile.user_photos && profile.user_photos.length > 1) {
+      setCurrentDetailImageIndex((prev) => (prev - 1 + profile.user_photos.length) % profile.user_photos.length)
+    }
+  }
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStartX(e.touches[0].clientX)
+  }
 
   const handleTouchEnd = (e: React.TouchEvent) => {
     if (touchStartX === null) return
     const deltaX = e.changedTouches[0].clientX - touchStartX
-    if (Math.abs(deltaX) > 50) deltaX > 0 ? prevDetailImage() : nextDetailImage()
+    if (Math.abs(deltaX) > 50) {
+      if (deltaX > 0) {
+        prevDetailImage()
+      } else {
+        nextDetailImage()
+      }
+    }
     setTouchStartX(null)
   }
 
-  const getCurrentImage = () =>
-    profile.user_photos?.length ? profile.user_photos[currentImageIndex] : "/placeholder.svg"
+  const getCurrentImage = () => {
+    if (profile.user_photos && profile.user_photos.length > 0) {
+      return profile.user_photos[currentImageIndex]
+    }
+    return "/placeholder.svg"
+  }
 
-  const getCurrentDetailImage = () =>
-    profile.user_photos?.length ? profile.user_photos[currentDetailImageIndex] : "/placeholder.svg"
-
-  /* ------------------------ motion values for NOPE / LIKE labels ------------------------ */
+  const getCurrentDetailImage = () => {
+    if (profile.user_photos && profile.user_photos.length > 0) {
+      return profile.user_photos[currentDetailImageIndex]
+    }
+    return "/placeholder.svg"
+  }
 
   const nopeOpacity = useTransform(x, [-150, -50], [1, 0])
   const nopeRotate = useTransform(x, [-150, -50], [-30, 0])
   const likeOpacity = useTransform(x, [50, 150], [0, 1])
   const likeRotate = useTransform(x, [50, 150], [0, 30])
 
-  /* ------------------------------ collapsed stack card ------------------------------ */
-
   if (!isTop && !isExpanded) {
     return (
       <motion.div
         className="absolute inset-0 bg-white rounded-3xl shadow-lg border border-gray-200"
-        style={{ scale: 1 - index * 0.05, y: index * 10, zIndex: 10 - index }}
+        style={{
+          scale: 1 - index * 0.05,
+          y: index * 10,
+          zIndex: 10 - index,
+        }}
         initial={{ scale: 1 - index * 0.05, y: index * 10 }}
         animate={{ scale: 1 - index * 0.05, y: index * 10 }}
       >
         <div className="relative w-full h-full rounded-3xl overflow-hidden">
-          <Image src={getCurrentImage()} alt={`${profile.first_name} ${profile.last_name}`} fill className="object-cover" />
+          <Image
+            src={getCurrentImage() || "/placeholder.svg"}
+            alt={`${profile.first_name} ${profile.last_name}`}
+            fill
+            className="object-cover"
+          />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
         </div>
       </motion.div>
     )
   }
 
-  /* ------------------------------ main swipe card ------------------------------ */
-
   return (
     <>
       <motion.div
         ref={cardRef}
         className="absolute inset-0 bg-white rounded-3xl shadow-2xl border border-gray-200 overflow-hidden cursor-pointer"
-        style={{ x, y: isExpanded ? y : 0, rotate, opacity, zIndex: isTop ? 20 : 10 - index }}
+        style={{
+          x,
+          y: isExpanded ? y : 0,
+          rotate,
+          opacity,
+          zIndex: isTop ? 20 : 10 - index,
+        }}
         drag={false}
         whileTap={{ scale: isExpanded ? 1 : 0.95 }}
         layout
         onClick={() => setIsExpanded(true)}
       >
-        {/* Image, overlays, info button etc. */}
-        {/* … existing unchanged JSX up to action buttons … */}
+        {/* Main Card Content */}
+        <div className="relative w-full h-full">
+          {/* Image Section */}
+          <div className="relative h-full">
+            <Image
+              src={getCurrentImage() || "/placeholder.svg"}
+              alt={`${profile.first_name} ${profile.last_name}`}
+              fill
+              className="object-cover"
+              priority
+            />
 
-        {/* ---------- action buttons ----------- */}
-        <div className="absolute bottom-4 right-4 flex flex-col gap-3 z-20">
-          {/* like */}
-          <motion.button
-            onClick={(e) => { e.stopPropagation(); triggerButton("like") }}
-            disabled={!!animatingButton}
-            className="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center text-green-500 hover:bg-white transition-colors disabled:opacity-50"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            animate={animatingButton === "like" ? { scale: [1, 1.3, 1], rotate: [0, 15, -15, 0] } : {}}
-            transition={{ duration: 0.5 }}
-          >
-            <Heart className="w-6 h-6" />
-          </motion.button>
-
-          {/* superlike */}
-          <motion.button
-            onClick={(e) => { e.stopPropagation(); triggerButton("superlike") }}
-            disabled={!!animatingButton}
-            className="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center text-blue-500 hover:bg-white transition-colors disabled:opacity-50"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            animate={animatingButton === "superlike" ? { scale: [1, 1.4, 1], y: [0, -10, 0] } : {}}
-            transition={{ duration: 0.6 }}
-          >
-            <Star className="w-6 h-6" />
-          </motion.button>
-
-          {/* dislike */}
-          <motion.button
-            onClick={(e) => { e.stopPropagation(); triggerButton("dislike") }}
-            disabled={!!animatingButton}
-            className="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center text-red-500 hover:bg-white transition-colors disabled:opacity-50"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            animate={animatingButton === "dislike" ? { scale: [1, 1.2, 1], rotate: [0, -15, 15, 0] } : {}}
-            transition={{ duration: 0.4 }}
-          >
-            <X className="w-6 h-6" />
-          </motion.button>
-
-          {/* undo – only if allowed */}
-          {showUndo && (
+            {/* Info Button - Top Right */}
             <motion.button
-              onClick={(e) => { e.stopPropagation(); triggerButton("undo") }}
-              disabled={!!animatingButton}
-              className="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center text-yellow-500 hover:bg-white transition-colors disabled:opacity-50"
+              onClick={(e) => {
+                e.stopPropagation()
+                setIsExpanded(true)
+              }}
+              className="absolute top-4 right-4 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center text-gray-700 hover:bg-white transition-colors z-20"
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
-              animate={animatingButton === "undo" ? { scale: [1, 1.2, 1], rotate: [0, 10, -10, 0] } : {}}
-              transition={{ duration: 0.4 }}
             >
-              <RotateCcw className="w-6 h-6" />
+              <Info className="w-5 h-5" />
             </motion.button>
-          )}
-        </div>
 
-        {/* NOPE / LIKE badges etc. … */}
+            {/* Image Navigation */}
+            {profile.user_photos && profile.user_photos.length > 1 && (
+              <>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    prevImage()
+                  }}
+                  className="absolute left-4 top-1/2 transform -translate-y-1/2 w-10 h-10 bg-black/30 rounded-full flex items-center justify-center text-white hover:bg-black/50 transition-colors z-10"
+                >
+                  ←
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    nextImage()
+                  }}
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 w-10 h-10 bg-black/30 rounded-full flex items-center justify-center text-white hover:bg-black/50 transition-colors z-10"
+                >
+                  →
+                </button>
+
+                {/* Image Indicators */}
+                <div className="absolute top-4 left-1/2 transform -translate-x-1/2 flex gap-2 z-10">
+                  {profile.user_photos.map((_: any, idx: number) => (
+                    <div
+                      key={idx}
+                      className={`w-2 h-2 rounded-full transition-colors ${
+                        idx === currentImageIndex ? "bg-white" : "bg-white/50"
+                      }`}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* Gradient Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+
+            {/* Profile Info Overlay */}
+            <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+              <div className="flex items-end justify-between">
+                <div className="flex-1">
+                  <h2 className="text-2xl font-bold mb-2">
+                    {profile.first_name} {profile.last_name}
+                  </h2>
+
+                  <div className="space-y-1 mb-3">
+                    <div className="flex items-center gap-2 text-white/90 text-sm">
+                      <Calendar className="w-4 h-4" />
+                      <span>{calculateAge(profile.birthdate)} years old</span>
+                    </div>
+
+                    {profile.city && profile.state && (
+                      <div className="flex items-center gap-2 text-white/90 text-sm">
+                        <MapPin className="w-4 h-4" />
+                        <span>
+                          {profile.city}, {profile.state}
+                        </span>
+                      </div>
+                    )}
+
+                    {profile.profession && (
+                      <div className="flex items-center gap-2 text-white/90 text-sm">
+                        <Briefcase className="w-4 h-4" />
+                        <span>{profile.profession}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Quick Info Tags */}
+                  <div className="flex flex-wrap gap-2">
+                    {profile.diet && (
+                      <span className="px-2 py-1 bg-white/20 rounded-full text-xs backdrop-blur-sm">
+                        {profile.diet}
+                      </span>
+                    )}
+                    {profile.education && (
+                      <span className="px-2 py-1 bg-white/20 rounded-full text-xs backdrop-blur-sm">
+                        {profile.education}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons - Right Bottom Corner */}
+            <div className="absolute bottom-4 right-4 flex flex-col gap-3 z-20">
+              {/* Like Button */}
+              <motion.button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleLike()
+                }}
+                disabled={animatingButton !== null}
+                className="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center text-green-500 hover:bg-white transition-colors disabled:opacity-50"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                animate={animatingButton === "like" ? { scale: [1, 1.3, 1], rotate: [0, 15, -15, 0] } : {}}
+                transition={{ duration: 0.5 }}
+              >
+                <Heart className="w-6 h-6" />
+              </motion.button>
+
+              {/* Super Like Button */}
+              <motion.button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleSuperlike()
+                }}
+                disabled={animatingButton !== null}
+                className="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center text-blue-500 hover:bg-white transition-colors disabled:opacity-50"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                animate={animatingButton === "superlike" ? { scale: [1, 1.4, 1], y: [0, -10, 0] } : {}}
+                transition={{ duration: 0.6 }}
+              >
+                <Star className="w-6 h-6" />
+              </motion.button>
+
+              {/* Dislike Button */}
+              <motion.button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleDislike()
+                }}
+                disabled={animatingButton !== null}
+                className="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center text-red-500 hover:bg-white transition-colors disabled:opacity-50"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                animate={animatingButton === "dislike" ? { scale: [1, 1.2, 1], rotate: [0, -15, 15, 0] } : {}}
+                transition={{ duration: 0.4 }}
+              >
+                <X className="w-6 h-6" />
+              </motion.button>
+
+              {showUndo && (
+                <motion.button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleUndoClick()
+                  }}
+                  disabled={animatingButton !== null}
+                  className="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center text-yellow-500 hover:bg-white transition-colors disabled:opacity-50"
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  animate={animatingButton === "undo" ? { scale: [1, 1.2, 1], rotate: [0, 10, -10, 0] } : {}}
+                  transition={{ duration: 0.4 }}
+                >
+                  <RotateCcw className="w-6 h-6" />
+                </motion.button>
+              )}
+            </div>
+          </div>
+
+          {/* Enhanced Swipe Indicators */}
+          <motion.div
+            className="absolute top-1/2 left-8 transform -translate-y-1/2 px-6 py-3 bg-red-500 text-white rounded-2xl font-bold text-xl shadow-2xl border-4 border-white"
+            style={{
+              opacity: nopeOpacity,
+              rotate: nopeRotate,
+            }}
+          >
+            NOPE
+          </motion.div>
+
+          <motion.div
+            className="absolute top-1/2 right-8 transform -translate-y-1/2 px-6 py-3 bg-green-500 text-white rounded-2xl font-bold text-xl shadow-2xl border-4 border-white"
+            style={{
+              opacity: likeOpacity,
+              rotate: likeRotate,
+            }}
+          >
+            LIKE
+          </motion.div>
+        </div>
       </motion.div>
 
-      {/* --------------------- expanded detail modal --------------------- */}
+      {/* Expanded Detail View */}
       {isExpanded && (
         <motion.div
           className="fixed inset-0 bg-black/50 z-[100000]"
@@ -228,14 +415,213 @@ export default function SwipeCard({
             transition={{ type: "spring", damping: 30, stiffness: 300 }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* … existing gallery & profile details … */}
+            {/* Close Button */}
+            <button
+              onClick={() => setIsExpanded(false)}
+              className="absolute top-4 right-4 w-10 h-10 bg-black/20 rounded-full flex items-center justify-center text-white hover:bg-black/40 transition-colors z-30"
+            >
+              <X className="w-6 h-6" />
+            </button>
 
-            {/* ---------- floating action buttons in modal ----------- */}
+            <div className="pb-32">
+              {/* Optimized Swipeable Photo Gallery */}
+              {profile.user_photos && profile.user_photos.length > 0 && (
+                <div
+                  className="relative h-[50vh] bg-gray-100 overflow-hidden"
+                  onTouchStart={handleTouchStart}
+                  onTouchEnd={handleTouchEnd}
+                >
+                  <div
+                    className="flex h-full transition-transform duration-300 ease-out"
+                    style={{
+                      transform: `translateX(-${currentDetailImageIndex * 100}%)`,
+                      width: `${profile.user_photos.length * 100}%`,
+                    }}
+                  >
+                    {profile.user_photos.map((photo: string, idx: number) => (
+                      <div
+                        key={idx}
+                        className="w-full h-full relative flex-shrink-0"
+                        style={{ width: "100%" }}
+                      >
+                        <Image
+                          src={photo || "/placeholder.svg"}
+                          alt={`${profile.first_name} ${profile.last_name} - Photo ${idx + 1}`}
+                          fill
+                          className="object-cover"
+                          priority={idx === 0}
+                        />
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Touch/Swipe Areas for Navigation */}
+                  <div className="absolute inset-0 flex">
+                    <button
+                      onClick={prevDetailImage}
+                      disabled={currentDetailImageIndex === 0}
+                      className="flex-1 opacity-0 disabled:cursor-not-allowed"
+                    />
+                    <button
+                      onClick={nextDetailImage}
+                      disabled={currentDetailImageIndex === profile.user_photos.length - 1}
+                      className="flex-1 opacity-0 disabled:cursor-not-allowed"
+                    />
+                  </div>
+
+                  {/* Better Photo Navigation Arrows */}
+                  {profile.user_photos.length > 1 && (
+                    <>
+                      <motion.button
+                        onClick={prevDetailImage}
+                        disabled={currentDetailImageIndex === 0}
+                        className="absolute left-4 top-1/2 transform -translate-y-1/2 w-14 h-14 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center text-gray-700 hover:bg-white shadow-lg transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed z-20"
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                      >
+                        <ChevronLeft className="w-7 h-7" />
+                      </motion.button>
+                      <motion.button
+                        onClick={nextDetailImage}
+                        disabled={currentDetailImageIndex === profile.user_photos.length - 1}
+                        className="absolute right-4 top-1/2 transform -translate-y-1/2 w-14 h-14 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center text-gray-700 hover:bg-white shadow-lg transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed z-20"
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                      >
+                        <ChevronRight className="w-7 h-7" />
+                      </motion.button>
+                    </>
+                  )}
+
+                  {/* Photo Navigation Dots */}
+                  <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-3 z-20">
+                    {profile.user_photos.map((_: any, idx: number) => (
+                      <motion.button
+                        key={idx}
+                        onClick={() => setCurrentDetailImageIndex(idx)}
+                        className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                          idx === currentDetailImageIndex ? "bg-white scale-125" : "bg-white/60"
+                        }`}
+                        whileHover={{ scale: 1.2 }}
+                        whileTap={{ scale: 0.9 }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="p-6">
+                {/* Profile Header */}
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-20 h-20 rounded-full overflow-hidden">
+                    <Image
+                      src={getCurrentImage() || "/placeholder.svg"}
+                      alt={`${profile.first_name} ${profile.last_name}`}
+                      width={80}
+                      height={80}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-gray-900">
+                      {profile.first_name} {profile.last_name}
+                    </h3>
+                    <p className="text-gray-600">{calculateAge(profile.birthdate)} years old</p>
+                  </div>
+                </div>
+
+                {/* About Section */}
+                {profile.about_me && (
+                  <div className="mb-6">
+                    <h4 className="text-lg font-semibold text-gray-900 mb-2">About Me</h4>
+                    <p className="text-gray-700 leading-relaxed">{profile.about_me}</p>
+                  </div>
+                )}
+
+                {/* Details Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                  {profile.city && profile.state && (
+                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                      <MapPin className="w-5 h-5 text-gray-500" />
+                      <div>
+                        <p className="text-sm text-gray-500">Location</p>
+                        <p className="font-medium">
+                          {profile.city}, {profile.state}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {profile.profession && (
+                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                      <Briefcase className="w-5 h-5 text-gray-500" />
+                      <div>
+                        <p className="text-sm text-gray-500">Profession</p>
+                        <p className="font-medium">{profile.profession}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {profile.education && (
+                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                      <GraduationCap className="w-5 h-5 text-gray-500" />
+                      <div>
+                        <p className="text-sm text-gray-500">Education</p>
+                        <p className="font-medium">{profile.education}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {profile.diet && (
+                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                      <Sparkles className="w-5 h-5 text-gray-500" />
+                      <div>
+                        <p className="text-sm text-gray-500">Diet</p>
+                        <p className="font-medium">{profile.diet}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Spiritual Practices */}
+                {profile.daily_practices && profile.daily_practices.length > 0 && (
+                  <div className="mb-6">
+                    <h4 className="text-lg font-semibold text-gray-900 mb-3">Daily Practices</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {profile.daily_practices.map((practice: string, index: number) => (
+                        <span key={index} className="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-sm">
+                          {practice}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Spiritual Organizations */}
+                {profile.spiritual_org && profile.spiritual_org.length > 0 && (
+                  <div className="mb-6">
+                    <h4 className="text-lg font-semibold text-gray-900 mb-3">Spiritual Organizations</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {profile.spiritual_org.map((org: string, index: number) => (
+                        <span key={index} className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm">
+                          {org}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Same Circular Action Buttons as Card */}
             <div className="fixed bottom-6 right-6 flex flex-col gap-3 z-30">
-              {/* like */}
+              {/* Like Button */}
               <motion.button
-                onClick={() => { setIsExpanded(false); triggerButton("like") }}
-                disabled={!!animatingButton}
+                onClick={() => {
+                  setIsExpanded(false)
+                  handleLike()
+                }}
+                disabled={animatingButton !== null}
                 className="w-14 h-14 bg-white shadow-xl rounded-full flex items-center justify-center text-green-500 hover:bg-green-50 transition-colors disabled:opacity-50 border border-gray-200"
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
@@ -245,10 +631,13 @@ export default function SwipeCard({
                 <Heart className="w-7 h-7" />
               </motion.button>
 
-              {/* superlike */}
+              {/* Super Like Button */}
               <motion.button
-                onClick={() => { setIsExpanded(false); triggerButton("superlike") }}
-                disabled={!!animatingButton}
+                onClick={() => {
+                  setIsExpanded(false)
+                  handleSuperlike()
+                }}
+                disabled={animatingButton !== null}
                 className="w-14 h-14 bg-white shadow-xl rounded-full flex items-center justify-center text-blue-500 hover:bg-blue-50 transition-colors disabled:opacity-50 border border-gray-200"
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
@@ -258,10 +647,13 @@ export default function SwipeCard({
                 <Star className="w-7 h-7" />
               </motion.button>
 
-              {/* dislike */}
+              {/* Dislike Button */}
               <motion.button
-                onClick={() => { setIsExpanded(false); triggerButton("dislike") }}
-                disabled={!!animatingButton}
+                onClick={() => {
+                  setIsExpanded(false)
+                  handleDislike()
+                }}
+                disabled={animatingButton !== null}
                 className="w-14 h-14 bg-white shadow-xl rounded-full flex items-center justify-center text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50 border border-gray-200"
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
@@ -271,11 +663,14 @@ export default function SwipeCard({
                 <X className="w-7 h-7" />
               </motion.button>
 
-              {/* undo (conditional) */}
+              {/* Undo Button */}
               {showUndo && (
                 <motion.button
-                  onClick={() => { setIsExpanded(false); triggerButton("undo") }}
-                  disabled={!!animatingButton}
+                  onClick={() => {
+                    setIsExpanded(false)
+                    handleUndoClick()
+                  }}
+                  disabled={animatingButton !== null}
                   className="w-14 h-14 bg-white shadow-xl rounded-full flex items-center justify-center text-yellow-500 hover:bg-yellow-50 transition-colors disabled:opacity-50 border border-gray-200"
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
@@ -285,6 +680,7 @@ export default function SwipeCard({
                   <RotateCcw className="w-7 h-7" />
                 </motion.button>
               )}
+
             </div>
           </motion.div>
         </motion.div>
