@@ -2,25 +2,26 @@
 
 import type React from "react"
 import { useState } from "react"
-import { Loader2, Upload, X } from 'lucide-react'
+import { Loader2, Upload, X, Quote } from "lucide-react"
 import Image from "next/image"
 import type { OnboardingData } from "@/lib/types/onboarding"
 
 interface FullBloomStageProps {
   formData: OnboardingData
   onChange: (updates: Partial<OnboardingData>) => void
-  onNext: (updates: Partial<OnboardingData>) => void // Changed
+  onNext: (updates: Partial<OnboardingData>) => void
   isLoading: boolean
   error?: string | null
 }
 
 export default function FullBloomStage({ formData, onChange, onNext, isLoading, error }: FullBloomStageProps) {
   // Destructure with null defaults
-  const { about_me = null, partner_expectations = null, user_photos = [] } = formData
+  const { about_me = null, partner_expectations = null, favorite_quote = null, user_photos = [] } = formData
 
   const [localFormData, setLocalFormData] = useState({
     about_me: about_me || "",
     partner_expectations: partner_expectations || "",
+    favorite_quote: favorite_quote || "",
   })
   const [photos, setPhotos] = useState<File[]>([])
   const [photoUrls, setPhotoUrls] = useState<string[]>(user_photos)
@@ -105,6 +106,7 @@ export default function FullBloomStage({ formData, onChange, onNext, isLoading, 
       const dataToSave: Partial<OnboardingData> = {
         about_me: localFormData.about_me.trim() || null,
         partner_expectations: localFormData.partner_expectations.trim() || null,
+        favorite_quote: localFormData.favorite_quote.trim() || null,
         user_photos: uploadedPhotoUrls,
       }
 
@@ -120,6 +122,7 @@ export default function FullBloomStage({ formData, onChange, onNext, isLoading, 
     const dataToSave: Partial<OnboardingData> = {
       about_me: null,
       partner_expectations: null,
+      favorite_quote: null,
       user_photos: [],
     }
     onChange(dataToSave) // Update local form data
@@ -168,6 +171,26 @@ export default function FullBloomStage({ formData, onChange, onNext, isLoading, 
             placeholder="Describe what you're looking for in a spiritual partner..."
             className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
           />
+        </div>
+
+        {/* Favorite Spiritual Quote */}
+        <div className="space-y-2">
+          <label htmlFor="favorite_quote" className="block text-sm font-medium text-foreground flex items-center gap-2">
+            <Quote className="w-4 h-4" />
+            Favorite Spiritual Quote (Optional)
+          </label>
+          <textarea
+            id="favorite_quote"
+            name="favorite_quote"
+            value={localFormData.favorite_quote}
+            onChange={handleChange}
+            rows={3}
+            placeholder="Share a quote that inspires your spiritual journey..."
+            className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
+          />
+          <p className="text-xs text-gray-500">
+            This will be displayed on your profile to help others connect with your spiritual perspective
+          </p>
         </div>
 
         {/* Photo Upload */}

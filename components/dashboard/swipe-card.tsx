@@ -17,6 +17,11 @@ import {
   ChevronLeft,
   ChevronRight,
   RotateCcw,
+  Quote,
+  Users,
+  BookOpen,
+  Home,
+  Phone,
 } from "lucide-react"
 import Image from "next/image"
 
@@ -615,6 +620,19 @@ export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, 
                   </div>
                 </div>
 
+                {/* Favorite Quote */}
+                {profile.favorite_quote && (
+                  <div className="mb-6 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-xl p-4">
+                    <div className="flex items-start gap-3">
+                      <Quote className="w-6 h-6 text-purple-600 flex-shrink-0 mt-1" />
+                      <div>
+                        <h4 className="font-semibold text-purple-800 mb-2">Favorite Quote</h4>
+                        <p className="text-purple-700 italic leading-relaxed">"{profile.favorite_quote}"</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* About Section */}
                 {profile.about_me && (
                   <div className="mb-6">
@@ -623,7 +641,7 @@ export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, 
                   </div>
                 )}
 
-                {/* Details Grid */}
+                {/* Enhanced Details Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                   {profile.city && profile.state && (
                     <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
@@ -666,6 +684,46 @@ export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, 
                       </div>
                     </div>
                   )}
+
+                  {profile.height && (
+                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                      <Users className="w-5 h-5 text-gray-500" />
+                      <div>
+                        <p className="text-sm text-gray-500">Height</p>
+                        <p className="font-medium">{profile.height}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {profile.mother_tongue && (
+                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                      <BookOpen className="w-5 h-5 text-gray-500" />
+                      <div>
+                        <p className="text-sm text-gray-500">Mother Tongue</p>
+                        <p className="font-medium">{profile.mother_tongue}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {profile.temple_visit_freq && (
+                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                      <Home className="w-5 h-5 text-gray-500" />
+                      <div>
+                        <p className="text-sm text-gray-500">Temple Visits</p>
+                        <p className="font-medium">{profile.temple_visit_freq}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {profile.annual_income && (
+                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                      <Phone className="w-5 h-5 text-gray-500" />
+                      <div>
+                        <p className="text-sm text-gray-500">Annual Income</p>
+                        <p className="font-medium">{profile.annual_income}</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Spiritual Practices */}
@@ -693,6 +751,14 @@ export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, 
                         </span>
                       ))}
                     </div>
+                  </div>
+                )}
+
+                {/* Partner Expectations */}
+                {profile.partner_expectations && (
+                  <div className="mb-6">
+                    <h4 className="text-lg font-semibold text-gray-900 mb-2">What I'm Looking For</h4>
+                    <p className="text-gray-700 leading-relaxed">{profile.partner_expectations}</p>
                   </div>
                 )}
               </div>

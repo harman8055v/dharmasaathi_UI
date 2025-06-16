@@ -4,7 +4,7 @@ export interface OnboardingData {
   email_verified: boolean
   // Mobile verification
   mobile_verified: boolean
-  mobile_number?: string | null // Add this line
+  mobile_number?: string | null
 
   // Personal info
   gender: "Male" | "Female" | "Other" | null
@@ -34,6 +34,7 @@ export interface OnboardingData {
   // Text fields
   about_me: string | null
   partner_expectations: string | null
+  favorite_quote: string | null // New field
 }
 
 export interface OnboardingProfile extends OnboardingData {
@@ -42,9 +43,18 @@ export interface OnboardingProfile extends OnboardingData {
   first_name?: string
   last_name?: string
   mobile_number?: string
-  verification_status?: 'pending' | 'verified' | 'rejected'
+  verification_status?: "pending" | "verified" | "rejected"
   onboarding_completed?: boolean
   updated_at?: string
+
+  // Plan and usage tracking
+  current_plan?: "drishti" | "sparsh" | "sangam" | "samarpan"
+  daily_swipes_used?: number
+  daily_swipes_limit?: number
+  last_swipe_reset?: string
+  super_likes_count?: number
+  message_highlights_count?: number
+  profile_visibility_boost?: boolean
 }
 
 // Updated validation constants
@@ -54,6 +64,46 @@ export const VALID_VALUES = {
   temple_visit_freq: [null, "Daily", "Weekly", "Monthly", "Rarely", "Never"] as const,
   vanaprastha_interest: [null, "yes", "no", "open"] as const,
   artha_vs_moksha: [null, "Artha-focused", "Moksha-focused", "Balance"] as const,
+} as const
+
+// Plan configurations
+export const PLAN_CONFIGS = {
+  drishti: {
+    name: "Drishti",
+    price: 0,
+    dailySwipes: 5,
+    canMessage: false,
+    superLikes: 0,
+    messageHighlights: 0,
+    profileVisibility: "normal",
+  },
+  sparsh: {
+    name: "Sparsh",
+    price: 399,
+    dailySwipes: 20,
+    canMessage: true,
+    superLikes: 0,
+    messageHighlights: 0,
+    profileVisibility: "normal",
+  },
+  sangam: {
+    name: "Sangam",
+    price: 699,
+    dailySwipes: 50,
+    canMessage: true,
+    superLikes: 5,
+    messageHighlights: 5,
+    profileVisibility: "high",
+  },
+  samarpan: {
+    name: "Samarpan",
+    price: 1299,
+    dailySwipes: -1, // unlimited
+    canMessage: true,
+    superLikes: 15,
+    messageHighlights: 15,
+    profileVisibility: "highest",
+  },
 } as const
 
 // Helper function to validate enum fields
