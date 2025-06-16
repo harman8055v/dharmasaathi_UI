@@ -1,49 +1,50 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { supabase } from "@/lib/supabase"
-import { debugLog } from "@/lib/logger"
-import type { User } from "@supabase/supabase-js"
-import type { OnboardingData, OnboardingProfile } from "@/lib/types/onboarding"
-import { VALID_VALUES, validateEnumField } from "@/lib/types/onboarding"
-import ProgressBar from "./progress-bar"
-import NavigationButtons from "./navigation-buttons"
-import Image from "next/image"
-import { Card, CardContent } from "@/components/ui/card" // Import Card components
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
+import { debugLog } from "@/lib/logger";
+import type { User } from "@supabase/supabase-js";
+import type { OnboardingData, OnboardingProfile } from "@/lib/types/onboarding";
+import { VALID_VALUES, validateEnumField } from "@/lib/types/onboarding";
+import ProgressBar from "./progress-bar";
+import NavigationButtons from "./navigation-buttons";
+import Image from "next/image";
+import { Card, CardContent } from "@/components/ui/card"; // Import Card components
 
 // Dynamic imports for stages
-import SeedStage from "./stages/seed-stage"
-import StemStage from "./stages/stem-stage"
-import LeavesStage from "./stages/leaves-stage"
-import PetalsStage from "./stages/petals-stage"
-import FullBloomStage from "./stages/full-bloom-stage"
+import SeedStage from "./stages/seed-stage";
+import StemStage from "./stages/stem-stage";
+import LeavesStage from "./stages/leaves-stage";
+import PetalsStage from "./stages/petals-stage";
+import FullBloomStage from "./stages/full-bloom-stage";
 
 interface OnboardingContainerProps {
-  user: User | null
-  profile: OnboardingProfile
-  setProfile: (profile: OnboardingProfile) => void
+  user: User | null;
+  profile: OnboardingProfile;
+  setProfile: (profile: OnboardingProfile) => void;
 }
 
 // Removes keys with null/undefined or blank-string values
 function sanitizePayload<T extends Record<string, any>>(data: T): Partial<T> {
-  return Object.entries(data).reduce(
-    (acc, [key, val]) => {
-      if (val === null || val === undefined) return acc
-      if (typeof val === "string" && val.trim() === "") return acc
-      acc[key as keyof T] = val
-      return acc
-    },
-    {} as Partial<T>,
-  )
+  return Object.entries(data).reduce((acc, [key, val]) => {
+    if (val === null || val === undefined) return acc;
+    if (typeof val === "string" && val.trim() === "") return acc;
+    acc[key as keyof T] = val;
+    return acc;
+  }, {} as Partial<T>);
 }
 
-export default function OnboardingContainer({ user, profile, setProfile }: OnboardingContainerProps) {
-  const [stage, setStage] = useState(1)
-  const [isLoading, setIsLoading] = useState(false)
-  const [showCompletion, setShowCompletion] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const router = useRouter()
+export default function OnboardingContainer({
+  user,
+  profile,
+  setProfile,
+}: OnboardingContainerProps) {
+  const [stage, setStage] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showCompletion, setShowCompletion] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   // Initialize form state with null for all enum/text fields and [] for arrays
   const [formData, setFormData] = useState<OnboardingData>({
@@ -69,14 +70,17 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
     user_photos: [],
     about_me: null,
     partner_expectations: null,
-  })
+    favorite_quote: null,
+  });
 
   // Initialize form data from existing profile
   useEffect(() => {
     if (profile) {
       setFormData({
-        email_verified: !!user?.email_confirmed_at || profile.email_verified || false,
-        mobile_verified: !!user?.phone_confirmed_at || profile.mobile_verified || false,
+        email_verified:
+          !!user?.email_confirmed_at || profile.email_verified || false,
+        mobile_verified:
+          !!user?.phone_confirmed_at || profile.mobile_verified || false,
         mobile_number: profile.mobile_number || null, // Add this line
         gender: profile.gender || null,
         birthdate: profile.birthdate || null,
@@ -97,46 +101,47 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
         user_photos: profile.user_photos || [],
         about_me: profile.about_me || null,
         partner_expectations: profile.partner_expectations || null,
-      })
+        favorite_quote: profile.favorite_quote || null,
+      });
 
       // Determine current stage based on completed data
       // First stage is now mobile verification
       if (!user?.phone_confirmed_at && !profile.mobile_verified) {
-        setStage(1)
+        setStage(1);
       } else if (!profile.gender || !profile.birthdate || !profile.height) {
-        setStage(2)
+        setStage(2);
       } else if (!profile.education || !profile.profession) {
-        setStage(3)
+        setStage(3);
       } else if (!profile.diet) {
-        setStage(4)
+        setStage(4);
       } else if (!profile.about_me) {
-        setStage(5)
+        setStage(5);
       }
     }
-  }, [profile, user])
+  }, [profile, user]);
 
   const handleFormChange = (updates: Partial<OnboardingData>) => {
-    setFormData((prev) => ({ ...prev, ...updates }))
-    setError(null) // Clear any previous errors
-  }
+    setFormData((prev) => ({ ...prev, ...updates }));
+    setError(null); // Clear any previous errors
+  };
 
   // Save and next handler
   async function handleSaveAndNext(stagePayload: Partial<OnboardingData>) {
-    setIsLoading(true)
-    setError(null)
+    setIsLoading(true);
+    setError(null);
 
     try {
-      const stageData = stagePayload // Use the payload passed directly from the stage
+      const stageData = stagePayload; // Use the payload passed directly from the stage
 
       // Validate stage data before saving
       if (Object.keys(stageData).length > 0) {
-        validateStageData(stageData, stage)
+        validateStageData(stageData, stage);
 
         // Sanitize the payload - removes null/undefined/empty string values
-        const payload = sanitizePayload(stageData)
+        const payload = sanitizePayload(stageData);
 
-        debugLog("Original stage data:", stageData)
-        debugLog("Sanitized payload:", payload)
+        debugLog("Original stage data:", stageData);
+        debugLog("Sanitized payload:", payload);
 
         // Only make the database call if we have data to save
         if (Object.keys(payload).length > 0) {
@@ -147,81 +152,104 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
               ...payload,
             },
             { onConflict: "id", returning: "minimal" },
-          )
+          );
 
           if (saveError) {
-            console.error("Error saving stage data:", saveError)
-            throw new Error(`Failed to save data: ${saveError.message}`)
+            console.error("Error saving stage data:", saveError);
+            throw new Error(`Failed to save data: ${saveError.message}`);
           }
 
-          debugLog("Successfully saved data")
+          debugLog("Successfully saved data");
 
           // Update local profile state
-          setProfile((prev) => ({ ...prev, ...payload }))
+          setProfile((prev) => ({ ...prev, ...payload }));
         }
       }
 
       // Move to next stage or complete
       if (stage < 5) {
-        setStage(stage + 1)
+        setStage(stage + 1);
       } else {
         // Mark onboarding as complete
         const { error: completeError } = await supabase
           .from("users")
           .update({ onboarding_completed: true })
-          .eq("id", user?.id)
+          .eq("id", user?.id);
 
         if (completeError) {
-          throw new Error(`Failed to complete onboarding: ${completeError.message}`)
+          throw new Error(
+            `Failed to complete onboarding: ${completeError.message}`,
+          );
         }
 
-        setShowCompletion(true)
+        setShowCompletion(true);
         setTimeout(() => {
-          router.push("/dashboard")
-        }, 3000)
+          router.push("/dashboard");
+        }, 3000);
       }
     } catch (err) {
-      console.error("Error saving stage data:", err)
-      setError((err as Error).message)
+      console.error("Error saving stage data:", err);
+      setError((err as Error).message);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   }
 
-  const validateStageData = (stageData: Partial<OnboardingData>, currentStage: number) => {
+  const validateStageData = (
+    stageData: Partial<OnboardingData>,
+    currentStage: number,
+  ) => {
     switch (currentStage) {
       case 1: // Mobile Verification Stage
         if (!stageData.mobile_verified) {
-          throw new Error("Please verify your mobile number before proceeding.")
+          throw new Error(
+            "Please verify your mobile number before proceeding.",
+          );
         }
-        break
+        break;
       case 2:
         // Validate gender
-        if (stageData.gender !== undefined && !validateEnumField("gender", stageData.gender)) {
+        if (
+          stageData.gender !== undefined &&
+          !validateEnumField("gender", stageData.gender)
+        ) {
           throw new Error(
             `Invalid gender value. Must be one of: ${VALID_VALUES.gender.filter((v) => v !== null).join(", ")}`,
-          )
+          );
         }
 
         // Required fields validation
         if (!stageData.gender) {
-          throw new Error("Please select your gender before proceeding.")
+          throw new Error("Please select your gender before proceeding.");
         }
-        if (!stageData.birthdate || !stageData.height || !stageData.city || !stageData.state || !stageData.country) {
-          throw new Error("Please fill in all required fields before proceeding.")
+        if (
+          !stageData.birthdate ||
+          !stageData.height ||
+          !stageData.city ||
+          !stageData.state ||
+          !stageData.country
+        ) {
+          throw new Error(
+            "Please fill in all required fields before proceeding.",
+          );
         }
-        break
+        break;
       case 3:
         if (!stageData.education || !stageData.profession) {
-          throw new Error("Please fill in all required fields before proceeding.")
+          throw new Error(
+            "Please fill in all required fields before proceeding.",
+          );
         }
-        break
+        break;
       case 4:
         // Validate enum fields
-        if (stageData.diet !== undefined && !validateEnumField("diet", stageData.diet)) {
+        if (
+          stageData.diet !== undefined &&
+          !validateEnumField("diet", stageData.diet)
+        ) {
           throw new Error(
             `Invalid diet value. Must be one of: ${VALID_VALUES.diet.filter((v) => v !== null).join(", ")}`,
-          )
+          );
         }
         if (
           stageData.temple_visit_freq !== undefined &&
@@ -229,15 +257,18 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
         ) {
           throw new Error(
             `Invalid temple visit frequency. Must be one of: ${VALID_VALUES.temple_visit_freq.filter((v) => v !== null).join(", ")}`,
-          )
+          );
         }
         if (
           stageData.vanaprastha_interest !== undefined &&
-          !validateEnumField("vanaprastha_interest", stageData.vanaprastha_interest)
+          !validateEnumField(
+            "vanaprastha_interest",
+            stageData.vanaprastha_interest,
+          )
         ) {
           throw new Error(
             `Invalid vanaprastha interest. Must be one of: ${VALID_VALUES.vanaprastha_interest.filter((v) => v !== null).join(", ")}`,
-          )
+          );
         }
         if (
           stageData.artha_vs_moksha !== undefined &&
@@ -245,57 +276,65 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
         ) {
           throw new Error(
             `Invalid artha vs moksha preference. Must be one of: ${VALID_VALUES.artha_vs_moksha.filter((v) => v !== null).join(", ")}`,
-          )
+          );
         }
 
         if (!stageData.diet) {
-          throw new Error("Please select your diet preference before proceeding.")
+          throw new Error(
+            "Please select your diet preference before proceeding.",
+          );
         }
-        break
+        break;
       case 5:
         if (!stageData.about_me) {
-          throw new Error("Please fill in the 'About Me' section before proceeding.")
+          throw new Error(
+            "Please fill in the 'About Me' section before proceeding.",
+          );
         }
-        break
+        break;
     }
-    return true
-  }
+    return true;
+  };
 
   const handleBack = () => {
     if (stage > 1) {
-      setStage(stage - 1)
+      setStage(stage - 1);
     }
-    setError(null)
-  }
+    setError(null);
+  };
 
   const handleSkip = async () => {
-    setIsLoading(true)
-    setError(null)
+    setIsLoading(true);
+    setError(null);
 
     try {
       // For skip, we don't save any data, just move to the next stage
       if (stage < 5) {
-        setStage(stage + 1)
+        setStage(stage + 1);
       } else {
         // If skipping the final stage, still mark onboarding as complete
         const { error: completeError } = await supabase
           .from("users")
           .update({ onboarding_completed: true })
-          .eq("id", user?.id)
+          .eq("id", user?.id);
 
         if (completeError) {
-          throw new Error(`Failed to complete onboarding: ${completeError.message}`)
+          throw new Error(
+            `Failed to complete onboarding: ${completeError.message}`,
+          );
         }
 
-        router.push("/dashboard")
+        router.push("/dashboard");
       }
     } catch (error: any) {
-      console.error("Error skipping stage:", error)
-      setError(error.message || "An unexpected error occurred. Please try again.")
+      console.error("Error skipping stage:", error);
+      setError(
+        error.message || "An unexpected error occurred. Please try again.",
+      );
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const stageNames = [
     "Mobile Verification",
@@ -303,7 +342,7 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
     "Professional Info",
     "Spiritual Preferences",
     "About You & Photos",
-  ]
+  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 relative overflow-hidden">
@@ -311,7 +350,11 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
       <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
         <div className="w-full max-w-4xl">
           {/* Progress bar */}
-          <ProgressBar currentStage={stage} totalStages={5} stageName={stageNames[stage - 1]} />
+          <ProgressBar
+            currentStage={stage}
+            totalStages={5}
+            stageName={stageNames[stage - 1]}
+          />
 
           {/* Error message */}
           {error && (
@@ -387,17 +430,25 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
           {/* Trust Section at the bottom */}
           <Card className="mt-8 max-w-2xl mx-auto bg-white/80 backdrop-blur-sm border border-white/20 shadow-lg">
             <CardContent className="flex flex-col items-center justify-center p-6 text-center">
-              <Image src="/logo.png" alt="DharmaSaathi Logo" width={120} height={40} className="mb-4" />
+              <Image
+                src="/logo.png"
+                alt="DharmaSaathi Logo"
+                width={120}
+                height={40}
+                className="mb-4"
+              />
               <p className="text-sm text-gray-600">
                 {
                   "Your data is safe with DharmaSaathi. We are committed to protecting your privacy and ensuring a secure experience."
                 }
               </p>
-              <p className="text-xs text-gray-500 mt-2">{"Learn more about our privacy policy."}</p>
+              <p className="text-xs text-gray-500 mt-2">
+                {"Learn more about our privacy policy."}
+              </p>
             </CardContent>
           </Card>
         </div>
       </div>
     </div>
-  )
+  );
 }

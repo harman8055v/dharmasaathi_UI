@@ -1,9 +1,14 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState, useRef } from "react"
-import { motion, useMotionValue, useTransform, type PanInfo } from "framer-motion"
+import { useState, useRef } from "react";
+import {
+  motion,
+  useMotionValue,
+  useTransform,
+  type PanInfo,
+} from "framer-motion";
 import {
   Heart,
   X,
@@ -17,152 +22,175 @@ import {
   ChevronLeft,
   ChevronRight,
   RotateCcw,
-} from "lucide-react"
-import Image from "next/image"
+} from "lucide-react";
+import Image from "next/image";
 
 interface SwipeCardProps {
-  profile: any
-  onSwipe: (direction: "left" | "right" | "superlike", profileId: string) => void
-  onUndo: () => void
-  showUndo?: boolean
-  isTop: boolean
-  index: number
+  profile: any;
+  onSwipe: (
+    direction: "left" | "right" | "superlike",
+    profileId: string,
+  ) => void;
+  onUndo: () => void;
+  showUndo?: boolean;
+  isTop: boolean;
+  index: number;
 }
 
-export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, isTop, index }: SwipeCardProps) {
-  const [isExpanded, setIsExpanded] = useState(false)
-  const [currentImageIndex, setCurrentImageIndex] = useState(0)
-  const [currentDetailImageIndex, setCurrentDetailImageIndex] = useState(0)
-  const [animatingButton, setAnimatingButton] = useState<string | null>(null)
-  const [touchStartX, setTouchStartX] = useState<number | null>(null)
-  const cardRef = useRef<HTMLDivElement>(null)
-  const x = useMotionValue(0)
-  const y = useMotionValue(0)
+export default function SwipeCard({
+  profile,
+  onSwipe,
+  onUndo,
+  showUndo = false,
+  isTop,
+  index,
+}: SwipeCardProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [currentDetailImageIndex, setCurrentDetailImageIndex] = useState(0);
+  const [animatingButton, setAnimatingButton] = useState<string | null>(null);
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
 
-  const rotateRaw = useTransform(x, [-300, 300], [-30, 30])
-  const opacity = useTransform(x, [-300, -150, 0, 150, 300], [0, 1, 1, 1, 0])
+  const rotateRaw = useTransform(x, [-300, 300], [-30, 30]);
+  const opacity = useTransform(x, [-300, -150, 0, 150, 300], [0, 1, 1, 1, 0]);
 
-  const rotate = rotateRaw
+  const rotate = rotateRaw;
 
   const calculateAge = (birthdate: string) => {
-    if (!birthdate) return "N/A"
-    const today = new Date()
-    const birth = new Date(birthdate)
-    let age = today.getFullYear() - birth.getFullYear()
-    const monthDiff = today.getMonth() - birth.getMonth()
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-      age--
+    if (!birthdate) return "N/A";
+    const today = new Date();
+    const birth = new Date(birthdate);
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+    if (
+      monthDiff < 0 ||
+      (monthDiff === 0 && today.getDate() < birth.getDate())
+    ) {
+      age--;
     }
-    return age
-  }
+    return age;
+  };
 
   const handleDragEnd = (event: any, info: PanInfo) => {
-    const threshold = 150
-    const velocity = info.velocity.x
+    const threshold = 150;
+    const velocity = info.velocity.x;
 
     if (Math.abs(info.offset.x) > threshold || Math.abs(velocity) > 500) {
-      const direction = info.offset.x > 0 ? "right" : "left"
-      onSwipe(direction, profile.id)
+      const direction = info.offset.x > 0 ? "right" : "left";
+      onSwipe(direction, profile.id);
     }
-  }
+  };
 
-  const [swipeAnimation, setSwipeAnimation] = useState<"left" | "right" | "up" | null>(null)
+  const [swipeAnimation, setSwipeAnimation] = useState<
+    "left" | "right" | "up" | null
+  >(null);
 
   const triggerSwipeAnimation = (direction: "left" | "right" | "up") => {
-    setSwipeAnimation(direction)
-    setTimeout(() => setSwipeAnimation(null), 800)
-  }
+    setSwipeAnimation(direction);
+    setTimeout(() => setSwipeAnimation(null), 800);
+  };
 
   const handleLike = () => {
-    if (animatingButton) return
-    setAnimatingButton("like")
-    triggerSwipeAnimation("right")
-    onSwipe("right", profile.id)
-    setTimeout(() => setAnimatingButton(null), 500)
-  }
+    if (animatingButton) return;
+    setAnimatingButton("like");
+    triggerSwipeAnimation("right");
+    onSwipe("right", profile.id);
+    setTimeout(() => setAnimatingButton(null), 500);
+  };
 
   const handleDislike = () => {
-    if (animatingButton) return
-    setAnimatingButton("dislike")
-    triggerSwipeAnimation("left")
-    onSwipe("left", profile.id)
-    setTimeout(() => setAnimatingButton(null), 500)
-  }
+    if (animatingButton) return;
+    setAnimatingButton("dislike");
+    triggerSwipeAnimation("left");
+    onSwipe("left", profile.id);
+    setTimeout(() => setAnimatingButton(null), 500);
+  };
 
   const handleSuperlike = () => {
-    if (animatingButton) return
-    setAnimatingButton("superlike")
-    triggerSwipeAnimation("up")
-    onSwipe("superlike", profile.id)
-    setTimeout(() => setAnimatingButton(null), 500)
-  }
+    if (animatingButton) return;
+    setAnimatingButton("superlike");
+    triggerSwipeAnimation("up");
+    onSwipe("superlike", profile.id);
+    setTimeout(() => setAnimatingButton(null), 500);
+  };
 
   const handleUndoClick = () => {
-    if (animatingButton) return
-    setAnimatingButton("undo")
-    onUndo()
-    setTimeout(() => setAnimatingButton(null), 300)
-  }
+    if (animatingButton) return;
+    setAnimatingButton("undo");
+    onUndo();
+    setTimeout(() => setAnimatingButton(null), 300);
+  };
 
   const nextImage = () => {
     if (profile.user_photos && profile.user_photos.length > 1) {
-      setCurrentImageIndex((prev) => (prev + 1) % profile.user_photos.length)
+      setCurrentImageIndex((prev) => (prev + 1) % profile.user_photos.length);
     }
-  }
+  };
 
   const prevImage = () => {
     if (profile.user_photos && profile.user_photos.length > 1) {
-      setCurrentImageIndex((prev) => (prev - 1 + profile.user_photos.length) % profile.user_photos.length)
+      setCurrentImageIndex(
+        (prev) =>
+          (prev - 1 + profile.user_photos.length) % profile.user_photos.length,
+      );
     }
-  }
+  };
 
   const nextDetailImage = () => {
     if (profile.user_photos && profile.user_photos.length > 1) {
-      setCurrentDetailImageIndex((prev) => (prev + 1) % profile.user_photos.length)
+      setCurrentDetailImageIndex(
+        (prev) => (prev + 1) % profile.user_photos.length,
+      );
     }
-  }
+  };
 
   const prevDetailImage = () => {
     if (profile.user_photos && profile.user_photos.length > 1) {
-      setCurrentDetailImageIndex((prev) => (prev - 1 + profile.user_photos.length) % profile.user_photos.length)
+      setCurrentDetailImageIndex(
+        (prev) =>
+          (prev - 1 + profile.user_photos.length) % profile.user_photos.length,
+      );
     }
-  }
+  };
 
   const handleTouchStart = (e: React.TouchEvent) => {
-    setTouchStartX(e.touches[0].clientX)
-  }
+    setTouchStartX(e.touches[0].clientX);
+  };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartX === null) return
-    const deltaX = e.changedTouches[0].clientX - touchStartX
+    if (touchStartX === null) return;
+    const deltaX = e.changedTouches[0].clientX - touchStartX;
     if (Math.abs(deltaX) > 50) {
       if (deltaX > 0) {
-        prevDetailImage()
+        prevDetailImage();
       } else {
-        nextDetailImage()
+        nextDetailImage();
       }
     }
-    setTouchStartX(null)
-  }
+    setTouchStartX(null);
+  };
 
   const getCurrentImage = () => {
     if (profile.user_photos && profile.user_photos.length > 0) {
-      return profile.user_photos[currentImageIndex]
+      return profile.user_photos[currentImageIndex];
     }
-    return "/placeholder.svg"
-  }
+    return "/placeholder.svg";
+  };
 
   const getCurrentDetailImage = () => {
     if (profile.user_photos && profile.user_photos.length > 0) {
-      return profile.user_photos[currentDetailImageIndex]
+      return profile.user_photos[currentDetailImageIndex];
     }
-    return "/placeholder.svg"
-  }
+    return "/placeholder.svg";
+  };
 
-  const nopeOpacity = useTransform(x, [-150, -50], [1, 0])
-  const nopeRotate = useTransform(x, [-150, -50], [-30, 0])
-  const likeOpacity = useTransform(x, [50, 150], [0, 1])
-  const likeRotate = useTransform(x, [50, 150], [0, 30])
+  const nopeOpacity = useTransform(x, [-150, -50], [1, 0]);
+  const nopeRotate = useTransform(x, [-150, -50], [-30, 0]);
+  const likeOpacity = useTransform(x, [50, 150], [0, 1]);
+  const likeRotate = useTransform(x, [50, 150], [0, 30]);
 
   if (!isTop && !isExpanded) {
     return (
@@ -186,7 +214,7 @@ export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, 
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
         </div>
       </motion.div>
-    )
+    );
   }
 
   return (
@@ -221,8 +249,8 @@ export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, 
             {/* Info Button - Top Right */}
             <motion.button
               onClick={(e) => {
-                e.stopPropagation()
-                setIsExpanded(true)
+                e.stopPropagation();
+                setIsExpanded(true);
               }}
               className="absolute top-4 right-4 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center text-gray-700 hover:bg-white transition-colors z-20"
               whileHover={{ scale: 1.1 }}
@@ -236,8 +264,8 @@ export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, 
               <>
                 <button
                   onClick={(e) => {
-                    e.stopPropagation()
-                    prevImage()
+                    e.stopPropagation();
+                    prevImage();
                   }}
                   className="absolute left-4 top-1/2 transform -translate-y-1/2 w-10 h-10 bg-black/30 rounded-full flex items-center justify-center text-white hover:bg-black/50 transition-colors z-10"
                 >
@@ -245,8 +273,8 @@ export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, 
                 </button>
                 <button
                   onClick={(e) => {
-                    e.stopPropagation()
-                    nextImage()
+                    e.stopPropagation();
+                    nextImage();
                   }}
                   className="absolute right-4 top-1/2 transform -translate-y-1/2 w-10 h-10 bg-black/30 rounded-full flex items-center justify-center text-white hover:bg-black/50 transition-colors z-10"
                 >
@@ -323,14 +351,18 @@ export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, 
               {/* Like Button */}
               <motion.button
                 onClick={(e) => {
-                  e.stopPropagation()
-                  handleLike()
+                  e.stopPropagation();
+                  handleLike();
                 }}
                 disabled={animatingButton !== null}
                 className="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center text-green-500 hover:bg-white transition-colors disabled:opacity-50"
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
-                animate={animatingButton === "like" ? { scale: [1, 1.3, 1], rotate: [0, 15, -15, 0] } : {}}
+                animate={
+                  animatingButton === "like"
+                    ? { scale: [1, 1.3, 1], rotate: [0, 15, -15, 0] }
+                    : {}
+                }
                 transition={{ duration: 0.5 }}
               >
                 <Heart className="w-6 h-6" />
@@ -339,14 +371,18 @@ export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, 
               {/* Super Like Button */}
               <motion.button
                 onClick={(e) => {
-                  e.stopPropagation()
-                  handleSuperlike()
+                  e.stopPropagation();
+                  handleSuperlike();
                 }}
                 disabled={animatingButton !== null}
                 className="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center text-blue-500 hover:bg-white transition-colors disabled:opacity-50"
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
-                animate={animatingButton === "superlike" ? { scale: [1, 1.4, 1], y: [0, -10, 0] } : {}}
+                animate={
+                  animatingButton === "superlike"
+                    ? { scale: [1, 1.4, 1], y: [0, -10, 0] }
+                    : {}
+                }
                 transition={{ duration: 0.6 }}
               >
                 <Star className="w-6 h-6" />
@@ -355,14 +391,18 @@ export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, 
               {/* Dislike Button */}
               <motion.button
                 onClick={(e) => {
-                  e.stopPropagation()
-                  handleDislike()
+                  e.stopPropagation();
+                  handleDislike();
                 }}
                 disabled={animatingButton !== null}
                 className="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center text-red-500 hover:bg-white transition-colors disabled:opacity-50"
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
-                animate={animatingButton === "dislike" ? { scale: [1, 1.2, 1], rotate: [0, -15, 15, 0] } : {}}
+                animate={
+                  animatingButton === "dislike"
+                    ? { scale: [1, 1.2, 1], rotate: [0, -15, 15, 0] }
+                    : {}
+                }
                 transition={{ duration: 0.4 }}
               >
                 <X className="w-6 h-6" />
@@ -371,14 +411,18 @@ export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, 
               {showUndo && (
                 <motion.button
                   onClick={(e) => {
-                    e.stopPropagation()
-                    handleUndoClick()
+                    e.stopPropagation();
+                    handleUndoClick();
                   }}
                   disabled={animatingButton !== null}
                   className="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center text-yellow-500 hover:bg-white transition-colors disabled:opacity-50"
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
-                  animate={animatingButton === "undo" ? { scale: [1, 1.2, 1], rotate: [0, 10, -10, 0] } : {}}
+                  animate={
+                    animatingButton === "undo"
+                      ? { scale: [1, 1.2, 1], rotate: [0, 10, -10, 0] }
+                      : {}
+                  }
                   transition={{ duration: 0.4 }}
                 >
                   <RotateCcw className="w-6 h-6" />
@@ -429,7 +473,10 @@ export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, 
                     animate={{ scale: 1.5, rotate: 0 }}
                     transition={{ duration: 0.4 }}
                   >
-                    <Heart className="w-16 h-16 text-green-500" fill="currentColor" />
+                    <Heart
+                      className="w-16 h-16 text-green-500"
+                      fill="currentColor"
+                    />
                   </motion.div>
                 </motion.div>
               )}
@@ -465,7 +512,10 @@ export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, 
                     animate={{ scale: 2, y: -100 }}
                     transition={{ duration: 0.6 }}
                   >
-                    <Star className="w-12 h-12 text-blue-500" fill="currentColor" />
+                    <Star
+                      className="w-12 h-12 text-blue-500"
+                      fill="currentColor"
+                    />
                   </motion.div>
 
                   {/* Superlike trail effect */}
@@ -478,7 +528,10 @@ export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, 
                       animate={{ scale: 1, opacity: 1 }}
                       transition={{ delay: i * 0.1, duration: 0.3 }}
                     >
-                      <Star className="w-6 h-6 text-blue-400" fill="currentColor" />
+                      <Star
+                        className="w-6 h-6 text-blue-400"
+                        fill="currentColor"
+                      />
                     </motion.div>
                   ))}
                 </motion.div>
@@ -528,7 +581,10 @@ export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, 
                     }}
                   >
                     {profile.user_photos.map((photo: string, idx: number) => (
-                      <div key={idx} className="w-full h-full relative flex-shrink-0">
+                      <div
+                        key={idx}
+                        className="w-full h-full relative flex-shrink-0"
+                      >
                         <Image
                           src={photo || "/placeholder.svg"}
                           alt={`${profile.first_name} ${profile.last_name} - Photo ${idx + 1}`}
@@ -549,7 +605,10 @@ export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, 
                     />
                     <button
                       onClick={nextDetailImage}
-                      disabled={currentDetailImageIndex === profile.user_photos.length - 1}
+                      disabled={
+                        currentDetailImageIndex ===
+                        profile.user_photos.length - 1
+                      }
                       className="flex-1 opacity-0 disabled:cursor-not-allowed"
                     />
                   </div>
@@ -568,7 +627,10 @@ export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, 
                       </motion.button>
                       <motion.button
                         onClick={nextDetailImage}
-                        disabled={currentDetailImageIndex === profile.user_photos.length - 1}
+                        disabled={
+                          currentDetailImageIndex ===
+                          profile.user_photos.length - 1
+                        }
                         className="absolute right-4 top-1/2 transform -translate-y-1/2 w-14 h-14 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center text-gray-700 hover:bg-white shadow-lg transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed z-20"
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
@@ -585,7 +647,9 @@ export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, 
                         key={idx}
                         onClick={() => setCurrentDetailImageIndex(idx)}
                         className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                          idx === currentDetailImageIndex ? "bg-white scale-125" : "bg-white/60"
+                          idx === currentDetailImageIndex
+                            ? "bg-white scale-125"
+                            : "bg-white/60"
                         }`}
                         whileHover={{ scale: 1.2 }}
                         whileTap={{ scale: 0.9 }}
@@ -611,15 +675,32 @@ export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, 
                     <h3 className="text-2xl font-bold text-gray-900">
                       {profile.first_name} {profile.last_name}
                     </h3>
-                    <p className="text-gray-600">{calculateAge(profile.birthdate)} years old</p>
+                    <p className="text-gray-600">
+                      {calculateAge(profile.birthdate)} years old
+                    </p>
                   </div>
                 </div>
 
                 {/* About Section */}
                 {profile.about_me && (
                   <div className="mb-6">
-                    <h4 className="text-lg font-semibold text-gray-900 mb-2">About Me</h4>
-                    <p className="text-gray-700 leading-relaxed">{profile.about_me}</p>
+                    <h4 className="text-lg font-semibold text-gray-900 mb-2">
+                      About Me
+                    </h4>
+                    <p className="text-gray-700 leading-relaxed">
+                      {profile.about_me}
+                    </p>
+                  </div>
+                )}
+
+                {profile.favorite_quote && (
+                  <div className="mb-6">
+                    <h4 className="text-lg font-semibold text-gray-900 mb-2">
+                      Favourite Quote
+                    </h4>
+                    <p className="text-gray-700 italic">
+                      "{profile.favorite_quote}"
+                    </p>
                   </div>
                 )}
 
@@ -669,29 +750,44 @@ export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, 
                 </div>
 
                 {/* Spiritual Practices */}
-                {profile.daily_practices && profile.daily_practices.length > 0 && (
-                  <div className="mb-6">
-                    <h4 className="text-lg font-semibold text-gray-900 mb-3">Daily Practices</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {profile.daily_practices.map((practice: string, index: number) => (
-                        <span key={index} className="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-sm">
-                          {practice}
-                        </span>
-                      ))}
+                {profile.daily_practices &&
+                  profile.daily_practices.length > 0 && (
+                    <div className="mb-6">
+                      <h4 className="text-lg font-semibold text-gray-900 mb-3">
+                        Daily Practices
+                      </h4>
+                      <div className="flex flex-wrap gap-2">
+                        {profile.daily_practices.map(
+                          (practice: string, index: number) => (
+                            <span
+                              key={index}
+                              className="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-sm"
+                            >
+                              {practice}
+                            </span>
+                          ),
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
                 {/* Spiritual Organizations */}
                 {profile.spiritual_org && profile.spiritual_org.length > 0 && (
                   <div className="mb-6">
-                    <h4 className="text-lg font-semibold text-gray-900 mb-3">Spiritual Organizations</h4>
+                    <h4 className="text-lg font-semibold text-gray-900 mb-3">
+                      Spiritual Organizations
+                    </h4>
                     <div className="flex flex-wrap gap-2">
-                      {profile.spiritual_org.map((org: string, index: number) => (
-                        <span key={index} className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm">
-                          {org}
-                        </span>
-                      ))}
+                      {profile.spiritual_org.map(
+                        (org: string, index: number) => (
+                          <span
+                            key={index}
+                            className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm"
+                          >
+                            {org}
+                          </span>
+                        ),
+                      )}
                     </div>
                   </div>
                 )}
@@ -703,15 +799,19 @@ export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, 
               {/* Like Button */}
               <motion.button
                 onClick={() => {
-                  setIsExpanded(false)
-                  triggerSwipeAnimation("right")
-                  handleLike()
+                  setIsExpanded(false);
+                  triggerSwipeAnimation("right");
+                  handleLike();
                 }}
                 disabled={animatingButton !== null}
                 className="w-14 h-14 bg-white shadow-xl rounded-full flex items-center justify-center text-green-500 hover:bg-green-50 transition-colors disabled:opacity-50 border border-gray-200"
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
-                animate={animatingButton === "like" ? { scale: [1, 1.3, 1], rotate: [0, 15, -15, 0] } : {}}
+                animate={
+                  animatingButton === "like"
+                    ? { scale: [1, 1.3, 1], rotate: [0, 15, -15, 0] }
+                    : {}
+                }
                 transition={{ duration: 0.5 }}
               >
                 <Heart className="w-7 h-7" />
@@ -720,15 +820,19 @@ export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, 
               {/* Super Like Button */}
               <motion.button
                 onClick={() => {
-                  setIsExpanded(false)
-                  triggerSwipeAnimation("up")
-                  handleSuperlike()
+                  setIsExpanded(false);
+                  triggerSwipeAnimation("up");
+                  handleSuperlike();
                 }}
                 disabled={animatingButton !== null}
                 className="w-14 h-14 bg-white shadow-xl rounded-full flex items-center justify-center text-blue-500 hover:bg-blue-50 transition-colors disabled:opacity-50 border border-gray-200"
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
-                animate={animatingButton === "superlike" ? { scale: [1, 1.4, 1], y: [0, -10, 0] } : {}}
+                animate={
+                  animatingButton === "superlike"
+                    ? { scale: [1, 1.4, 1], y: [0, -10, 0] }
+                    : {}
+                }
                 transition={{ duration: 0.6 }}
               >
                 <Star className="w-7 h-7" />
@@ -737,15 +841,19 @@ export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, 
               {/* Dislike Button */}
               <motion.button
                 onClick={() => {
-                  setIsExpanded(false)
-                  triggerSwipeAnimation("left")
-                  handleDislike()
+                  setIsExpanded(false);
+                  triggerSwipeAnimation("left");
+                  handleDislike();
                 }}
                 disabled={animatingButton !== null}
                 className="w-14 h-14 bg-white shadow-xl rounded-full flex items-center justify-center text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50 border border-gray-200"
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
-                animate={animatingButton === "dislike" ? { scale: [1, 1.2, 1], rotate: [0, -15, 15, 0] } : {}}
+                animate={
+                  animatingButton === "dislike"
+                    ? { scale: [1, 1.2, 1], rotate: [0, -15, 15, 0] }
+                    : {}
+                }
                 transition={{ duration: 0.4 }}
               >
                 <X className="w-7 h-7" />
@@ -755,14 +863,18 @@ export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, 
               {showUndo && (
                 <motion.button
                   onClick={() => {
-                    setIsExpanded(false)
-                    handleUndoClick()
+                    setIsExpanded(false);
+                    handleUndoClick();
                   }}
                   disabled={animatingButton !== null}
                   className="w-14 h-14 bg-white shadow-xl rounded-full flex items-center justify-center text-yellow-500 hover:bg-yellow-50 transition-colors disabled:opacity-50 border border-gray-200"
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
-                  animate={animatingButton === "undo" ? { scale: [1, 1.2, 1], rotate: [0, 10, -10, 0] } : {}}
+                  animate={
+                    animatingButton === "undo"
+                      ? { scale: [1, 1.2, 1], rotate: [0, 10, -10, 0] }
+                      : {}
+                  }
                   transition={{ duration: 0.4 }}
                 >
                   <RotateCcw className="w-7 h-7" />
@@ -773,5 +885,5 @@ export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, 
         </motion.div>
       )}
     </>
-  )
+  );
 }

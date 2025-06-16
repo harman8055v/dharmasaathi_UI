@@ -1,25 +1,37 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { supabase } from "@/lib/supabase"
-import { debugLog } from "@/lib/logger"
-import { Button } from "@/components/ui/button"
-import { Heart, Settings, User, Shield, Users, Clock, CheckCircle, AlertCircle, Edit, Star, Zap } from "lucide-react"
-import { ReferralProgram } from "@/components/dashboard/referral-program"
-import MobileNav from "@/components/dashboard/mobile-nav"
-import SettingsCard from "@/components/dashboard/settings-card"
-import SwipeStack from "@/components/dashboard/swipe-stack"
-import type { User as SupabaseUser } from "@supabase/supabase-js"
-import WelcomeSection from "@/components/dashboard/welcome-section"
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
+import { debugLog } from "@/lib/logger";
+import { Button } from "@/components/ui/button";
+import {
+  Heart,
+  Settings,
+  User,
+  Shield,
+  Users,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  Edit,
+  Star,
+  Zap,
+} from "lucide-react";
+import { ReferralProgram } from "@/components/dashboard/referral-program";
+import MobileNav from "@/components/dashboard/mobile-nav";
+import SettingsCard from "@/components/dashboard/settings-card";
+import SwipeStack from "@/components/dashboard/swipe-stack";
+import type { User as SupabaseUser } from "@supabase/supabase-js";
+import WelcomeSection from "@/components/dashboard/welcome-section";
 
 export default function DashboardPage() {
-  const [user, setUser] = useState<SupabaseUser | null>(null)
-  const [profile, setProfile] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
-  const [profiles, setProfiles] = useState<any[]>([])
-  const [loadingProfiles, setLoadingProfiles] = useState(false)
-  const router = useRouter()
+  const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [profile, setProfile] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [profiles, setProfiles] = useState<any[]>([]);
+  const [loadingProfiles, setLoadingProfiles] = useState(false);
+  const router = useRouter();
 
   // Mock profiles for demonstration - replace with actual API call
   const mockProfiles = [
@@ -35,7 +47,10 @@ export default function DashboardPage() {
       diet: "Vegetarian",
       about_me:
         "Passionate about spirituality and technology. Love practicing yoga and meditation daily. Looking for someone who shares similar values and interests in personal growth.",
-      user_photos: ["/abstract-spiritual-avatar-1.png", "/abstract-spiritual-avatar-2.png"],
+      user_photos: [
+        "/abstract-spiritual-avatar-1.png",
+        "/abstract-spiritual-avatar-2.png",
+      ],
       daily_practices: ["Meditation", "Yoga", "Prayer"],
       spiritual_org: ["Art of Living", "Isha Foundation"],
     },
@@ -51,7 +66,10 @@ export default function DashboardPage() {
       diet: "Vegetarian",
       about_me:
         "Dedicated to serving others through medicine and spirituality. Believe in the power of compassion and mindfulness in healing.",
-      user_photos: ["/abstract-spiritual-avatar-3.png", "/abstract-spiritual-avatar-4.png"],
+      user_photos: [
+        "/abstract-spiritual-avatar-3.png",
+        "/abstract-spiritual-avatar-4.png",
+      ],
       daily_practices: ["Meditation", "Chanting", "Reading Scriptures"],
       spiritual_org: ["Brahma Kumaris"],
     },
@@ -67,59 +85,66 @@ export default function DashboardPage() {
       diet: "Vegan",
       about_me:
         "Teaching is my passion, and I believe in nurturing young minds with spiritual values. Love nature, books, and meaningful conversations.",
-      user_photos: ["/abstract-spiritual-avatar-2.png", "/abstract-spiritual-avatar-1.png"],
+      user_photos: [
+        "/abstract-spiritual-avatar-2.png",
+        "/abstract-spiritual-avatar-1.png",
+      ],
       daily_practices: ["Meditation", "Yoga", "Journaling"],
       spiritual_org: ["Osho International", "Vipassana"],
     },
-  ]
+  ];
 
   useEffect(() => {
     async function getUser() {
       try {
         const {
           data: { user },
-        } = await supabase.auth.getUser()
+        } = await supabase.auth.getUser();
 
         if (!user) {
-          router.push("/")
-          return
+          router.push("/");
+          return;
         }
 
-        setUser(user)
+        setUser(user);
 
         // Fetch user profile data
-        const { data: profileData, error } = await supabase.from("users").select("*").eq("id", user.id).single()
+        const { data: profileData, error } = await supabase
+          .from("users")
+          .select("*")
+          .eq("id", user.id)
+          .single();
 
         if (error) {
-          console.error("Error fetching user profile:", error)
-          router.push("/onboarding")
-          return
+          console.error("Error fetching user profile:", error);
+          router.push("/onboarding");
+          return;
         }
 
         // If user hasn't completed onboarding, redirect to onboarding
         if (!profileData?.onboarding_completed) {
-          router.push("/onboarding")
-          return
+          router.push("/onboarding");
+          return;
         }
 
-        setProfile(profileData)
+        setProfile(profileData);
 
         // For demo purposes, set mock profiles
         // In production, fetch actual profiles based on user preferences
-        setProfiles(mockProfiles)
+        setProfiles(mockProfiles);
 
-        setLoading(false)
+        setLoading(false);
       } catch (error) {
-        console.error("Error in auth check:", error)
-        router.push("/")
+        console.error("Error in auth check:", error);
+        router.push("/");
       }
     }
 
-    getUser()
-  }, [router])
+    getUser();
+  }, [router]);
 
   const calculateProfileCompleteness = () => {
-    if (!profile) return 0
+    if (!profile) return 0;
 
     const fields = [
       "first_name",
@@ -135,34 +160,38 @@ export default function DashboardPage() {
       "profession",
       "diet",
       "about_me",
-    ]
+    ];
 
-    const arrayFields = ["spiritual_org", "daily_practices", "user_photos"]
+    const arrayFields = ["spiritual_org", "daily_practices", "user_photos"];
 
-    let completed = 0
-    const total = fields.length + arrayFields.length
+    let completed = 0;
+    const total = fields.length + arrayFields.length;
 
     fields.forEach((field) => {
       if (profile[field] && profile[field].toString().trim() !== "") {
-        completed++
+        completed++;
       }
-    })
+    });
 
     arrayFields.forEach((field) => {
-      if (profile[field] && Array.isArray(profile[field]) && profile[field].length > 0) {
-        completed++
+      if (
+        profile[field] &&
+        Array.isArray(profile[field]) &&
+        profile[field].length > 0
+      ) {
+        completed++;
       }
-    })
+    });
 
-    return Math.round((completed / total) * 100)
-  }
+    return Math.round((completed / total) * 100);
+  };
 
   const getNextTuesday = () => {
-    const now = new Date()
-    const nextTuesday = new Date()
-    const daysUntilTuesday = (2 - now.getDay() + 7) % 7 || 7 // 2 = Tuesday
-    nextTuesday.setDate(now.getDate() + daysUntilTuesday)
-    nextTuesday.setHours(18, 0, 0, 0) // 6 PM
+    const now = new Date();
+    const nextTuesday = new Date();
+    const daysUntilTuesday = (2 - now.getDay() + 7) % 7 || 7; // 2 = Tuesday
+    nextTuesday.setDate(now.getDate() + daysUntilTuesday);
+    nextTuesday.setHours(18, 0, 0, 0); // 6 PM
 
     return (
       nextTuesday.toLocaleDateString("en-IN", {
@@ -171,16 +200,16 @@ export default function DashboardPage() {
         month: "long",
         day: "numeric",
       }) + " at 6:00 PM IST"
-    )
-  }
+    );
+  };
 
   const handleSwipe = (direction: "left" | "right", profileId: string) => {
-    debugLog(`Swiped ${direction} on profile ${profileId}`)
+    debugLog(`Swiped ${direction} on profile ${profileId}`);
     // Here you would typically:
     // 1. Send the swipe action to your backend
     // 2. Update user preferences/matches
     // 3. Handle match notifications if it's a mutual like
-  }
+  };
 
   if (loading) {
     return (
@@ -190,11 +219,11 @@ export default function DashboardPage() {
           <p className="text-gray-600">Loading your dashboard...</p>
         </div>
       </div>
-    )
+    );
   }
 
-  const profileCompleteness = calculateProfileCompleteness()
-  const isVerified = profile?.verification_status === "verified"
+  const profileCompleteness = calculateProfileCompleteness();
+  const isVerified = profile?.verification_status === "verified";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50">
@@ -202,11 +231,17 @@ export default function DashboardPage() {
       <MobileNav userProfile={profile} />
 
       {/* Main Content */}
-      <main className={`${isVerified ? "pt-4 pb-32" : "pt-16 pb-32"} min-h-screen flex flex-col`}>
+      <main
+        className={`${isVerified ? "pt-4 pb-32" : "pt-16 pb-32"} min-h-screen flex flex-col`}
+      >
         {isVerified ? (
           // Verified User - Swipe Interface (No Header)
           <div className="flex-1 flex flex-col">
-            <SwipeStack profiles={profiles} onSwipe={handleSwipe} headerless={isVerified} />
+            <SwipeStack
+              profiles={profiles}
+              onSwipe={handleSwipe}
+              headerless={isVerified}
+            />
           </div>
         ) : (
           // Non-verified User - Original Dashboard
@@ -216,7 +251,9 @@ export default function DashboardPage() {
               <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
                 Welcome back, {profile?.first_name}! 🌸
               </h1>
-              <p className="text-gray-600">Your spiritual journey continues here</p>
+              <p className="text-gray-600">
+                Your spiritual journey continues here
+              </p>
             </div>
 
             {/* Welcome Section */}
@@ -234,7 +271,9 @@ export default function DashboardPage() {
                 </div>
                 <div className="flex-1">
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-3">
-                    <h3 className="text-xl font-bold text-gray-900">Profile Under Verification</h3>
+                    <h3 className="text-xl font-bold text-gray-900">
+                      Profile Under Verification
+                    </h3>
                     <div className="px-3 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full w-fit">
                       In Review
                     </div>
@@ -246,24 +285,31 @@ export default function DashboardPage() {
                     )}
                   </div>
                   <p className="text-gray-700 mb-4 leading-relaxed">
-                    Thank you for joining DharmaSaathi! Your profile is currently being reviewed by our team to ensure
-                    the safety and authenticity of our spiritual community.
+                    Thank you for joining DharmaSaathi! Your profile is
+                    currently being reviewed by our team to ensure the safety
+                    and authenticity of our spiritual community.
                     <span className="font-semibold text-blue-700">
                       {" "}
-                      New verified profiles go live every Tuesday at 6:00 PM IST.
+                      New verified profiles go live every Tuesday at 6:00 PM
+                      IST.
                     </span>
                     {profile?.fast_track_verification && (
                       <span className="font-semibold text-green-700">
                         {" "}
-                        Your profile is in the fast-track queue for priority review!
+                        Your profile is in the fast-track queue for priority
+                        review!
                       </span>
                     )}
                   </p>
 
                   <div className="bg-white/70 rounded-xl p-4 mb-4">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-gray-700">Profile Completeness</span>
-                      <span className="text-sm font-bold text-blue-600">{profileCompleteness}%</span>
+                      <span className="text-sm font-medium text-gray-700">
+                        Profile Completeness
+                      </span>
+                      <span className="text-sm font-bold text-blue-600">
+                        {profileCompleteness}%
+                      </span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-3">
                       <div
@@ -280,16 +326,24 @@ export default function DashboardPage() {
                         <Zap className="w-4 h-4 text-white" />
                       </div>
                       <div className="flex-1">
-                        <h4 className="font-semibold text-purple-800 mb-1">Want to get verified faster? ⚡</h4>
+                        <h4 className="font-semibold text-purple-800 mb-1">
+                          Want to get verified faster? ⚡
+                        </h4>
                         <p className="text-sm text-purple-700 mb-2">
-                          Boost your profile credibility and jump to the front of the verification queue with our
-                          referral program below! Invite 4 friends and get <strong>priority verification</strong> plus{" "}
-                          <strong>14 days of premium features</strong> absolutely free.
+                          Boost your profile credibility and jump to the front
+                          of the verification queue with our referral program
+                          below! Invite 4 friends and get{" "}
+                          <strong>priority verification</strong>.
                         </p>
                         <button
                           onClick={() => {
-                            const referralSection = document.querySelector("[data-referral-section]")
-                            referralSection?.scrollIntoView({ behavior: "smooth", block: "center" })
+                            const referralSection = document.querySelector(
+                              "[data-referral-section]",
+                            );
+                            referralSection?.scrollIntoView({
+                              behavior: "smooth",
+                              block: "center",
+                            });
                           }}
                           className="text-purple-600 hover:text-purple-700 font-medium text-sm underline decoration-2 underline-offset-2 transition-colors duration-200"
                         >
@@ -317,10 +371,12 @@ export default function DashboardPage() {
                       <div className="flex items-start gap-3">
                         <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
                         <div className="flex-1">
-                          <h4 className="font-semibold text-amber-800 mb-1">Speed up your verification!</h4>
+                          <h4 className="font-semibold text-amber-800 mb-1">
+                            Speed up your verification!
+                          </h4>
                           <p className="text-sm text-amber-700 mb-3">
-                            Complete profiles get verified faster. Add more details to help us review your profile
-                            quickly.
+                            Complete profiles get verified faster. Add more
+                            details to help us review your profile quickly.
                           </p>
                           <Button
                             size="sm"
@@ -345,7 +401,9 @@ export default function DashboardPage() {
 
             {/* Quick Actions */}
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Quick Actions</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                Quick Actions
+              </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <SettingsCard
                   title="Account Settings"
@@ -379,9 +437,16 @@ export default function DashboardPage() {
               <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-orange-100 hover:shadow-2xl transition-all duration-300">
                 <div className="text-center">
                   <Heart className="w-12 h-12 text-red-500 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Find Matches</h3>
-                  <p className="text-gray-600 mb-4">Discover compatible spiritual partners</p>
-                  <Button className="w-full bg-gradient-to-r from-orange-500 to-pink-500" disabled>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                    Find Matches
+                  </h3>
+                  <p className="text-gray-600 mb-4">
+                    Discover compatible spiritual partners
+                  </p>
+                  <Button
+                    className="w-full bg-gradient-to-r from-orange-500 to-pink-500"
+                    disabled
+                  >
                     Available After Verification
                   </Button>
                 </div>
@@ -390,8 +455,12 @@ export default function DashboardPage() {
               <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-orange-100 hover:shadow-2xl transition-all duration-300">
                 <div className="text-center">
                   <Users className="w-12 h-12 text-blue-500 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Community</h3>
-                  <p className="text-gray-600 mb-4">Connect with like-minded souls</p>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                    Community
+                  </h3>
+                  <p className="text-gray-600 mb-4">
+                    Connect with like-minded souls
+                  </p>
                   <Button variant="outline" className="w-full" disabled>
                     Coming Soon
                   </Button>
@@ -401,7 +470,9 @@ export default function DashboardPage() {
               <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-orange-100 hover:shadow-2xl transition-all duration-300 sm:col-span-2 lg:col-span-1">
                 <div className="text-center">
                   <Star className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Premium Features</h3>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                    Premium Features
+                  </h3>
                   <p className="text-gray-600 mb-4">Unlock advanced matching</p>
                   <Button variant="outline" className="w-full">
                     Learn More
@@ -413,5 +484,5 @@ export default function DashboardPage() {
         )}
       </main>
     </div>
-  )
+  );
 }
