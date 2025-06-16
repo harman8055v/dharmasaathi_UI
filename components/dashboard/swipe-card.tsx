@@ -14,21 +14,25 @@ import {
   Info,
   ChevronLeft,
   ChevronRight,
+  RotateCcw,
 } from "lucide-react"
 import Image from "next/image"
 
 interface SwipeCardProps {
   profile: any
   onSwipe: (direction: "left" | "right" | "superlike", profileId: string) => void
+  onUndo: () => void
+  showUndo?: boolean
   isTop: boolean
   index: number
 }
 
-export default function SwipeCard({ profile, onSwipe, isTop, index }: SwipeCardProps) {
+export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, isTop, index }: SwipeCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [currentDetailImageIndex, setCurrentDetailImageIndex] = useState(0)
   const [animatingButton, setAnimatingButton] = useState<string | null>(null)
+  const [touchStartX, setTouchStartX] = useState<number | null>(null)
   const cardRef = useRef<HTMLDivElement>(null)
   const x = useMotionValue(0)
   const y = useMotionValue(0)
@@ -81,6 +85,13 @@ export default function SwipeCard({ profile, onSwipe, isTop, index }: SwipeCardP
     setTimeout(() => setAnimatingButton(null), 500)
   }
 
+  const handleUndoClick = () => {
+    if (animatingButton) return
+    setAnimatingButton("undo")
+    onUndo()
+    setTimeout(() => setAnimatingButton(null), 300)
+  }
+
   const nextImage = () => {
     if (profile.user_photos && profile.user_photos.length > 1) {
       setCurrentImageIndex((prev) => (prev + 1) % profile.user_photos.length)
@@ -103,6 +114,23 @@ export default function SwipeCard({ profile, onSwipe, isTop, index }: SwipeCardP
     if (profile.user_photos && profile.user_photos.length > 1) {
       setCurrentDetailImageIndex((prev) => (prev - 1 + profile.user_photos.length) % profile.user_photos.length)
     }
+  }
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStartX(e.touches[0].clientX)
+  }
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX === null) return
+    const deltaX = e.changedTouches[0].clientX - touchStartX
+    if (Math.abs(deltaX) > 50) {
+      if (deltaX > 0) {
+        prevDetailImage()
+      } else {
+        nextDetailImage()
+      }
+    }
+    setTouchStartX(null)
   }
 
   const getCurrentImage = () => {
@@ -327,6 +355,23 @@ export default function SwipeCard({ profile, onSwipe, isTop, index }: SwipeCardP
               >
                 <X className="w-6 h-6" />
               </motion.button>
+
+              {showUndo && (
+                <motion.button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleUndoClick()
+                  }}
+                  disabled={animatingButton !== null}
+                  className="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center text-yellow-500 hover:bg-white transition-colors disabled:opacity-50"
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  animate={animatingButton === "undo" ? { scale: [1, 1.2, 1], rotate: [0, 10, -10, 0] } : {}}
+                  transition={{ duration: 0.4 }}
+                >
+                  <RotateCcw className="w-6 h-6" />
+                </motion.button>
+              )}
             </div>
           </div>
 
@@ -381,7 +426,11 @@ export default function SwipeCard({ profile, onSwipe, isTop, index }: SwipeCardP
             <div className="pb-32">
               {/* Optimized Swipeable Photo Gallery */}
               {profile.user_photos && profile.user_photos.length > 0 && (
-                <div className="relative h-[50vh] bg-gray-100 overflow-hidden">
+                <div
+                  className="relative h-[50vh] bg-gray-100 overflow-hidden"
+                  onTouchStart={handleTouchStart}
+                  onTouchEnd={handleTouchEnd}
+                >
                   <div
                     className="flex h-full transition-transform duration-300 ease-out"
                     style={{
@@ -393,7 +442,7 @@ export default function SwipeCard({ profile, onSwipe, isTop, index }: SwipeCardP
                       <div
                         key={idx}
                         className="w-full h-full relative flex-shrink-0"
-                        style={{ width: `${100 / profile.user_photos.length}%` }}
+                        style={{ width: "100%" }}
                       >
                         <Image
                           src={photo || "/placeholder.svg"}
@@ -613,6 +662,7 @@ export default function SwipeCard({ profile, onSwipe, isTop, index }: SwipeCardP
               >
                 <X className="w-7 h-7" />
               </motion.button>
+
             </div>
           </motion.div>
         </motion.div>
