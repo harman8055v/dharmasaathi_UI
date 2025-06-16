@@ -162,10 +162,8 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
 # Razorpay credentials for payments
 RAZORPAY_KEY_ID=your-razorpay-key-id
 RAZORPAY_KEY_SECRET=your-razorpay-key-secret
-NEXT_PUBLIC_RAZORPAY_KEY_ID=your-razorpay-key-id
 # Enable extra logging locally
 NEXT_PUBLIC_DEBUG=false
-# (Do NOT expose secret keys on frontend!)
 \`\`\`
 
 Ensure in your Supabase project settings that email confirmation is disabled so

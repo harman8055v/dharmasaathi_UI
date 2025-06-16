@@ -78,7 +78,7 @@ export default function PaymentModal({ isOpen, onClose, item, onSuccess }: Payme
 
       // Configure Razorpay options
       const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        key: order.key_id,
         amount: order.amount,
         currency: order.currency,
         name: "DharmaSaathi",
