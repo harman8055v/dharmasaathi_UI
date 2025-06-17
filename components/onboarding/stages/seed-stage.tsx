@@ -66,13 +66,19 @@ export default function SeedStage({ formData, onChange, onNext, isLoading, user,
 
     setIsVerifying(true)
     try {
+      console.log("Sending OTP to:", mobileNumber)
+
       // Update the user's phone number in auth.users table
       const { data: updateData, error: updateError } = await supabase.auth.updateUser({
         phone: mobileNumber,
       })
 
-      if (updateError) throw updateError
+      if (updateError) {
+        console.error("Update user error:", updateError)
+        throw updateError
+      }
 
+      console.log("User phone updated successfully:", updateData)
       setOtpSent(true)
       setIsUserEditing(false)
       setResendTimer(60)
@@ -111,43 +117,78 @@ export default function SeedStage({ formData, onChange, onNext, isLoading, user,
 
     setIsVerifying(true)
     try {
-      const { data, error: verifyError } = await supabase.auth.verifyOtp({
-        phone: mobileNumber,
-        token: otp,
-        type: "phone_change",
-      })
+      console.log("Verifying OTP:", otp, "for phone:", mobileNumber)
 
-      if (verifyError) throw verifyError
+      // Try different OTP verification types
+      const verificationAttempts = [{ type: "phone_change" as const }, { type: "sms" as const }]
 
-      if (data.user) {
-        // Update the mobile_verified status in your 'users' table
-        const { error: updateError } = await supabase
-          .from("users")
-          .update({
-            mobile_number: mobileNumber,
-            mobile_verified: true,
-            updated_at: new Date().toISOString(),
+      let verificationSuccess = false
+      let lastError = null
+
+      for (const attempt of verificationAttempts) {
+        try {
+          console.log(`Attempting verification with type: ${attempt.type}`)
+
+          const { data, error: verifyError } = await supabase.auth.verifyOtp({
+            phone: mobileNumber,
+            token: otp,
+            type: attempt.type,
           })
-          .eq("id", data.user.id)
 
-        if (updateError) {
-          console.error("Error updating mobile_verified status:", updateError)
-          setLocalError("OTP verified, but failed to update profile. Please contact support.")
-          return
+          if (verifyError) {
+            console.error(`Verification failed with type ${attempt.type}:`, verifyError)
+            lastError = verifyError
+            continue
+          }
+
+          if (data.user) {
+            console.log("OTP verification successful:", data.user.id)
+
+            // Update the mobile_verified status in your 'users' table
+            const { error: updateError } = await supabase
+              .from("users")
+              .update({
+                mobile_number: mobileNumber,
+                mobile_verified: true,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", data.user.id)
+
+            if (updateError) {
+              console.error("Error updating mobile_verified status:", updateError)
+              setLocalError("OTP verified, but failed to update profile. Please contact support.")
+              return
+            }
+
+            setIsMobileVerified(true)
+            onChange({ mobile_number: mobileNumber, mobile_verified: true })
+            onNext({ mobile_verified: true })
+            verificationSuccess = true
+            break
+          }
+        } catch (attemptError) {
+          console.error(`Attempt with type ${attempt.type} failed:`, attemptError)
+          lastError = attemptError
         }
+      }
 
-        setIsMobileVerified(true)
-        onChange({ mobile_number: mobileNumber, mobile_verified: true })
-        onNext({ mobile_verified: true })
+      if (!verificationSuccess) {
+        throw lastError || new Error("All verification attempts failed")
       }
     } catch (err: any) {
       console.error("Error verifying OTP:", err)
+
+      // More specific error messages
       if (err.message?.includes("Invalid token") || err.message?.includes("invalid")) {
-        setLocalError("Invalid OTP. Please check and try again.")
-      } else if (err.message?.includes("expired")) {
+        setLocalError("Invalid OTP. Please check the 6-digit code and try again.")
+      } else if (err.message?.includes("expired") || err.message?.includes("Token has expired")) {
         setLocalError("OTP has expired. Please request a new one.")
+      } else if (err.message?.includes("too many requests")) {
+        setLocalError("Too many attempts. Please wait a few minutes before trying again.")
+      } else if (err.message?.includes("Phone number not confirmed")) {
+        setLocalError("Phone number verification failed. Please try sending a new OTP.")
       } else {
-        setLocalError(err.message || "Failed to verify OTP. Please try again.")
+        setLocalError(`Verification failed: ${err.message || "Please try again or request a new OTP."}`)
       }
     } finally {
       setIsVerifying(false)
@@ -161,12 +202,18 @@ export default function SeedStage({ formData, onChange, onNext, isLoading, user,
     setLocalError(null)
 
     try {
+      console.log("Resending OTP to:", mobileNumber)
+
       const { error } = await supabase.auth.updateUser({
         phone: mobileNumber,
       })
 
-      if (error) throw error
+      if (error) {
+        console.error("Resend OTP error:", error)
+        throw error
+      }
 
+      console.log("OTP resent successfully")
       setResendTimer(60)
       const timer = setInterval(() => {
         setResendTimer((prev) => {
@@ -277,6 +324,7 @@ export default function SeedStage({ formData, onChange, onNext, isLoading, user,
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">Enter Verification Code</h3>
                   <p className="text-gray-600 text-sm">We've sent a 6-digit code to:</p>
+                  <p className="font-semibold text-gray-900">{mobileNumber}</p>
                 </div>
 
                 <div className="space-y-2 mb-4">
@@ -323,6 +371,7 @@ export default function SeedStage({ formData, onChange, onNext, isLoading, user,
                       autoFocus
                     />
                   </div>
+                  <p className="mt-1 text-xs text-gray-500">Enter the 6-digit code sent to your phone</p>
                 </div>
 
                 <button
