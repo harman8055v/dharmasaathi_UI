@@ -174,7 +174,18 @@ export default function MatchesPage() {
         setProfile(profileData)
 
         // Set matches based on verification status
-        if (profileData?.verification_status === "verified") {
+        const isVerifiedAccount =
+          profileData?.verification_status === "verified" ||
+          [
+            "active",
+            "sparsh",
+            "sangam",
+            "samarpan",
+            "premium",
+            "elite",
+          ].includes(profileData?.account_status ?? "")
+
+        if (isVerifiedAccount) {
           setMatches(mockMatches)
           setLikesReceived(mockLikesReceived)
           setSuperlikesReceived(mockSuperlikesReceived)
@@ -210,7 +221,11 @@ export default function MatchesPage() {
     )
   }
 
-  const isVerified = profile?.verification_status === "verified"
+  const isVerified =
+    profile?.verification_status === "verified" ||
+    ["active", "sparsh", "sangam", "samarpan", "premium", "elite"].includes(
+      profile?.account_status ?? "",
+    )
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50">

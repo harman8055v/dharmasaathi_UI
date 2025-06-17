@@ -58,7 +58,18 @@ export default function DashboardPage() {
         console.log("Account status:", profileData?.account_status)
 
         // If verified, fetch profiles and swipe stats
-        if (profileData?.verification_status === "verified" || profileData?.account_status === "active") {
+        const isVerifiedAccount =
+          profileData?.verification_status === "verified" ||
+          [
+            "active",
+            "sparsh",
+            "sangam",
+            "samarpan",
+            "premium",
+            "elite",
+          ].includes(profileData?.account_status ?? "")
+
+        if (isVerifiedAccount) {
           fetchProfiles()
           fetchSwipeStats()
         }
@@ -173,7 +184,9 @@ export default function DashboardPage() {
   const profileCompleteness = calculateProfileCompleteness()
   const isVerified =
     profile?.verification_status === "verified" ||
-    profile?.account_status === "active"
+    ["active", "sparsh", "sangam", "samarpan", "premium", "elite"].includes(
+      profile?.account_status ?? "",
+    )
   console.log("Is verified:", isVerified)
 
   return (
