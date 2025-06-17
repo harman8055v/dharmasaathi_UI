@@ -12,6 +12,7 @@ import { ArrowLeft, Save, User, Heart, Briefcase, Users, Activity, Target, Check
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import MobileNav from "@/components/dashboard/mobile-nav"
 import { cn } from "@/lib/utils"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 const SPIRITUAL_ORGANIZATIONS = [
   "ISKCON",
@@ -121,51 +122,6 @@ const HOBBIES = [
   "Knitting",
   "Woodworking",
 ]
-
-// Custom Selection Component
-const SelectionCard = ({
-  options,
-  value,
-  onChange,
-  className = "",
-}: {
-  options: { value: string; label: string; description?: string }[]
-  value: string
-  onChange: (value: string) => void
-  className?: string
-}) => {
-  return (
-    <div className={cn("grid gap-3", className)}>
-      {options.map((option) => (
-        <div
-          key={option.value}
-          onClick={() => onChange(option.value)}
-          className={cn(
-            "relative cursor-pointer rounded-lg border p-4 transition-all hover:shadow-md",
-            value === option.value
-              ? "border-orange-500 bg-orange-50 shadow-sm"
-              : "border-gray-200 bg-white hover:border-gray-300",
-          )}
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex-1">
-              <div className="font-medium text-gray-900">{option.label}</div>
-              {option.description && <div className="text-sm text-gray-600 mt-1">{option.description}</div>}
-            </div>
-            <div
-              className={cn(
-                "w-5 h-5 rounded-full border-2 flex items-center justify-center",
-                value === option.value ? "border-orange-500 bg-orange-500" : "border-gray-300",
-              )}
-            >
-              {value === option.value && <Check className="w-3 h-3 text-white" />}
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  )
-}
 
 // Multi-Selection Component
 const MultiSelectCard = ({
@@ -360,16 +316,16 @@ export default function SettingsPage() {
                     </div>
                     <div>
                       <Label>Gender</Label>
-                      <SelectionCard
-                        options={[
-                          { value: "Male", label: "Male" },
-                          { value: "Female", label: "Female" },
-                          { value: "Other", label: "Other" },
-                        ]}
-                        value={profile?.gender || ""}
-                        onChange={(value) => updateProfile("gender", value)}
-                        className="grid-cols-1"
-                      />
+                      <Select value={profile?.gender || ""} onValueChange={(value) => updateProfile("gender", value)}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select gender" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Male">Male</SelectItem>
+                          <SelectItem value="Female">Female</SelectItem>
+                          <SelectItem value="Other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
 
@@ -430,46 +386,55 @@ export default function SettingsPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <Label>Marital Status</Label>
-                        <SelectionCard
-                          options={[
-                            { value: "Never Married", label: "Never Married" },
-                            { value: "Divorced", label: "Divorced" },
-                            { value: "Widowed", label: "Widowed" },
-                            { value: "Separated", label: "Separated" },
-                          ]}
+                        <Select
                           value={profile?.marital_status || ""}
-                          onChange={(value) => updateProfile("marital_status", value)}
-                          className="grid-cols-1"
-                        />
+                          onValueChange={(value) => updateProfile("marital_status", value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select marital status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Never Married">Never Married</SelectItem>
+                            <SelectItem value="Divorced">Divorced</SelectItem>
+                            <SelectItem value="Widowed">Widowed</SelectItem>
+                            <SelectItem value="Separated">Separated</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div>
                         <Label>Family Type</Label>
-                        <SelectionCard
-                          options={[
-                            { value: "Joint Family", label: "Joint Family" },
-                            { value: "Nuclear Family", label: "Nuclear Family" },
-                            { value: "Extended Family", label: "Extended Family" },
-                          ]}
+                        <Select
                           value={profile?.family_type || ""}
-                          onChange={(value) => updateProfile("family_type", value)}
-                          className="grid-cols-1"
-                        />
+                          onValueChange={(value) => updateProfile("family_type", value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select family type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Joint Family">Joint Family</SelectItem>
+                            <SelectItem value="Nuclear Family">Nuclear Family</SelectItem>
+                            <SelectItem value="Extended Family">Extended Family</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <Label>Family Values</Label>
-                        <SelectionCard
-                          options={[
-                            { value: "Traditional", label: "Traditional", description: "Strong cultural values" },
-                            { value: "Moderate", label: "Moderate", description: "Balanced approach" },
-                            { value: "Liberal", label: "Liberal", description: "Open-minded values" },
-                          ]}
+                        <Select
                           value={profile?.family_values || ""}
-                          onChange={(value) => updateProfile("family_values", value)}
-                          className="grid-cols-1"
-                        />
+                          onValueChange={(value) => updateProfile("family_values", value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select family values" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Traditional">Traditional</SelectItem>
+                            <SelectItem value="Moderate">Moderate</SelectItem>
+                            <SelectItem value="Liberal">Liberal</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div className="space-y-4">
                         <div>
@@ -520,20 +485,23 @@ export default function SettingsPage() {
 
                     <div>
                       <Label>Annual Income</Label>
-                      <SelectionCard
-                        options={[
-                          { value: "Below 3 Lakhs", label: "Below ₹3 Lakhs" },
-                          { value: "3-5 Lakhs", label: "₹3-5 Lakhs" },
-                          { value: "5-10 Lakhs", label: "₹5-10 Lakhs" },
-                          { value: "10-15 Lakhs", label: "₹10-15 Lakhs" },
-                          { value: "15-25 Lakhs", label: "₹15-25 Lakhs" },
-                          { value: "25-50 Lakhs", label: "₹25-50 Lakhs" },
-                          { value: "Above 50 Lakhs", label: "Above ₹50 Lakhs" },
-                        ]}
+                      <Select
                         value={profile?.annual_income || ""}
-                        onChange={(value) => updateProfile("annual_income", value)}
-                        className="grid-cols-2 md:grid-cols-3"
-                      />
+                        onValueChange={(value) => updateProfile("annual_income", value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select annual income" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Below 3 Lakhs">Below ₹3 Lakhs</SelectItem>
+                          <SelectItem value="3-5 Lakhs">₹3-5 Lakhs</SelectItem>
+                          <SelectItem value="5-10 Lakhs">₹5-10 Lakhs</SelectItem>
+                          <SelectItem value="10-15 Lakhs">₹10-15 Lakhs</SelectItem>
+                          <SelectItem value="15-25 Lakhs">₹15-25 Lakhs</SelectItem>
+                          <SelectItem value="25-50 Lakhs">₹25-50 Lakhs</SelectItem>
+                          <SelectItem value="Above 50 Lakhs">Above ₹50 Lakhs</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
 
@@ -565,32 +533,35 @@ export default function SettingsPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <Label>Diet Preference</Label>
-                      <SelectionCard
-                        options={[
-                          { value: "Vegetarian", label: "Vegetarian" },
-                          { value: "Vegan", label: "Vegan" },
-                          { value: "Eggetarian", label: "Eggetarian" },
-                          { value: "Non-Vegetarian", label: "Non-Vegetarian" },
-                        ]}
-                        value={profile?.diet || ""}
-                        onChange={(value) => updateProfile("diet", value)}
-                        className="grid-cols-1"
-                      />
+                      <Select value={profile?.diet || ""} onValueChange={(value) => updateProfile("diet", value)}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select diet preference" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Vegetarian">Vegetarian</SelectItem>
+                          <SelectItem value="Vegan">Vegan</SelectItem>
+                          <SelectItem value="Eggetarian">Eggetarian</SelectItem>
+                          <SelectItem value="Non-Vegetarian">Non-Vegetarian</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div>
                       <Label>Temple Visit Frequency</Label>
-                      <SelectionCard
-                        options={[
-                          { value: "Daily", label: "Daily" },
-                          { value: "Weekly", label: "Weekly" },
-                          { value: "Monthly", label: "Monthly" },
-                          { value: "Rarely", label: "Rarely" },
-                          { value: "Never", label: "Never" },
-                        ]}
+                      <Select
                         value={profile?.temple_visit_freq || ""}
-                        onChange={(value) => updateProfile("temple_visit_freq", value)}
-                        className="grid-cols-1"
-                      />
+                        onValueChange={(value) => updateProfile("temple_visit_freq", value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select frequency" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Daily">Daily</SelectItem>
+                          <SelectItem value="Weekly">Weekly</SelectItem>
+                          <SelectItem value="Monthly">Monthly</SelectItem>
+                          <SelectItem value="Rarely">Rarely</SelectItem>
+                          <SelectItem value="Never">Never</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
 
@@ -598,95 +569,113 @@ export default function SettingsPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <Label>Meditation Practice</Label>
-                      <SelectionCard
-                        options={[
-                          { value: "Daily", label: "Daily" },
-                          { value: "Weekly", label: "Weekly" },
-                          { value: "Monthly", label: "Monthly" },
-                          { value: "Rarely", label: "Rarely" },
-                          { value: "Never", label: "Never" },
-                        ]}
+                      <Select
                         value={profile?.meditation_frequency || ""}
-                        onChange={(value) => updateProfile("meditation_frequency", value)}
-                        className="grid-cols-1"
-                      />
+                        onValueChange={(value) => updateProfile("meditation_frequency", value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select frequency" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Daily">Daily</SelectItem>
+                          <SelectItem value="Weekly">Weekly</SelectItem>
+                          <SelectItem value="Monthly">Monthly</SelectItem>
+                          <SelectItem value="Rarely">Rarely</SelectItem>
+                          <SelectItem value="Never">Never</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div>
                       <Label>Yoga Practice</Label>
-                      <SelectionCard
-                        options={[
-                          { value: "Daily", label: "Daily" },
-                          { value: "Weekly", label: "Weekly" },
-                          { value: "Monthly", label: "Monthly" },
-                          { value: "Rarely", label: "Rarely" },
-                          { value: "Never", label: "Never" },
-                        ]}
+                      <Select
                         value={profile?.yoga_frequency || ""}
-                        onChange={(value) => updateProfile("yoga_frequency", value)}
-                        className="grid-cols-1"
-                      />
+                        onValueChange={(value) => updateProfile("yoga_frequency", value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select frequency" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Daily">Daily</SelectItem>
+                          <SelectItem value="Weekly">Weekly</SelectItem>
+                          <SelectItem value="Monthly">Monthly</SelectItem>
+                          <SelectItem value="Rarely">Rarely</SelectItem>
+                          <SelectItem value="Never">Never</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <Label>Scripture Study</Label>
-                      <SelectionCard
-                        options={[
-                          { value: "Daily", label: "Daily" },
-                          { value: "Weekly", label: "Weekly" },
-                          { value: "Monthly", label: "Monthly" },
-                          { value: "Rarely", label: "Rarely" },
-                          { value: "Never", label: "Never" },
-                        ]}
+                      <Select
                         value={profile?.scripture_study || ""}
-                        onChange={(value) => updateProfile("scripture_study", value)}
-                        className="grid-cols-1"
-                      />
+                        onValueChange={(value) => updateProfile("scripture_study", value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select frequency" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Daily">Daily</SelectItem>
+                          <SelectItem value="Weekly">Weekly</SelectItem>
+                          <SelectItem value="Monthly">Monthly</SelectItem>
+                          <SelectItem value="Rarely">Rarely</SelectItem>
+                          <SelectItem value="Never">Never</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div>
                       <Label>Pilgrimage Interest</Label>
-                      <SelectionCard
-                        options={[
-                          { value: "Very High", label: "Very High" },
-                          { value: "High", label: "High" },
-                          { value: "Moderate", label: "Moderate" },
-                          { value: "Low", label: "Low" },
-                          { value: "None", label: "None" },
-                        ]}
+                      <Select
                         value={profile?.pilgrimage_interest || ""}
-                        onChange={(value) => updateProfile("pilgrimage_interest", value)}
-                        className="grid-cols-1"
-                      />
+                        onValueChange={(value) => updateProfile("pilgrimage_interest", value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select interest level" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Very High">Very High</SelectItem>
+                          <SelectItem value="High">High</SelectItem>
+                          <SelectItem value="Moderate">Moderate</SelectItem>
+                          <SelectItem value="Low">Low</SelectItem>
+                          <SelectItem value="None">None</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <Label>Vanaprastha Interest</Label>
-                      <SelectionCard
-                        options={[
-                          { value: "yes", label: "Yes", description: "Interested in spiritual retirement" },
-                          { value: "no", label: "No", description: "Not interested" },
-                          { value: "open", label: "Open to Discussion", description: "Willing to consider" },
-                        ]}
+                      <Select
                         value={profile?.vanaprastha_interest || ""}
-                        onChange={(value) => updateProfile("vanaprastha_interest", value)}
-                        className="grid-cols-1"
-                      />
+                        onValueChange={(value) => updateProfile("vanaprastha_interest", value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select interest" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="yes">Yes</SelectItem>
+                          <SelectItem value="no">No</SelectItem>
+                          <SelectItem value="open">Open to Discussion</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div>
                       <Label>Life Philosophy</Label>
-                      <SelectionCard
-                        options={[
-                          { value: "Artha-focused", label: "Artha-focused", description: "Material prosperity" },
-                          { value: "Moksha-focused", label: "Moksha-focused", description: "Spiritual liberation" },
-                          { value: "Balance", label: "Balanced Approach", description: "Both material & spiritual" },
-                        ]}
+                      <Select
                         value={profile?.artha_vs_moksha || ""}
-                        onChange={(value) => updateProfile("artha_vs_moksha", value)}
-                        className="grid-cols-1"
-                      />
+                        onValueChange={(value) => updateProfile("artha_vs_moksha", value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select philosophy" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Artha-focused">Artha-focused</SelectItem>
+                          <SelectItem value="Moksha-focused">Moksha-focused</SelectItem>
+                          <SelectItem value="Balance">Balanced Approach</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
 
@@ -743,64 +732,73 @@ export default function SettingsPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <Label>Smoking</Label>
-                      <SelectionCard
-                        options={[
-                          { value: "Never", label: "Never" },
-                          { value: "Occasionally", label: "Occasionally" },
-                          { value: "Regularly", label: "Regularly" },
-                          { value: "Trying to Quit", label: "Trying to Quit" },
-                        ]}
-                        value={profile?.smoking || ""}
-                        onChange={(value) => updateProfile("smoking", value)}
-                        className="grid-cols-1"
-                      />
+                      <Select value={profile?.smoking || ""} onValueChange={(value) => updateProfile("smoking", value)}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select smoking habit" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Never">Never</SelectItem>
+                          <SelectItem value="Occasionally">Occasionally</SelectItem>
+                          <SelectItem value="Regularly">Regularly</SelectItem>
+                          <SelectItem value="Trying to Quit">Trying to Quit</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div>
                       <Label>Drinking</Label>
-                      <SelectionCard
-                        options={[
-                          { value: "Never", label: "Never" },
-                          { value: "Socially", label: "Socially" },
-                          { value: "Occasionally", label: "Occasionally" },
-                          { value: "Regularly", label: "Regularly" },
-                        ]}
+                      <Select
                         value={profile?.drinking || ""}
-                        onChange={(value) => updateProfile("drinking", value)}
-                        className="grid-cols-1"
-                      />
+                        onValueChange={(value) => updateProfile("drinking", value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select drinking habit" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Never">Never</SelectItem>
+                          <SelectItem value="Socially">Socially</SelectItem>
+                          <SelectItem value="Occasionally">Occasionally</SelectItem>
+                          <SelectItem value="Regularly">Regularly</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <Label>Exercise Frequency</Label>
-                      <SelectionCard
-                        options={[
-                          { value: "Daily", label: "Daily" },
-                          { value: "4-6 times a week", label: "4-6 times a week" },
-                          { value: "2-3 times a week", label: "2-3 times a week" },
-                          { value: "Once a week", label: "Once a week" },
-                          { value: "Rarely", label: "Rarely" },
-                          { value: "Never", label: "Never" },
-                        ]}
+                      <Select
                         value={profile?.exercise_frequency || ""}
-                        onChange={(value) => updateProfile("exercise_frequency", value)}
-                        className="grid-cols-1"
-                      />
+                        onValueChange={(value) => updateProfile("exercise_frequency", value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select exercise frequency" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Daily">Daily</SelectItem>
+                          <SelectItem value="4-6 times a week">4-6 times a week</SelectItem>
+                          <SelectItem value="2-3 times a week">2-3 times a week</SelectItem>
+                          <SelectItem value="Once a week">Once a week</SelectItem>
+                          <SelectItem value="Rarely">Rarely</SelectItem>
+                          <SelectItem value="Never">Never</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div>
                       <Label>Sleep Schedule</Label>
-                      <SelectionCard
-                        options={[
-                          { value: "Early Bird (Before 10 PM)", label: "Early Bird", description: "Before 10 PM" },
-                          { value: "Regular (10 PM - 12 AM)", label: "Regular", description: "10 PM - 12 AM" },
-                          { value: "Night Owl (After 12 AM)", label: "Night Owl", description: "After 12 AM" },
-                          { value: "Irregular", label: "Irregular" },
-                        ]}
+                      <Select
                         value={profile?.sleep_schedule || ""}
-                        onChange={(value) => updateProfile("sleep_schedule", value)}
-                        className="grid-cols-1"
-                      />
+                        onValueChange={(value) => updateProfile("sleep_schedule", value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select sleep schedule" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Early Bird (Before 10 PM)">Early Bird (Before 10 PM)</SelectItem>
+                          <SelectItem value="Regular (10 PM - 12 AM)">Regular (10 PM - 12 AM)</SelectItem>
+                          <SelectItem value="Night Owl (After 12 AM)">Night Owl (After 12 AM)</SelectItem>
+                          <SelectItem value="Irregular">Irregular</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                 </CardContent>

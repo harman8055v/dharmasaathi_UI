@@ -50,9 +50,23 @@ export default function SwipeStack({ profiles: initialProfiles, onSwipe, headerl
 
   const fetchSwipeStats = async () => {
     try {
-      const response = await fetch("/api/swipe/stats")
-      if (!response.ok) {
-        throw new Error(`Failed to fetch swipe stats: ${response.status}`)
+const fetchSwipeStats = async () => {
+  try {
+    // include credentials on every call
+    const response = await fetch("/api/swipe/stats", { credentials: "include" })
+    // if the response isn’t OK, throw to trigger your error state
+    if (!response.ok) {
+      throw new Error(`Failed to fetch swipe stats: ${response.status}`)
+    }
+    // parse and store
+    const stats = await response.json()
+    setSwipeStats(stats)
+  } catch (error) {
+    console.error("Error fetching swipe stats:", error)
+    throw error
+  }
+}
+ testing
       }
       const stats = await response.json()
       setSwipeStats(stats)
@@ -65,7 +79,7 @@ export default function SwipeStack({ profiles: initialProfiles, onSwipe, headerl
   const fetchProfiles = async () => {
     try {
       console.log("Fetching profiles...")
-      const response = await fetch("/api/profiles/discover")
+      const response = await fetch("/api/profiles/discover", { credentials: "include" })
       console.log("Profiles response:", response.status)
       if (!response.ok) {
         throw new Error(`Failed to fetch profiles: ${response.status}`)

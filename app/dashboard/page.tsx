@@ -75,7 +75,7 @@ export default function DashboardPage() {
 
   const fetchProfiles = async () => {
     try {
-      const response = await fetch("/api/profiles/discover")
+      const response = await fetch("/api/profiles/discover", { credentials: "include" })
       if (response.ok) {
         const data = await response.json()
         setProfiles(data.profiles || [])
@@ -87,7 +87,7 @@ export default function DashboardPage() {
 
   const fetchSwipeStats = async () => {
     try {
-      const response = await fetch("/api/swipe/stats")
+      const response = await fetch("/api/swipe/stats", { credentials: "include" })
       if (response.ok) {
         const stats = await response.json()
         setSwipeStats(stats)

@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { MessageCircle, Search, Send, ArrowLeft, Smile, MoreVertical, UserX, Flag, Trash2, User } from "lucide-react"
+import { MessageCircle, Search, Send, ArrowLeft, MoreVertical, UserX, Flag, Trash2, User } from "lucide-react"
 import MobileNav from "@/components/dashboard/mobile-nav"
 import type { User as SupabaseUser } from "@supabase/supabase-js"
 import {
@@ -330,11 +330,6 @@ export default function MessagesPage() {
                             <span className="text-xs text-gray-500">{conversation.time}</span>
                           </div>
                           <p className="text-sm text-gray-600 truncate">{conversation.lastMessage}</p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <div className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
-                              {conversation.compatibility}% Match
-                            </div>
-                          </div>
                         </div>
                       </div>
                     </div>
@@ -425,9 +420,6 @@ export default function MessagesPage() {
                     {/* Message Input */}
                     <div className="p-4 border-t border-gray-100">
                       <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="sm">
-                          <Smile className="w-4 h-4" />
-                        </Button>
                         <Input
                           placeholder="Type your message..."
                           value={newMessage}
