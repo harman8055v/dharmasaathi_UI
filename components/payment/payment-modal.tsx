@@ -212,21 +212,27 @@ export default function PaymentModal({ isOpen, onClose, item, onSuccess }: Payme
             {/* Payment Methods */}
             <div className="space-y-4">
               <h4 className="font-medium text-gray-900">Accepted Payment Methods</h4>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="flex flex-col items-center p-4 border rounded-lg hover:border-blue-300 transition-colors">
-                  <Smartphone className="w-8 h-8 text-blue-600 mb-2" />
-                  <span className="text-sm font-medium">UPI</span>
-                  <span className="text-xs text-gray-500">Instant</span>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="flex flex-col items-center p-3 border rounded-xl hover:border-blue-300 hover:bg-blue-50/50 transition-all duration-200 cursor-pointer">
+                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mb-2">
+                    <Smartphone className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <span className="text-sm font-medium text-gray-900">UPI</span>
+                  <span className="text-xs text-gray-500 mt-0.5">Instant</span>
                 </div>
-                <div className="flex flex-col items-center p-4 border rounded-lg hover:border-green-300 transition-colors">
-                  <CreditCard className="w-8 h-8 text-green-600 mb-2" />
-                  <span className="text-sm font-medium">Cards</span>
-                  <span className="text-xs text-gray-500">Secure</span>
+                <div className="flex flex-col items-center p-3 border rounded-xl hover:border-green-300 hover:bg-green-50/50 transition-all duration-200 cursor-pointer">
+                  <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mb-2">
+                    <CreditCard className="w-5 h-5 text-green-600" />
+                  </div>
+                  <span className="text-sm font-medium text-gray-900">Cards</span>
+                  <span className="text-xs text-gray-500 mt-0.5">Secure</span>
                 </div>
-                <div className="flex flex-col items-center p-4 border rounded-lg hover:border-purple-300 transition-colors">
-                  <Building className="w-8 h-8 text-purple-600 mb-2" />
-                  <span className="text-sm font-medium">Net Banking</span>
-                  <span className="text-xs text-gray-500">All Banks</span>
+                <div className="flex flex-col items-center p-3 border rounded-xl hover:border-purple-300 hover:bg-purple-50/50 transition-all duration-200 cursor-pointer">
+                  <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center mb-2">
+                    <Building className="w-5 h-5 text-purple-600" />
+                  </div>
+                  <span className="text-sm font-medium text-gray-900">Banking</span>
+                  <span className="text-xs text-gray-500 mt-0.5">All Banks</span>
                 </div>
               </div>
             </div>
