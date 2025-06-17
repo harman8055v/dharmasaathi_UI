@@ -255,7 +255,7 @@ export default function PaymentModal({ isOpen, onClose, item, onSuccess }: Payme
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg w-[95vw] max-h-[calc(95vh-100px)] p-0 gap-0 fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[9999] mb-20 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] rounded-lg shadow-2xl border-0 flex flex-col">
+      <DialogContent className="max-w-lg w-[95vw] max-h-[calc(100vh-120px)] p-0 gap-0 fixed top-4 left-1/2 transform -translate-x-1/2 z-[9999] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-4 data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-4 rounded-lg shadow-2xl border-0 flex flex-col mb-24">
         {/* Header */}
         <DialogHeader className="px-6 py-4 border-b bg-white sticky top-0 z-10">
           <div className="flex items-center justify-between">
@@ -271,8 +271,8 @@ export default function PaymentModal({ isOpen, onClose, item, onSuccess }: Payme
 
         {/* Footer */}
         {paymentStep === "details" && (
-          <div className="px-6 py-4 border-t bg-gray-50 sticky bottom-0 z-10">
-            <div className="flex gap-3 mb-safe">
+          <div className="px-6 py-4 border-t bg-gray-50 sticky bottom-0 z-10 mb-safe">
+            <div className="flex gap-3 pb-2">
               <Button variant="outline" onClick={onClose} className="flex-1" disabled={isProcessing}>
                 Cancel
               </Button>
@@ -284,7 +284,7 @@ export default function PaymentModal({ isOpen, onClose, item, onSuccess }: Payme
                 {isProcessing ? "Processing..." : `Pay ₹${item.price.toLocaleString()}`}
               </Button>
             </div>
-            <p className="text-xs text-gray-500 text-center mt-3">
+            <p className="text-xs text-gray-500 text-center mt-2 pb-2">
               By proceeding, you agree to our Terms of Service and Privacy Policy
             </p>
           </div>
