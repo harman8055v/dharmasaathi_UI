@@ -11,11 +11,7 @@ interface SwipeStackProps {
   headerless?: boolean
 }
 
-export default function SwipeStack({
-  profiles,
-  onSwipe,
-  headerless = false,
-}: SwipeStackProps) {
+export default function SwipeStack({ profiles, onSwipe, headerless = false }: SwipeStackProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [swipeDirection, setSwipeDirection] = useState<"left" | "right" | "superlike" | null>(null)
   const [isAnimating, setIsAnimating] = useState(false)
@@ -33,10 +29,7 @@ export default function SwipeStack({
     setCurrentIndex(lastIndex)
   }
 
-  const handleSwipe = (
-    direction: "left" | "right" | "superlike",
-    profileId: string
-  ) => {
+  const handleSwipe = (direction: "left" | "right" | "superlike", profileId: string) => {
     if (isAnimating) return
 
     setIsAnimating(true)
@@ -45,7 +38,7 @@ export default function SwipeStack({
 
     setTimeout(() => {
       // CONFLICT #2 resolved: only record left/right swipes
-      if (direction === "left" || direction === "right") {
+      if (direction === "left" || "right") {
         setHistory((prev) => [...prev, currentIndex])
       }
       setCurrentIndex((prev) => prev + 1)
@@ -83,7 +76,7 @@ export default function SwipeStack({
 
   return (
     <div className="flex flex-col h-full">
-      <div className={`relative px-4 py-4 ${headerless ? "h-[calc(100vh-80px)]" : "h-[calc(100vh-120px)]"}`}>
+      <div className="relative flex-1 px-4 py-2">
         <div className="relative w-full max-w-sm mx-auto h-full">
           <AnimatePresence mode="popLayout">
             {visibleProfiles.map((profile, index) => (
@@ -114,8 +107,8 @@ export default function SwipeStack({
                     swipeDirection === "right"
                       ? "bg-green-500 text-white"
                       : swipeDirection === "superlike"
-                      ? "bg-blue-500 text-white"
-                      : "bg-red-500 text-white"
+                        ? "bg-blue-500 text-white"
+                        : "bg-red-500 text-white"
                   }`}
                 >
                   {swipeDirection === "right" ? (

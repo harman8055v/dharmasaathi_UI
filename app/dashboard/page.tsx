@@ -12,15 +12,15 @@ import SettingsCard from "@/components/dashboard/settings-card"
 import SwipeStack from "@/components/dashboard/swipe-stack"
 import type { User as SupabaseUser } from "@supabase/supabase-js"
 import WelcomeSection from "@/components/dashboard/welcome-section"
-import { PLAN_CONFIGS } from "@/lib/types/onboarding"
 
 export default function DashboardPage() {
   const [user, setUser] = useState<SupabaseUser | null>(null)
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [profiles, setProfiles] = useState<any[]>([])
-  const [swipesRemaining, setSwipesRemaining] = useState(0)
+  const [loadingProfiles, setLoadingProfiles] = useState(false)
   const router = useRouter()
+  const [swipesRemaining, setSwipesRemaining] = useState(999) // Default to unlimited
 
   // Mock profiles for demonstration - replace with actual API call
   const mockProfiles = [
@@ -36,7 +36,6 @@ export default function DashboardPage() {
       diet: "Vegetarian",
       about_me:
         "Passionate about spirituality and technology. Love practicing yoga and meditation daily. Looking for someone who shares similar values and interests in personal growth.",
-      favorite_quote: "The mind is everything. What you think you become. - Buddha",
       user_photos: ["/abstract-spiritual-avatar-1.png", "/abstract-spiritual-avatar-2.png"],
       daily_practices: ["Meditation", "Yoga", "Prayer"],
       spiritual_org: ["Art of Living", "Isha Foundation"],
@@ -53,7 +52,6 @@ export default function DashboardPage() {
       diet: "Vegetarian",
       about_me:
         "Dedicated to serving others through medicine and spirituality. Believe in the power of compassion and mindfulness in healing.",
-      favorite_quote: "Service to others is the rent you pay for your room here on earth. - Muhammad Ali",
       user_photos: ["/abstract-spiritual-avatar-3.png", "/abstract-spiritual-avatar-4.png"],
       daily_practices: ["Meditation", "Chanting", "Reading Scriptures"],
       spiritual_org: ["Brahma Kumaris"],
@@ -70,7 +68,6 @@ export default function DashboardPage() {
       diet: "Vegan",
       about_me:
         "Teaching is my passion, and I believe in nurturing young minds with spiritual values. Love nature, books, and meaningful conversations.",
-      favorite_quote: "Be yourself; everyone else is already taken. - Oscar Wilde",
       user_photos: ["/abstract-spiritual-avatar-2.png", "/abstract-spiritual-avatar-1.png"],
       daily_practices: ["Meditation", "Yoga", "Journaling"],
       spiritual_org: ["Osho International", "Vipassana"],
@@ -108,10 +105,8 @@ export default function DashboardPage() {
 
         setProfile(profileData)
 
-        // Check and reset daily swipes if needed
-        await checkAndResetDailySwipes(profileData)
-
         // For demo purposes, set mock profiles
+        // In production, fetch actual profiles based on user preferences
         setProfiles(mockProfiles)
 
         setLoading(false)
@@ -123,35 +118,6 @@ export default function DashboardPage() {
 
     getUser()
   }, [router])
-
-  const checkAndResetDailySwipes = async (profileData: any) => {
-    const today = new Date().toDateString()
-    const lastReset = profileData.last_swipe_reset ? new Date(profileData.last_swipe_reset).toDateString() : null
-
-    if (lastReset !== today) {
-      // Reset daily swipes
-      const currentPlan = profileData.current_plan || "drishti"
-      const planConfig = PLAN_CONFIGS[currentPlan as keyof typeof PLAN_CONFIGS]
-
-      const { error } = await supabase
-        .from("users")
-        .update({
-          daily_swipes_used: 0,
-          last_swipe_reset: new Date().toISOString(),
-        })
-        .eq("id", profileData.id)
-
-      if (!error) {
-        setSwipesRemaining(planConfig.dailySwipes === -1 ? 999 : planConfig.dailySwipes)
-      }
-    } else {
-      const currentPlan = profileData.current_plan || "drishti"
-      const planConfig = PLAN_CONFIGS[currentPlan as keyof typeof PLAN_CONFIGS]
-      const used = profileData.daily_swipes_used || 0
-      const remaining = planConfig.dailySwipes === -1 ? 999 : Math.max(0, planConfig.dailySwipes - used)
-      setSwipesRemaining(remaining)
-    }
-  }
 
   const calculateProfileCompleteness = () => {
     if (!profile) return 0
@@ -209,42 +175,8 @@ export default function DashboardPage() {
     )
   }
 
-  const handleSwipe = async (direction: "left" | "right" | "superlike", profileId: string) => {
+  const handleSwipe = (direction: "left" | "right", profileId: string) => {
     debugLog(`Swiped ${direction} on profile ${profileId}`)
-
-    if (direction === "superlike") {
-      // Check if user has super likes
-      if ((profile?.super_likes_count || 0) <= 0) {
-        // Redirect to store or show upgrade modal
-        router.push("/dashboard/store")
-        return
-      }
-
-      // Deduct super like
-      await supabase
-        .from("users")
-        .update({ super_likes_count: (profile?.super_likes_count || 0) - 1 })
-        .eq("id", profile.id)
-    }
-
-    if (direction === "left" || direction === "right") {
-      // Check swipe limits for non-unlimited plans
-      const currentPlan = profile?.current_plan || "drishti"
-      const planConfig = PLAN_CONFIGS[currentPlan as keyof typeof PLAN_CONFIGS]
-
-      if (planConfig.dailySwipes !== -1 && swipesRemaining <= 0) {
-        // Show upgrade modal or redirect to store
-        router.push("/dashboard/store")
-        return
-      }
-
-      // Update swipe count
-      const newSwipesUsed = (profile?.daily_swipes_used || 0) + 1
-      await supabase.from("users").update({ daily_swipes_used: newSwipesUsed }).eq("id", profile.id)
-
-      setSwipesRemaining((prev) => Math.max(0, prev - 1))
-    }
-
     // Here you would typically:
     // 1. Send the swipe action to your backend
     // 2. Update user preferences/matches
@@ -271,27 +203,30 @@ export default function DashboardPage() {
       <MobileNav userProfile={profile} />
 
       {/* Main Content */}
-      <main className={`${isVerified ? "pt-20 pb-32" : "pt-16 pb-32"} min-h-screen flex flex-col`}>
+      <main className={`${isVerified ? "pt-4 pb-32" : "pt-16 pb-32"} min-h-screen flex flex-col`}>
         {isVerified ? (
-          // Verified User - Swipe Interface with proper spacing
-          <div className="flex-1 flex flex-col px-4">
-            {/* Compact Header for verified users */}
-            <div className="text-center mb-4">
-              <h1 className="text-xl font-semibold text-gray-900">Find Your Match</h1>
-              <div className="flex items-center justify-center gap-4 text-sm text-gray-600 mt-2">
+          // Verified User - Swipe Interface with proper spacing to avoid navbar overlap
+          <div className="flex-1 flex flex-col h-screen">
+            {/* Compact Header for verified users - fixed height */}
+            <div className="flex-shrink-0 text-center py-4 px-4 bg-gradient-to-r from-orange-50 to-pink-50">
+              <h1 className="text-lg font-semibold text-gray-900">Find Your Match</h1>
+              <div className="flex items-center justify-center gap-4 text-sm text-gray-600 mt-1">
                 <span>Swipes: {swipesRemaining === 999 ? "Unlimited" : swipesRemaining}</span>
                 <span>•</span>
                 <span>Super Likes: {profile?.super_likes_count || 0}</span>
               </div>
             </div>
-            <SwipeStack profiles={profiles} onSwipe={handleSwipe} headerless={false} />
+            {/* Swipe Stack - takes remaining space */}
+            <div className="flex-1 overflow-hidden">
+              <SwipeStack profiles={profiles} onSwipe={handleSwipe} headerless={true} />
+            </div>
           </div>
         ) : (
           // Non-verified User - Original Dashboard
           <div className="px-4 space-y-6 max-w-4xl mx-auto">
             {/* Welcome Section */}
             <div className="text-center">
-              <h1 className="text-xl md:text-2xl font-semibold text-gray-900 mb-2">
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
                 Welcome back, {profile?.first_name}! 🌸
               </h1>
               <p className="text-gray-600">Your spiritual journey continues here</p>
@@ -312,7 +247,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="flex-1">
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-3">
-                    <h3 className="text-lg font-semibold text-gray-900">Profile Under Verification</h3>
+                    <h3 className="text-xl font-bold text-gray-900">Profile Under Verification</h3>
                     <div className="px-3 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full w-fit">
                       In Review
                     </div>
@@ -361,7 +296,8 @@ export default function DashboardPage() {
                         <h4 className="font-semibold text-purple-800 mb-1">Want to get verified faster? ⚡</h4>
                         <p className="text-sm text-purple-700 mb-2">
                           Boost your profile credibility and jump to the front of the verification queue with our
-                          referral program! Invite 4 friends and get <strong>priority verification</strong>.
+                          referral program below! Invite 4 friends and get <strong>priority verification</strong> plus{" "}
+                          <strong>14 days of premium features</strong> absolutely free.
                         </p>
                         <button
                           onClick={() => {
@@ -422,7 +358,7 @@ export default function DashboardPage() {
 
             {/* Quick Actions */}
             <div>
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">Quick Actions</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <SettingsCard
                   title="Account Settings"
@@ -456,7 +392,7 @@ export default function DashboardPage() {
               <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-orange-100 hover:shadow-2xl transition-all duration-300">
                 <div className="text-center">
                   <Heart className="w-12 h-12 text-red-500 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Find Matches</h3>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Find Matches</h3>
                   <p className="text-gray-600 mb-4">Discover compatible spiritual partners</p>
                   <Button className="w-full bg-gradient-to-r from-orange-500 to-pink-500" disabled>
                     Available After Verification
@@ -467,7 +403,7 @@ export default function DashboardPage() {
               <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-orange-100 hover:shadow-2xl transition-all duration-300">
                 <div className="text-center">
                   <Users className="w-12 h-12 text-blue-500 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Community</h3>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Community</h3>
                   <p className="text-gray-600 mb-4">Connect with like-minded souls</p>
                   <Button variant="outline" className="w-full" disabled>
                     Coming Soon
@@ -478,7 +414,7 @@ export default function DashboardPage() {
               <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-orange-100 hover:shadow-2xl transition-all duration-300 sm:col-span-2 lg:col-span-1">
                 <div className="text-center">
                   <Star className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Premium Features</h3>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Premium Features</h3>
                   <p className="text-gray-600 mb-4">Unlock advanced matching</p>
                   <Button variant="outline" className="w-full">
                     Learn More
