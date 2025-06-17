@@ -18,7 +18,9 @@ export default function SwipeStack({ profiles: initialProfiles, onSwipe, headerl
   const [currentIndex, setCurrentIndex] = useState(0)
   const [undoStack, setUndoStack] = useState<any[]>([])
   const [swipeStats, setSwipeStats] = useState<any>(null)
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [swiping, setSwiping] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   console.log("SwipeStack rendered with:", {
     profilesCount: initialProfiles.length,
@@ -30,19 +32,33 @@ export default function SwipeStack({ profiles: initialProfiles, onSwipe, headerl
   // Fetch swipe stats and profiles on mount
   useEffect(() => {
     console.log("SwipeStack useEffect running")
-    fetchSwipeStats()
-    fetchProfiles()
+    fetchData()
   }, [])
+
+  const fetchData = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      await Promise.all([fetchSwipeStats(), fetchProfiles()])
+    } catch (err) {
+      console.error("Failed to load data:", err)
+      setError("Failed to load profiles. Please try again.")
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const fetchSwipeStats = async () => {
     try {
       const response = await fetch("/api/swipe/stats")
-      if (response.ok) {
-        const stats = await response.json()
-        setSwipeStats(stats)
+      if (!response.ok) {
+        throw new Error(`Failed to fetch swipe stats: ${response.status}`)
       }
+      const stats = await response.json()
+      setSwipeStats(stats)
     } catch (error) {
       console.error("Error fetching swipe stats:", error)
+      throw error
     }
   }
 
@@ -51,20 +67,20 @@ export default function SwipeStack({ profiles: initialProfiles, onSwipe, headerl
       console.log("Fetching profiles...")
       const response = await fetch("/api/profiles/discover")
       console.log("Profiles response:", response.status)
-      if (response.ok) {
-        const data = await response.json()
-        console.log("Profiles data:", data)
-        setProfiles(data.profiles || [])
-      } else {
-        console.error("Failed to fetch profiles:", response.status)
+      if (!response.ok) {
+        throw new Error(`Failed to fetch profiles: ${response.status}`)
       }
+      const data = await response.json()
+      console.log("Profiles data:", data)
+      setProfiles(data.profiles || [])
     } catch (error) {
       console.error("Error fetching profiles:", error)
+      throw error
     }
   }
 
   const handleSwipe = async (direction: "left" | "right" | "superlike", profileId: string) => {
-    if (loading) return
+    if (swiping) return
 
     // Check limits before swiping
     if (!swipeStats?.can_swipe) {
@@ -77,7 +93,7 @@ export default function SwipeStack({ profiles: initialProfiles, onSwipe, headerl
       return
     }
 
-    setLoading(true)
+    setSwiping(true)
 
     try {
       const response = await fetch("/api/swipe", {
@@ -127,7 +143,7 @@ export default function SwipeStack({ profiles: initialProfiles, onSwipe, headerl
       console.error("Swipe error:", error)
       toast.error("Something went wrong. Please try again.")
     } finally {
-      setLoading(false)
+      setSwiping(false)
     }
   }
 
@@ -144,6 +160,34 @@ export default function SwipeStack({ profiles: initialProfiles, onSwipe, headerl
   const currentProfile = profiles[currentIndex]
   const hasMoreProfiles = currentIndex < profiles.length
 
+  if (loading) {
+    return (
+      <div className="flex-1 flex items-center justify-center p-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading profiles...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!loading && profiles.length === 0) {
+    return (
+      <div className="flex-1 flex items-center justify-center p-8">
+        <div className="text-center max-w-md">
+          <div className="w-24 h-24 bg-gradient-to-r from-orange-400 to-pink-400 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Heart className="w-12 h-12 text-white" />
+          </div>
+          <h3 className="text-2xl font-bold text-gray-900 mb-4">No profiles available</h3>
+          <p className="text-gray-600 mb-6">{error ?? "Try adjusting your preferences or check back later."}</p>
+          <Button onClick={fetchData} className="bg-gradient-to-r from-orange-500 to-pink-500">
+            Retry
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
   if (!hasMoreProfiles && profiles.length > 0) {
     return (
       <div className="flex-1 flex items-center justify-center p-8">
@@ -155,7 +199,7 @@ export default function SwipeStack({ profiles: initialProfiles, onSwipe, headerl
           <p className="text-gray-600 mb-6">
             You've seen all available profiles for today. Check back later for new matches!
           </p>
-          <Button onClick={fetchProfiles} className="bg-gradient-to-r from-orange-500 to-pink-500">
+          <Button onClick={fetchData} className="bg-gradient-to-r from-orange-500 to-pink-500">
             Refresh Profiles
           </Button>
         </div>
@@ -249,7 +293,7 @@ export default function SwipeStack({ profiles: initialProfiles, onSwipe, headerl
               variant="outline"
               size="lg"
               onClick={handleUndo}
-              disabled={undoStack.length === 0 || loading}
+              disabled={undoStack.length === 0 || swiping}
               className="rounded-full w-14 h-14 p-0 border-gray-300 hover:border-yellow-400 hover:bg-yellow-50"
             >
               <RotateCcw className="w-6 h-6 text-gray-500 hover:text-yellow-500" />
@@ -260,7 +304,7 @@ export default function SwipeStack({ profiles: initialProfiles, onSwipe, headerl
               variant="outline"
               size="lg"
               onClick={() => handleSwipe("left", currentProfile.id)}
-              disabled={loading || !swipeStats?.can_swipe}
+              disabled={swiping || !swipeStats?.can_swipe}
               className="rounded-full w-16 h-16 p-0 border-gray-300 hover:border-red-400 hover:bg-red-50"
             >
               <X className="w-7 h-7 text-gray-500 hover:text-red-500" />
@@ -270,7 +314,7 @@ export default function SwipeStack({ profiles: initialProfiles, onSwipe, headerl
             <Button
               size="lg"
               onClick={() => handleSwipe("superlike", currentProfile.id)}
-              disabled={loading || !swipeStats?.can_swipe || swipeStats?.super_likes_available <= 0}
+              disabled={swiping || !swipeStats?.can_swipe || swipeStats?.super_likes_available <= 0}
               className="rounded-full w-14 h-14 p-0 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 disabled:opacity-50"
             >
               <Star className="w-6 h-6 text-white" />
@@ -280,7 +324,7 @@ export default function SwipeStack({ profiles: initialProfiles, onSwipe, headerl
             <Button
               size="lg"
               onClick={() => handleSwipe("right", currentProfile.id)}
-              disabled={loading || !swipeStats?.can_swipe}
+              disabled={swiping || !swipeStats?.can_swipe}
               className="rounded-full w-16 h-16 p-0 bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600 disabled:opacity-50"
             >
               <Heart className="w-7 h-7 text-white" />
