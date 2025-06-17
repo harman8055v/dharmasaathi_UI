@@ -341,8 +341,8 @@ export default function DashboardPage() {
                         <h4 className="font-semibold text-purple-800 mb-1">Want to get verified faster? ⚡</h4>
                         <p className="text-sm text-purple-700 mb-2">
                           Boost your profile credibility and jump to the front of the verification queue with our
-                          referral program below! Invite 4 friends and get <strong>priority verification</strong> plus{" "}
-                          <strong>14 days of premium features</strong> absolutely free.
+                          referral program below! Invite <strong>4 friends</strong> and get{" "}
+                          <strong>priority verification</strong>.
                         </p>
                         <button
                           onClick={() => {

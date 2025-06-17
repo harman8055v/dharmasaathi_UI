@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { supabase } from "@/lib/supabase"
-import { Users, Copy, CheckCircle, Gift, Zap, Crown, Share2, ExternalLink, Trophy, Clock } from "lucide-react"
+import { Users, Copy, CheckCircle, Gift, Zap, Crown, Share2, Clock } from "lucide-react"
 
 interface ReferralProgramProps {
   userId: string
@@ -12,7 +12,11 @@ interface ReferralProgramProps {
 
 export function ReferralProgram({ userId, userProfile }: ReferralProgramProps) {
   const [referralCode, setReferralCode] = useState<string>("")
-  const [referralCount, setReferralCount] = useState<number>(0)
+  const [referralStats, setReferralStats] = useState({
+    total_referrals: 0,
+    successful_referrals: 0,
+    pending_referrals: 0,
+  })
   const [copied, setCopied] = useState(false)
   const [rewards, setRewards] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -61,7 +65,28 @@ export function ReferralProgram({ userId, userProfile }: ReferralProgramProps) {
       }
 
       setReferralCode(currentReferralCode || "")
-      setReferralCount(userData.referral_count || 0)
+
+      // Get referral statistics
+      const { data: referralsData, error: referralsError } = await supabase
+        .from("referrals")
+        .select("*, referred:users!referrals_referred_id_fkey(verification_status)")
+        .eq("referrer_id", userId)
+
+      if (!referralsError && referralsData) {
+        const totalReferrals = referralsData.length
+        const successfulReferrals = referralsData.filter(
+          (r) => r.status === "completed" && r.referred?.verification_status === "verified",
+        ).length
+        const pendingReferrals = referralsData.filter(
+          (r) => r.status === "pending" || (r.status === "completed" && r.referred?.verification_status !== "verified"),
+        ).length
+
+        setReferralStats({
+          total_referrals: totalReferrals,
+          successful_referrals: successfulReferrals,
+          pending_referrals: pendingReferrals,
+        })
+      }
 
       // Get user's rewards
       const { data: rewardsData, error: rewardsError } = await supabase
@@ -134,9 +159,30 @@ export function ReferralProgram({ userId, userProfile }: ReferralProgramProps) {
     }
   }
 
-  const getRemainingReferrals = () => Math.max(0, 4 - referralCount)
-  const isEligibleForRewards = referralCount >= 4
-  const progressPercentage = Math.min((referralCount / 4) * 100, 100)
+  const getProgressForLevel = (level: number) => {
+    const { successful_referrals } = referralStats
+    switch (level) {
+      case 1: // Fast Track (4 referrals)
+        return Math.min((successful_referrals / 4) * 100, 100)
+      case 2: // Sangam Plan (10 referrals)
+        return Math.min((successful_referrals / 10) * 100, 100)
+      case 3: // Samarpan Plan (20 referrals)
+        return Math.min((successful_referrals / 20) * 100, 100)
+      default:
+        return 0
+    }
+  }
+
+  const getRewardStatus = (requiredReferrals: number) => {
+    const { successful_referrals } = referralStats
+    if (successful_referrals >= requiredReferrals) {
+      return "unlocked"
+    } else if (successful_referrals >= requiredReferrals * 0.5) {
+      return "progress"
+    } else {
+      return "locked"
+    }
+  }
 
   if (loading) {
     return (
@@ -176,32 +222,9 @@ export function ReferralProgram({ userId, userProfile }: ReferralProgramProps) {
               scripts/create-referral-system-v2.sql
             </code>
           </p>
-          <p className="text-xs text-gray-500">
-            This will create the necessary database tables and columns for referral tracking, rewards, and user referral
-            codes.
-          </p>
         </div>
 
         <div className="text-center">
-          <p className="text-sm text-gray-600 mb-3">Once the database is set up, you'll be able to:</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-gray-600 mb-4">
-            <div className="flex items-center gap-2">
-              <div className="w-1 h-1 bg-purple-500 rounded-full"></div>
-              <span>Generate referral links</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-1 h-1 bg-purple-500 rounded-full"></div>
-              <span>Track successful referrals</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-1 h-1 bg-purple-500 rounded-full"></div>
-              <span>Earn fast verification</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-1 h-1 bg-purple-500 rounded-full"></div>
-              <span>Get 14 days premium free</span>
-            </div>
-          </div>
           <Button
             onClick={() => window.location.reload()}
             variant="outline"
@@ -222,74 +245,113 @@ export function ReferralProgram({ userId, userProfile }: ReferralProgramProps) {
           <Users className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
         </div>
         <div className="flex-1">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
-            <h3 className="text-lg sm:text-xl font-bold text-gray-900">Referral Program</h3>
-            {isEligibleForRewards && (
-              <div className="flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-yellow-100 to-orange-100 text-orange-800 text-xs font-medium rounded-full w-fit">
-                <Crown className="w-3 h-3" />
-                <span>Rewards Unlocked!</span>
-              </div>
-            )}
-          </div>
+          <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">Referral Program</h3>
           <p className="text-sm sm:text-base text-gray-700 mb-4">
-            Invite friends to boost your verification speed and earn premium benefits!
+            Invite friends to unlock exclusive benefits and premium features!
           </p>
         </div>
       </div>
 
-      {/* Progress Section */}
-      <div className="bg-white/70 rounded-lg p-4 mb-4">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-gray-700">Progress to Rewards</span>
-          <span className="text-sm font-bold text-purple-600">{referralCount}/4 referrals</span>
+      {/* Statistics */}
+      <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="bg-white/70 rounded-lg p-3 text-center">
+          <div className="text-2xl font-bold text-blue-600">{referralStats.total_referrals}</div>
+          <div className="text-xs text-gray-600">Total Referrals</div>
         </div>
-        <div className="w-full bg-gray-200 rounded-full h-3 mb-2">
-          <div
-            className="bg-gradient-to-r from-purple-500 to-pink-500 h-3 rounded-full transition-all duration-500 relative"
-            style={{ width: `${progressPercentage}%` }}
-          >
-            {progressPercentage > 0 && (
-              <div className="absolute right-1 top-1/2 transform -translate-y-1/2">
-                <div className="w-2 h-2 bg-white rounded-full"></div>
-              </div>
-            )}
-          </div>
+        <div className="bg-white/70 rounded-lg p-3 text-center">
+          <div className="text-2xl font-bold text-green-600">{referralStats.successful_referrals}</div>
+          <div className="text-xs text-gray-600">Successful</div>
         </div>
-        <p className="text-xs text-gray-600">
-          {getRemainingReferrals() > 0
-            ? `${getRemainingReferrals()} more referrals needed for premium rewards!`
-            : "🎉 Congratulations! You've unlocked all rewards!"}
-        </p>
+        <div className="bg-white/70 rounded-lg p-3 text-center">
+          <div className="text-2xl font-bold text-orange-600">{referralStats.pending_referrals}</div>
+          <div className="text-xs text-gray-600">Pending</div>
+        </div>
       </div>
 
-      {/* Rewards Preview */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+      {/* Reward Levels */}
+      <div className="space-y-4 mb-6">
+        {/* Level 1: Fast Track Verification */}
         <div
-          className={`p-3 rounded-lg border-2 transition-all ${
-            isEligibleForRewards
-              ? "bg-green-50 border-green-200 text-green-800"
-              : "bg-gray-50 border-gray-200 text-gray-600"
+          className={`p-4 rounded-lg border-2 transition-all ${
+            getRewardStatus(4) === "unlocked"
+              ? "bg-green-50 border-green-200"
+              : getRewardStatus(4) === "progress"
+                ? "bg-blue-50 border-blue-200"
+                : "bg-gray-50 border-gray-200"
           }`}
         >
-          <div className="flex items-center gap-2 mb-1">
-            <Zap className="w-4 h-4" />
-            <span className="text-sm font-semibold">Fast Verification</span>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Zap className={`w-5 h-5 ${getRewardStatus(4) === "unlocked" ? "text-green-600" : "text-gray-500"}`} />
+              <span className="font-semibold">Fast Track Verification</span>
+            </div>
+            <span className="text-sm font-bold">{referralStats.successful_referrals}/4</span>
           </div>
-          <p className="text-xs">Priority review for faster approval</p>
+          <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+            <div
+              className={`h-2 rounded-full transition-all duration-500 ${
+                getRewardStatus(4) === "unlocked" ? "bg-green-500" : "bg-blue-500"
+              }`}
+              style={{ width: `${getProgressForLevel(1)}%` }}
+            ></div>
+          </div>
+          <p className="text-xs text-gray-600">Priority review for faster profile approval</p>
         </div>
 
+        {/* Level 2: Sangam Plan */}
         <div
-          className={`p-3 rounded-lg border-2 transition-all ${
-            isEligibleForRewards
-              ? "bg-green-50 border-green-200 text-green-800"
-              : "bg-gray-50 border-gray-200 text-gray-600"
+          className={`p-4 rounded-lg border-2 transition-all ${
+            getRewardStatus(10) === "unlocked"
+              ? "bg-green-50 border-green-200"
+              : getRewardStatus(10) === "progress"
+                ? "bg-blue-50 border-blue-200"
+                : "bg-gray-50 border-gray-200"
           }`}
         >
-          <div className="flex items-center gap-2 mb-1">
-            <Gift className="w-4 h-4" />
-            <span className="text-sm font-semibold">14 Days Sangam Plan</span>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Gift className={`w-5 h-5 ${getRewardStatus(10) === "unlocked" ? "text-green-600" : "text-gray-500"}`} />
+              <span className="font-semibold">1 Month Sangam Plan</span>
+            </div>
+            <span className="text-sm font-bold">{referralStats.successful_referrals}/10</span>
           </div>
-          <p className="text-xs">Premium features absolutely free!</p>
+          <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+            <div
+              className={`h-2 rounded-full transition-all duration-500 ${
+                getRewardStatus(10) === "unlocked" ? "bg-green-500" : "bg-blue-500"
+              }`}
+              style={{ width: `${getProgressForLevel(2)}%` }}
+            ></div>
+          </div>
+          <p className="text-xs text-gray-600">Premium features for 30 days absolutely free</p>
+        </div>
+
+        {/* Level 3: Samarpan Plan */}
+        <div
+          className={`p-4 rounded-lg border-2 transition-all ${
+            getRewardStatus(20) === "unlocked"
+              ? "bg-green-50 border-green-200"
+              : getRewardStatus(20) === "progress"
+                ? "bg-blue-50 border-blue-200"
+                : "bg-gray-50 border-gray-200"
+          }`}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Crown className={`w-5 h-5 ${getRewardStatus(20) === "unlocked" ? "text-green-600" : "text-gray-500"}`} />
+              <span className="font-semibold">45 Days Samarpan Plan</span>
+            </div>
+            <span className="text-sm font-bold">{referralStats.successful_referrals}/20</span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+            <div
+              className={`h-2 rounded-full transition-all duration-500 ${
+                getRewardStatus(20) === "unlocked" ? "bg-green-500" : "bg-blue-500"
+              }`}
+              style={{ width: `${getProgressForLevel(3)}%` }}
+            ></div>
+          </div>
+          <p className="text-xs text-gray-600">Premium+ features for 45 days with exclusive benefits</p>
         </div>
       </div>
 
@@ -328,24 +390,10 @@ export function ReferralProgram({ userId, userProfile }: ReferralProgramProps) {
         </div>
       )}
 
-      {/* Success Referrals */}
-      {referralCount > 0 && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Trophy className="w-5 h-5 text-green-600" />
-            <h4 className="font-semibold text-green-800">Successful Referrals</h4>
-          </div>
-          <p className="text-sm text-green-700">
-            🎉 You've successfully referred <strong>{referralCount}</strong> {referralCount === 1 ? "person" : "people"}{" "}
-            to DharmaSaathi!
-          </p>
-        </div>
-      )}
-
       {/* Call to Action */}
       <div className="text-center">
         <p className="text-sm text-gray-600 mb-3">
-          Share with friends, family, and your spiritual community to help them find their perfect match!
+          Share with friends, family, and your spiritual community to unlock exclusive benefits!
         </p>
         <div className="flex flex-col sm:flex-row gap-2 justify-center">
           <Button
@@ -355,10 +403,6 @@ export function ReferralProgram({ userId, userProfile }: ReferralProgramProps) {
           >
             <Share2 className="w-4 h-4 mr-2" />
             Start Referring Now
-          </Button>
-          <Button variant="outline" size="sm">
-            <ExternalLink className="w-4 h-4 mr-2" />
-            Learn More
           </Button>
         </div>
       </div>
@@ -374,12 +418,15 @@ export function ReferralProgram({ userId, userProfile }: ReferralProgramProps) {
             {rewards.map((reward) => (
               <div key={reward.id} className="flex items-center justify-between text-sm">
                 <span className="text-yellow-700">
-                  {reward.reward_type === "premium_days" && `${reward.reward_value} Days Premium`}
-                  {reward.reward_type === "fast_verification" && "Fast Track Verification"}
+                  {reward.reward_type === "fast_track_verification" && "Fast Track Verification"}
+                  {reward.reward_type === "sangam_plan_free" && "1 Month Sangam Plan"}
+                  {reward.reward_type === "samarpan_plan_free" && "45 Days Samarpan Plan"}
                 </span>
                 <div className="flex items-center gap-1 text-yellow-600">
                   <Clock className="w-3 h-3" />
-                  <span className="text-xs">Expires {new Date(reward.expires_at).toLocaleDateString()}</span>
+                  <span className="text-xs">
+                    {reward.expires_at ? `Expires ${new Date(reward.expires_at).toLocaleDateString()}` : "Permanent"}
+                  </span>
                 </div>
               </div>
             ))}
