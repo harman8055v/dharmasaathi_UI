@@ -73,30 +73,38 @@ export async function GET(request: NextRequest) {
       query = query.eq("state", userProfile.state)
     }
 
-    // Profile visibility ranking based on account status
-    // Samarpan (highest) -> Sangam -> Sparsh -> Drishti (lowest)
-    const visibilityOrder = `
-      CASE account_status 
-        WHEN 'samarpan' THEN 1
-        WHEN 'sangam' THEN 2  
-        WHEN 'sparsh' THEN 3
-        ELSE 4
-      END
-    `
-
+    // Fetch profiles ordered by creation date first
     const { data: profiles, error } = await query
-      .order(visibilityOrder, { ascending: true })
       .order("created_at", { ascending: false })
-      .limit(10)
+      .limit(50)
 
     if (error) {
       console.error("Error fetching profiles:", error)
       return NextResponse.json({ error: "Failed to fetch profiles" }, { status: 500 })
     }
 
+    // Sort by account status visibility ranking
+    const statusRank: Record<string, number> = {
+      samarpan: 1,
+      sangam: 2,
+      sparsh: 3,
+      drishti: 4,
+    }
+
+    const sortedProfiles = (profiles || []).sort((a: any, b: any) => {
+      const rankA = statusRank[a.account_status] ?? 5
+      const rankB = statusRank[b.account_status] ?? 5
+      if (rankA === rankB) {
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      }
+      return rankA - rankB
+    })
+
+    const limitedProfiles = sortedProfiles.slice(0, 10)
+
     // Calculate compatibility scores (simplified)
     const profilesWithCompatibility =
-      profiles?.map((profile) => ({
+      limitedProfiles.map((profile) => ({
         ...profile,
         compatibility_score: calculateCompatibility(userProfile, profile),
       })) || []
