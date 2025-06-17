@@ -459,7 +459,7 @@ export default function MatchesPage() {
                           <div className="border-t border-gray-100">
                             <Button
                               onClick={() => handleMessage(match.id)}
-                              className="w-full h-12 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-none rounded-b-lg font-medium"
+                              className="w-full h-12 bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white rounded-none rounded-b-lg font-medium"
                             >
                               <MessageCircle className="w-4 h-4 mr-2" />
                               Start Conversation
