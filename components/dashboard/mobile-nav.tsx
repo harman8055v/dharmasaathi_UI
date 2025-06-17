@@ -28,7 +28,11 @@ export default function MobileNav({ userProfile }: MobileNavProps) {
   const router = useRouter()
   const pathname = usePathname()
 
-  const isVerified = userProfile?.verification_status === "verified"
+  const isVerified =
+    userProfile?.verification_status === "verified" ||
+    ["active", "sparsh", "sangam", "samarpan", "premium", "elite"].includes(
+      userProfile?.account_status ?? "",
+    )
   const showHeader = !(pathname === "/dashboard" && isVerified)
 
   const handleSignOut = async () => {
