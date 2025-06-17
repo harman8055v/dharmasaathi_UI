@@ -441,7 +441,7 @@ export default function ProfilePage() {
             </Card>
           )}
 
-          {/* Profile Preview Modal - Full Profile Dialog */}
+          {/* Profile Preview Modal */}
           {showPreview && (
             <div className="fixed inset-0 bg-black/50 z-[100000]" onClick={() => setShowPreview(false)}>
               <div className="w-full h-screen bg-white overflow-y-auto relative" onClick={(e) => e.stopPropagation()}>
@@ -454,20 +454,30 @@ export default function ProfilePage() {
                 </button>
 
                 <div className="pb-32">
-                  {/* Swipeable Photo Gallery */}
+                  {/* Photo Gallery */}
                   {userImages && userImages.length > 0 && (
                     <div className="relative h-[50vh] bg-gray-100 overflow-hidden">
-                      <div className="flex h-full transition-transform duration-300 ease-out">
-                        {userImages.map((photo: string, idx: number) => (
-                          <div key={idx} className="w-full h-full relative flex-shrink-0">
-                            <img
-                              src={photo || "/placeholder.svg"}
-                              alt={`${profile?.first_name} ${profile?.last_name} - Photo ${idx + 1}`}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                        ))}
+                      <div className="flex h-full">
+                        <div className="w-full h-full relative">
+                          <img
+                            src={userImages[0] || "/placeholder.svg"}
+                            alt={`${profile?.first_name} ${profile?.last_name}`}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
                       </div>
+
+                      {/* Photo Navigation Dots */}
+                      {userImages.length > 1 && (
+                        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-3 z-20">
+                          {userImages.map((_, idx) => (
+                            <div
+                              key={idx}
+                              className={`w-3 h-3 rounded-full ${idx === 0 ? "bg-white scale-125" : "bg-white/60"}`}
+                            />
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -523,7 +533,7 @@ export default function ProfilePage() {
 
                       {profile?.education && (
                         <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                          <Edit className="w-5 h-5 text-gray-500" />
+                          <div className="w-5 h-5 text-gray-500">🎓</div>
                           <div>
                             <p className="text-sm text-gray-500">Education</p>
                             <p className="font-medium">{profile.education}</p>
@@ -542,12 +552,12 @@ export default function ProfilePage() {
                       )}
                     </div>
 
-                    {/* Daily Practices */}
+                    {/* Spiritual Practices */}
                     {profile?.daily_practices && profile.daily_practices.length > 0 && (
                       <div className="mb-6">
                         <h4 className="text-lg font-semibold text-gray-900 mb-3">Daily Practices</h4>
                         <div className="flex flex-wrap gap-2">
-                          {profile.daily_practices.map((practice: string, index: number) => (
+                          {profile.daily_practices.map((practice, index) => (
                             <span key={index} className="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-sm">
                               {practice}
                             </span>
@@ -561,7 +571,7 @@ export default function ProfilePage() {
                       <div className="mb-6">
                         <h4 className="text-lg font-semibold text-gray-900 mb-3">Spiritual Organizations</h4>
                         <div className="flex flex-wrap gap-2">
-                          {profile.spiritual_org.map((org: string, index: number) => (
+                          {profile.spiritual_org.map((org, index) => (
                             <span key={index} className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm">
                               {org}
                             </span>
@@ -570,24 +580,72 @@ export default function ProfilePage() {
                       </div>
                     )}
 
-                    {/* Interests */}
-                    {profile?.interests && profile.interests.length > 0 && (
+                    {/* Family & Background */}
+                    {(profile?.family_type || profile?.family_values || profile?.caste) && (
                       <div className="mb-6">
-                        <h4 className="text-lg font-semibold text-gray-900 mb-3">Interests</h4>
-                        <div className="flex flex-wrap gap-2">
-                          {profile.interests.map((interest: string, index: number) => (
-                            <span key={index} className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm">
-                              {interest}
-                            </span>
-                          ))}
+                        <h4 className="text-lg font-semibold text-gray-900 mb-3">Family & Background</h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          {profile?.family_type && (
+                            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                              <Users className="w-5 h-5 text-gray-500" />
+                              <div>
+                                <p className="text-sm text-gray-500">Family Type</p>
+                                <p className="font-medium">{profile.family_type}</p>
+                              </div>
+                            </div>
+                          )}
+                          {profile?.family_values && (
+                            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                              <Heart className="w-5 h-5 text-gray-500" />
+                              <div>
+                                <p className="text-sm text-gray-500">Family Values</p>
+                                <p className="font-medium">{profile.family_values}</p>
+                              </div>
+                            </div>
+                          )}
                         </div>
+                      </div>
+                    )}
+
+                    {/* Interests & Hobbies */}
+                    {((profile?.interests && profile.interests.length > 0) ||
+                      (profile?.hobbies && profile.hobbies.length > 0)) && (
+                      <div className="mb-6">
+                        <h4 className="text-lg font-semibold text-gray-900 mb-3">Interests & Hobbies</h4>
+                        {profile?.interests && profile.interests.length > 0 && (
+                          <div className="mb-4">
+                            <p className="text-sm text-gray-500 mb-2">Interests</p>
+                            <div className="flex flex-wrap gap-2">
+                              {profile.interests.map((interest, index) => (
+                                <span
+                                  key={index}
+                                  className="px-3 py-1 bg-green-100 text-green-700 text-sm rounded-full"
+                                >
+                                  {interest}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {profile?.hobbies && profile.hobbies.length > 0 && (
+                          <div>
+                            <p className="text-sm text-gray-500 mb-2">Hobbies</p>
+                            <div className="flex flex-wrap gap-2">
+                              {profile.hobbies.map((hobby, index) => (
+                                <span key={index} className="px-3 py-1 bg-blue-100 text-blue-700 text-sm rounded-full">
+                                  {hobby}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
 
                     {/* Partner Preferences */}
                     {profile?.partner_expectations && (
                       <div className="mb-6">
-                        <h4 className="text-lg font-semibold text-gray-900 mb-2">What I'm Looking For</h4>
+                        <h4 className="text-lg font-semibold text-gray-900 mb-2">Looking For</h4>
                         <p className="text-gray-700 leading-relaxed">{profile.partner_expectations}</p>
                       </div>
                     )}
