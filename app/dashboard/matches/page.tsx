@@ -4,9 +4,8 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Heart, X, Star, MapPin, GraduationCap, Briefcase, Calendar, MessageCircle, Filter, Search } from "lucide-react"
-import { Input } from "@/components/ui/input"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Heart, Star, MapPin, GraduationCap, Briefcase, Calendar, MessageCircle, Lock } from "lucide-react"
 import MobileNav from "@/components/dashboard/mobile-nav"
 import type { User as SupabaseUser } from "@supabase/supabase-js"
 
@@ -15,7 +14,8 @@ export default function MatchesPage() {
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [matches, setMatches] = useState<any[]>([])
-  const [searchQuery, setSearchQuery] = useState("")
+  const [likesReceived, setLikesReceived] = useState<any[]>([])
+  const [superlikesReceived, setSuperlikesReceived] = useState<any[]>([])
   const router = useRouter()
 
   // Mock matches data for verified users
@@ -67,7 +67,7 @@ export default function MatchesPage() {
       education: "B.A. Philosophy",
       diet: "Vegetarian",
       compatibility: 92,
-      mutual_likes: false,
+      mutual_likes: true,
       last_active: "3 hours ago",
       user_photos: ["/abstract-spiritual-avatar-3.png"],
       spiritual_org: ["Sivananda Yoga", "Ramana Maharshi Foundation"],
@@ -85,12 +85,60 @@ export default function MatchesPage() {
       education: "M.A. Psychology",
       diet: "Vegetarian",
       compatibility: 89,
-      mutual_likes: false,
+      mutual_likes: true,
       last_active: "5 hours ago",
       user_photos: ["/abstract-spiritual-avatar-4.png"],
       spiritual_org: ["Brahma Kumaris", "Heartfulness"],
       about_me: "Helping people find inner peace through counseling and spiritual guidance.",
       match_date: "2024-01-12",
+    },
+  ]
+
+  // Mock likes received data
+  const mockLikesReceived = [
+    {
+      id: "like1",
+      first_name: "Arjun",
+      age: 30,
+      city: "Bangalore",
+      user_photos: ["/abstract-spiritual-avatar-1.png"],
+      liked_at: "2024-01-16",
+    },
+    {
+      id: "like2",
+      first_name: "Rohit",
+      age: 32,
+      city: "Pune",
+      user_photos: ["/abstract-spiritual-avatar-2.png"],
+      liked_at: "2024-01-15",
+    },
+    {
+      id: "like3",
+      first_name: "Vikram",
+      age: 29,
+      city: "Chennai",
+      user_photos: ["/abstract-spiritual-avatar-3.png"],
+      liked_at: "2024-01-14",
+    },
+  ]
+
+  // Mock superlikes received data
+  const mockSuperlikesReceived = [
+    {
+      id: "super1",
+      first_name: "Karan",
+      age: 31,
+      city: "Mumbai",
+      user_photos: ["/abstract-spiritual-avatar-4.png"],
+      superliked_at: "2024-01-16",
+    },
+    {
+      id: "super2",
+      first_name: "Aditya",
+      age: 28,
+      city: "Delhi",
+      user_photos: ["/abstract-spiritual-avatar-1.png"],
+      superliked_at: "2024-01-15",
     },
   ]
 
@@ -128,6 +176,8 @@ export default function MatchesPage() {
         // Set matches based on verification status
         if (profileData?.verification_status === "verified") {
           setMatches(mockMatches)
+          setLikesReceived(mockLikesReceived)
+          setSuperlikesReceived(mockSuperlikesReceived)
         }
 
         setLoading(false)
@@ -140,25 +190,13 @@ export default function MatchesPage() {
     getUser()
   }, [router])
 
-  const filteredMatches = matches.filter(
-    (match) =>
-      match.first_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      match.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      match.profession.toLowerCase().includes(searchQuery.toLowerCase()),
-  )
-
   const handleMessage = (matchId: string) => {
     router.push(`/dashboard/messages?chat=${matchId}`)
   }
 
-  const handleLike = (matchId: string) => {
-    // Handle like action
-    console.log("Liked match:", matchId)
-  }
-
-  const handlePass = (matchId: string) => {
-    // Handle pass action
-    setMatches(matches.filter((match) => match.id !== matchId))
+  const canSeeWhoLikes = () => {
+    const plan = profile?.account_status || "drishti"
+    return ["sangam", "samarpan", "elite"].includes(plan)
   }
 
   if (loading) {
@@ -189,21 +227,145 @@ export default function MatchesPage() {
                 <p className="text-sm text-gray-600">Connect with compatible spiritual souls</p>
               </div>
 
-              {/* Search and Filter */}
-              <div className="flex gap-4 mb-6">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <Input
-                    placeholder="Search matches by name, city, or profession..."
-                    className="pl-10 bg-white/80 backdrop-blur-sm border-orange-200"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-                <Button variant="outline" className="bg-white/80 backdrop-blur-sm border-orange-200">
-                  <Filter className="w-4 h-4 mr-2" />
-                  Filters
-                </Button>
+              {/* Likes & Superlikes Received Section */}
+              <div className="mb-8 space-y-6">
+                {/* Likes Received */}
+                <Card className="bg-white/90 backdrop-blur-sm border-pink-200">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <Heart className="w-5 h-5 text-pink-500" />
+                      <span>Likes Received ({likesReceived.length})</span>
+                      {!canSeeWhoLikes() && <Lock className="w-4 h-4 text-gray-400" />}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {canSeeWhoLikes() ? (
+                      <div className="flex gap-4 overflow-x-auto pb-2">
+                        {likesReceived.map((like) => (
+                          <div key={like.id} className="flex-shrink-0 text-center">
+                            <div className="relative">
+                              <img
+                                src={like.user_photos[0] || "/placeholder.svg"}
+                                alt={like.first_name}
+                                className="w-16 h-16 rounded-full object-cover border-2 border-pink-200"
+                              />
+                              <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-pink-500 rounded-full flex items-center justify-center">
+                                <Heart className="w-3 h-3 text-white fill-current" />
+                              </div>
+                            </div>
+                            <p className="text-sm font-medium text-gray-900 mt-2">{like.first_name}</p>
+                            <p className="text-xs text-gray-500">
+                              {like.age}, {like.city}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="relative">
+                        <div className="flex gap-4 overflow-x-auto pb-2 blur-sm">
+                          {likesReceived.map((like) => (
+                            <div key={like.id} className="flex-shrink-0 text-center">
+                              <div className="relative">
+                                <img
+                                  src={like.user_photos[0] || "/placeholder.svg"}
+                                  alt="Blurred profile"
+                                  className="w-16 h-16 rounded-full object-cover border-2 border-pink-200"
+                                />
+                                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-pink-500 rounded-full flex items-center justify-center">
+                                  <Heart className="w-3 h-3 text-white fill-current" />
+                                </div>
+                              </div>
+                              <p className="text-sm font-medium text-gray-900 mt-2">???</p>
+                              <p className="text-xs text-gray-500">??, ???</p>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="absolute inset-0 flex items-center justify-center bg-white/80 backdrop-blur-sm rounded-lg">
+                          <div className="text-center p-4">
+                            <Lock className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                            <p className="text-sm font-medium text-gray-900 mb-2">Upgrade to see who likes you</p>
+                            <Button
+                              size="sm"
+                              onClick={() => router.push("/dashboard/store")}
+                              className="bg-pink-600 hover:bg-pink-700"
+                            >
+                              Upgrade Plan
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Superlikes Received */}
+                <Card className="bg-white/90 backdrop-blur-sm border-yellow-200">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <Star className="w-5 h-5 text-yellow-500" />
+                      <span>Super Likes Received ({superlikesReceived.length})</span>
+                      {!canSeeWhoLikes() && <Lock className="w-4 h-4 text-gray-400" />}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {canSeeWhoLikes() ? (
+                      <div className="flex gap-4 overflow-x-auto pb-2">
+                        {superlikesReceived.map((superlike) => (
+                          <div key={superlike.id} className="flex-shrink-0 text-center">
+                            <div className="relative">
+                              <img
+                                src={superlike.user_photos[0] || "/placeholder.svg"}
+                                alt={superlike.first_name}
+                                className="w-16 h-16 rounded-full object-cover border-2 border-yellow-200"
+                              />
+                              <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center">
+                                <Star className="w-3 h-3 text-white fill-current" />
+                              </div>
+                            </div>
+                            <p className="text-sm font-medium text-gray-900 mt-2">{superlike.first_name}</p>
+                            <p className="text-xs text-gray-500">
+                              {superlike.age}, {superlike.city}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="relative">
+                        <div className="flex gap-4 overflow-x-auto pb-2 blur-sm">
+                          {superlikesReceived.map((superlike) => (
+                            <div key={superlike.id} className="flex-shrink-0 text-center">
+                              <div className="relative">
+                                <img
+                                  src={superlike.user_photos[0] || "/placeholder.svg"}
+                                  alt="Blurred profile"
+                                  className="w-16 h-16 rounded-full object-cover border-2 border-yellow-200"
+                                />
+                                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center">
+                                  <Star className="w-3 h-3 text-white fill-current" />
+                                </div>
+                              </div>
+                              <p className="text-sm font-medium text-gray-900 mt-2">???</p>
+                              <p className="text-xs text-gray-500">??, ???</p>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="absolute inset-0 flex items-center justify-center bg-white/80 backdrop-blur-sm rounded-lg">
+                          <div className="text-center p-4">
+                            <Lock className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                            <p className="text-sm font-medium text-gray-900 mb-2">Upgrade to see who super liked you</p>
+                            <Button
+                              size="sm"
+                              onClick={() => router.push("/dashboard/store")}
+                              className="bg-yellow-600 hover:bg-yellow-700"
+                            >
+                              Upgrade Plan
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
               </div>
 
               {/* Match Stats */}
@@ -213,10 +375,8 @@ export default function MatchesPage() {
                   <div className="text-sm text-gray-600">Total Matches</div>
                 </div>
                 <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 text-center border border-orange-100">
-                  <div className="text-2xl font-bold text-green-600">
-                    {matches.filter((m) => m.mutual_likes).length}
-                  </div>
-                  <div className="text-sm text-gray-600">Mutual Likes</div>
+                  <div className="text-2xl font-bold text-green-600">{likesReceived.length}</div>
+                  <div className="text-sm text-gray-600">Likes Received</div>
                 </div>
                 <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 text-center border border-orange-100">
                   <div className="text-2xl font-bold text-blue-600">
@@ -228,8 +388,9 @@ export default function MatchesPage() {
 
               {/* Matches List */}
               <div className="space-y-4">
-                {filteredMatches.length > 0 ? (
-                  filteredMatches.map((match) => (
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">Your Matches</h2>
+                {matches.length > 0 ? (
+                  matches.map((match) => (
                     <Card
                       key={match.id}
                       className="overflow-hidden hover:shadow-lg transition-all duration-300 bg-white/90 backdrop-blur-sm border-orange-100"
@@ -242,20 +403,18 @@ export default function MatchesPage() {
                               alt={match.first_name}
                               className="w-20 h-20 rounded-full object-cover border-4 border-white shadow-lg"
                             />
-                            {match.mutual_likes && (
-                              <div className="absolute -top-1 -right-1 w-6 h-6 bg-pink-500 rounded-full flex items-center justify-center">
-                                <Heart className="w-3 h-3 text-white fill-current" />
-                              </div>
-                            )}
+                            <div className="absolute -top-1 -right-1 w-6 h-6 bg-pink-500 rounded-full flex items-center justify-center">
+                              <Heart className="w-3 h-3 text-white fill-current" />
+                            </div>
                           </div>
 
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-3">
                                 <h3 className="text-xl font-bold text-gray-900">
                                   {match.first_name} {match.last_name}
                                 </h3>
-                                <div className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
+                                <div className="px-3 py-1 bg-gradient-to-r from-green-100 to-emerald-100 border border-green-200 text-green-800 text-sm font-semibold rounded-full shadow-sm">
                                   {match.compatibility}% Match
                                 </div>
                               </div>
@@ -296,42 +455,15 @@ export default function MatchesPage() {
                               ))}
                             </div>
 
-                            <div className="flex justify-between items-center">
-                              <div className="flex gap-2">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handlePass(match.id)}
-                                  className="rounded-full w-10 h-10 p-0 border-gray-300 hover:border-red-300 hover:bg-red-50"
-                                >
-                                  <X className="w-4 h-4 text-gray-500 hover:text-red-500" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  onClick={() => handleLike(match.id)}
-                                  className="rounded-full w-10 h-10 p-0 bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600"
-                                >
-                                  <Heart className="w-4 h-4 text-white" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="rounded-full w-10 h-10 p-0 border-yellow-300 hover:border-yellow-400 hover:bg-yellow-50"
-                                >
-                                  <Star className="w-4 h-4 text-yellow-500" />
-                                </Button>
-                              </div>
-
-                              {match.mutual_likes && (
-                                <Button
-                                  size="sm"
-                                  onClick={() => handleMessage(match.id)}
-                                  className="bg-blue-600 hover:bg-blue-700 text-white"
-                                >
-                                  <MessageCircle className="w-4 h-4 mr-2" />
-                                  Message
-                                </Button>
-                              )}
+                            <div className="flex justify-end">
+                              <Button
+                                size="sm"
+                                onClick={() => handleMessage(match.id)}
+                                className="bg-blue-600 hover:bg-blue-700 text-white"
+                              >
+                                <MessageCircle className="w-4 h-4 mr-2" />
+                                Chat
+                              </Button>
                             </div>
                           </div>
                         </div>
@@ -341,8 +473,8 @@ export default function MatchesPage() {
                 ) : (
                   <div className="text-center py-12">
                     <Heart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold text-gray-600 mb-2">No matches found</h3>
-                    <p className="text-gray-500">Try adjusting your search or check back later for new matches!</p>
+                    <h3 className="text-xl font-semibold text-gray-600 mb-2">No matches yet</h3>
+                    <p className="text-gray-500">Keep swiping to find your perfect spiritual match!</p>
                   </div>
                 )}
               </div>

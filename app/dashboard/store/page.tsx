@@ -22,6 +22,7 @@ import {
   FileCheck,
   DollarSign,
   Heart,
+  Eye,
 } from "lucide-react"
 import MobileNav from "@/components/dashboard/mobile-nav"
 import PaymentModal from "@/components/payment/payment-modal"
@@ -368,6 +369,10 @@ export default function StorePage() {
                       <span>5 Super Likes monthly</span>
                     </li>
                     <li className="flex items-center gap-3">
+                      <Eye className="w-5 h-5 text-purple-500" />
+                      <span>See who likes you & match instantly</span>
+                    </li>
+                    <li className="flex items-center gap-3">
                       <Sparkles className="w-5 h-5 text-purple-500" />
                       <span>5 Message Highlights monthly</span>
                     </li>
@@ -387,6 +392,7 @@ export default function StorePage() {
                           "50 swipes per day",
                           "Everything in Sparsh",
                           "5 Super Likes monthly",
+                          "See who likes you & match instantly",
                           "5 Message Highlights monthly",
                           "Higher profile visibility",
                           billingCycle === "quarterly"
