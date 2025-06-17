@@ -36,7 +36,7 @@ export default function SwipeStack({ profiles: initialProfiles, onSwipe, headerl
 
   const fetchSwipeStats = async () => {
     try {
-      const response = await fetch("/api/swipe/stats")
+      const response = await fetch("/api/swipe/stats", { credentials: "include" })
       if (response.ok) {
         const stats = await response.json()
         setSwipeStats(stats)
@@ -49,7 +49,7 @@ export default function SwipeStack({ profiles: initialProfiles, onSwipe, headerl
   const fetchProfiles = async () => {
     try {
       console.log("Fetching profiles...")
-      const response = await fetch("/api/profiles/discover")
+      const response = await fetch("/api/profiles/discover", { credentials: "include" })
       console.log("Profiles response:", response.status)
       if (response.ok) {
         const data = await response.json()
