@@ -5,10 +5,28 @@ import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Star, Sparkles, Crown, Check, Shield, Diamond, Users, DollarSign, Eye } from "lucide-react"
+import {
+  Star,
+  Sparkles,
+  Crown,
+  Check,
+  Shield,
+  Diamond,
+  BadgeCheck,
+  Award,
+  Gem,
+  Lock,
+  Users,
+  MapPin,
+  FileCheck,
+  DollarSign,
+  Eye,
+} from "lucide-react"
 import MobileNav from "@/components/dashboard/mobile-nav"
+import PaymentModal from "@/components/payment/payment-modal"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { User as SupabaseUser } from "@supabase/supabase-js"
+import { Toaster } from "sonner"
 
 const superLikePackages = [
   { count: 4, price: 199, popular: false },
@@ -534,4 +552,247 @@ export default function StorePage() {
                         </div>
                       </div>
                       <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center flex-\
+                        <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
+                          <MapPin className="w-5 h-5 text-purple-600" />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-gray-900">Location Verified</h4>
+                          <p className="text-sm text-gray-600">
+                            Verified addresses in premium neighborhoods and cities
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0">
+                          <FileCheck className="w-5 h-5 text-orange-600" />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-gray-900">Credit Score Verified</h4>
+                          <p className="text-sm text-gray-600">
+                            Financial responsibility and creditworthiness verified
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Exclusive Benefits</h3>
+                      <ul className="space-y-3">
+                        <li className="flex items-center gap-3">
+                          <BadgeCheck className="w-5 h-5 text-indigo-600" />
+                          <span>Access to Elite verified profiles only</span>
+                        </li>
+                        <li className="flex items-center gap-3">
+                          <Users className="w-5 h-5 text-indigo-600" />
+                          <span>Personal matchmaking concierge</span>
+                        </li>
+                        <li className="flex items-center gap-3">
+                          <Award className="w-5 h-5 text-indigo-600" />
+                          <span>Exclusive spiritual events & retreats</span>
+                        </li>
+                        <li className="flex items-center gap-3">
+                          <Gem className="w-5 h-5 text-indigo-600" />
+                          <span>In-depth compatibility analysis</span>
+                        </li>
+                        <li className="flex items-center gap-3">
+                          <Lock className="w-5 h-5 text-indigo-600" />
+                          <span>Enhanced privacy controls</span>
+                        </li>
+                      </ul>
+                    </div>
+
+                    <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-6 border border-indigo-200">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-3">Success Story</h3>
+                      <blockquote className="text-sm text-gray-700 italic mb-3">
+                        "Through Elite membership, I found my spiritual soulmate who shares not just my values but also
+                        my life aspirations. The verification process gave me confidence in every connection."
+                      </blockquote>
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 flex items-center justify-center">
+                          <span className="text-white text-xs font-bold">A</span>
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900">Ananya S.</p>
+                          <p className="text-xs text-gray-600">Elite Member since 2023</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="text-center">
+                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4 mb-6">
+                      <div className="flex items-center justify-center gap-2 text-green-800 mb-2">
+                        <Shield className="w-5 h-5" />
+                        <span className="font-semibold">100% Confidentiality Guaranteed</span>
+                      </div>
+                      <p className="text-sm text-green-700">
+                        Your privacy is our priority. All verifications are conducted with utmost discretion.
+                      </p>
+                    </div>
+
+                    <Button
+                      onClick={() =>
+                        openPaymentModal({
+                          type: "plan",
+                          name: `Elite Membership (${billingCycle === "monthly" ? "1 month" : "3 months"})`,
+                          price: planPricing.elite[billingCycle].price,
+                          description: `${
+                            billingCycle === "monthly" ? "1 month" : "3 months"
+                          } of exclusive Elite access`,
+                          features: [
+                            "Access to Elite verified profiles",
+                            "Personal matchmaking concierge",
+                            "Exclusive spiritual events & retreats",
+                            "In-depth compatibility analysis",
+                            "Enhanced privacy controls",
+                            "100% confidentiality guaranteed",
+                            billingCycle === "quarterly"
+                              ? `Save ${planPricing.elite.quarterly.savings} compared to monthly`
+                              : "",
+                          ].filter(Boolean),
+                        })
+                      }
+                      className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-8 py-3 text-lg font-semibold shadow-lg hover:shadow-xl transition-all"
+                      disabled={profile?.account_status === "elite"}
+                    >
+                      {profile?.account_status === "elite" ? (
+                        <>
+                          <Diamond className="w-5 h-5 mr-2" />
+                          Elite Active
+                        </>
+                      ) : (
+                        <>
+                          <Diamond className="w-5 h-5 mr-2" />
+                          Join Elite
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          {/* Super Likes & Highlights */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+            {/* Super Likes */}
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Super Likes ⭐</h2>
+              <div className="space-y-4">
+                {superLikePackages.map((pkg, index) => (
+                  <Card
+                    key={index}
+                    className={`relative overflow-hidden border-2 transition-colors ${
+                      pkg.popular
+                        ? "border-yellow-300 bg-gradient-to-r from-yellow-50 to-orange-50"
+                        : "border-gray-200 hover:border-yellow-200"
+                    }`}
+                  >
+                    {pkg.popular && (
+                      <div className="absolute top-4 right-4 bg-gradient-to-r from-yellow-400 to-orange-400 text-white px-3 py-1 rounded-full text-sm font-semibold">
+                        Popular
+                      </div>
+                    )}
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="text-xl font-semibold text-gray-900">{pkg.count} Super Likes</h3>
+                          <p className="text-gray-600">Stand out from the crowd</p>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-2xl font-bold text-gray-900">₹{pkg.price}</div>
+                          <Button
+                            onClick={() =>
+                              openPaymentModal({
+                                type: "super_likes",
+                                name: `${pkg.count} Super Likes`,
+                                price: pkg.price,
+                                description: `${pkg.count} Super Likes to make your profile stand out`,
+                                features: [
+                                  "Instantly notify matches of your interest",
+                                  "Higher chance of getting matched",
+                                  "Stand out from regular likes",
+                                ],
+                              })
+                            }
+                            className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 mt-2"
+                          >
+                            Buy Now
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+
+            {/* Message Highlights */}
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Message Highlights ✨</h2>
+              <div className="space-y-4">
+                {highlightPackages.map((pkg, index) => (
+                  <Card
+                    key={index}
+                    className={`relative overflow-hidden border-2 transition-colors ${
+                      pkg.popular
+                        ? "border-purple-300 bg-gradient-to-r from-purple-50 to-pink-50"
+                        : "border-gray-200 hover:border-purple-200"
+                    }`}
+                  >
+                    {pkg.popular && (
+                      <div className="absolute top-4 right-4 bg-gradient-to-r from-purple-400 to-pink-400 text-white px-3 py-1 rounded-full text-sm font-semibold">
+                        Popular
+                      </div>
+                    )}
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="text-xl font-semibold text-gray-900">{pkg.count} Highlights</h3>
+                          <p className="text-gray-600">Make your messages priority</p>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-2xl font-bold text-gray-900">₹{pkg.price}</div>
+                          <Button
+                            onClick={() =>
+                              openPaymentModal({
+                                type: "highlights",
+                                name: `${pkg.count} Message Highlights`,
+                                price: pkg.price,
+                                description: `${pkg.count} Message Highlights to prioritize your messages`,
+                                features: [
+                                  "Your messages appear at the top",
+                                  "Higher visibility and response rate",
+                                  "Stand out in crowded inboxes",
+                                ],
+                              })
+                            }
+                            className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 mt-2"
+                          >
+                            Buy Now
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      {/* Payment Modal */}
+      <PaymentModal
+        isOpen={paymentModal.isOpen}
+        onClose={closePaymentModal}
+        item={paymentModal.item}
+        onSuccess={handlePaymentSuccess}
+      />
+
+      <Toaster position="top-center" />
+    </div>
+  )
+}
