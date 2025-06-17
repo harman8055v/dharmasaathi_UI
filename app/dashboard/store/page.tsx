@@ -12,15 +12,15 @@ import type { User as SupabaseUser } from "@supabase/supabase-js"
 import { Toaster } from "sonner"
 
 const superLikePackages = [
-  { count: 5, price: 499, popular: false },
-  { count: 15, price: 1299, popular: true },
-  { count: 30, price: 2499, popular: false },
+  { count: 4, price: 199, popular: false },
+  { count: 10, price: 399, popular: true },
+  { count: 40, price: 999, popular: false },
 ]
 
 const highlightPackages = [
-  { count: 3, price: 399, popular: false },
-  { count: 10, price: 999, popular: true },
-  { count: 20, price: 1799, popular: false },
+  { count: 4, price: 199, popular: false },
+  { count: 10, price: 399, popular: true },
+  { count: 40, price: 999, popular: false },
 ]
 
 export default function StorePage() {
@@ -153,131 +153,233 @@ export default function StorePage() {
 
           {/* Premium Plans */}
           <div className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Premium Plans</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Premium Monthly */}
-              <Card className="relative overflow-hidden border-2 border-purple-200 hover:border-purple-300 transition-colors">
-                <CardHeader className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Choose Your Plan</h2>
+
+            {/* Free Plan - Drishti */}
+            <div className="mb-6">
+              <Card className="relative overflow-hidden border-2 border-gray-200 bg-gray-50">
+                <CardHeader className="bg-gradient-to-r from-gray-600 to-gray-700 text-white">
                   <div className="flex items-center justify-between">
                     <CardTitle className="flex items-center gap-2">
-                      <Crown className="w-6 h-6" />
-                      Premium Monthly
+                      <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
+                        <span className="text-sm font-bold">👁️</span>
+                      </div>
+                      Drishti Plan
                     </CardTitle>
+                    <div className="bg-white/20 px-3 py-1 rounded-full text-sm font-semibold">Current Plan</div>
                   </div>
                   <div className="text-3xl font-bold">
-                    ₹999<span className="text-lg font-normal">/month</span>
+                    Free<span className="text-lg font-normal">/forever</span>
                   </div>
                 </CardHeader>
                 <CardContent className="p-6">
                   <ul className="space-y-3 mb-6">
                     <li className="flex items-center gap-3">
                       <Check className="w-5 h-5 text-green-500" />
-                      <span>Unlimited Super Likes</span>
+                      <span>5 swipes per day</span>
                     </li>
                     <li className="flex items-center gap-3">
                       <Check className="w-5 h-5 text-green-500" />
-                      <span>Priority Profile Visibility</span>
+                      <span>View your matches</span>
+                    </li>
+                    <li className="flex items-center gap-3">
+                      <span className="w-5 h-5 text-red-500">✕</span>
+                      <span className="text-gray-500">Messaging (upgrade required)</span>
                     </li>
                     <li className="flex items-center gap-3">
                       <Check className="w-5 h-5 text-green-500" />
-                      <span>Advanced Matching Filters</span>
+                      <span>Basic profile features</span>
+                    </li>
+                  </ul>
+                  <Button disabled className="w-full bg-gray-400">
+                    Current Plan
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Paid Plans Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Sparsh Plan */}
+              <Card className="relative overflow-hidden border-2 border-blue-200 hover:border-blue-300 transition-colors">
+                <CardHeader className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+                  <CardTitle className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
+                      <span className="text-sm font-bold">🤝</span>
+                    </div>
+                    Sparsh Plan
+                  </CardTitle>
+                  <div className="text-3xl font-bold">
+                    ₹399<span className="text-lg font-normal">/month</span>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <ul className="space-y-3 mb-6">
+                    <li className="flex items-center gap-3">
+                      <Check className="w-5 h-5 text-green-500" />
+                      <span>20 swipes per day</span>
                     </li>
                     <li className="flex items-center gap-3">
                       <Check className="w-5 h-5 text-green-500" />
-                      <span>Message Highlights (10/month)</span>
+                      <span>Unlimited messaging</span>
                     </li>
                     <li className="flex items-center gap-3">
                       <Check className="w-5 h-5 text-green-500" />
-                      <span>See Who Liked You</span>
+                      <span>View all matches</span>
                     </li>
                     <li className="flex items-center gap-3">
                       <Check className="w-5 h-5 text-green-500" />
-                      <span>Read Receipts</span>
+                      <span>Basic profile visibility</span>
                     </li>
                   </ul>
                   <Button
                     onClick={() =>
                       openPaymentModal({
                         type: "plan",
-                        name: "Premium Monthly",
-                        price: 999,
-                        description: "1 month of premium access",
+                        name: "Sparsh Plan",
+                        price: 399,
+                        description: "1 month of Sparsh access",
                         features: [
-                          "Unlimited Super Likes",
-                          "Priority Profile Visibility",
-                          "Advanced Matching Filters",
-                          "Message Highlights (10/month)",
-                          "See Who Liked You",
-                          "Read Receipts",
+                          "20 swipes per day",
+                          "Unlimited messaging",
+                          "View all matches",
+                          "Basic profile visibility",
+                        ],
+                      })
+                    }
+                    className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
+                    disabled={profile?.account_status === "premium"}
+                  >
+                    {profile?.account_status === "premium" ? "Already Premium" : "Choose Sparsh"}
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Sangam Plan */}
+              <Card className="relative overflow-hidden border-2 border-purple-200 hover:border-purple-300 transition-colors">
+                <div className="absolute top-4 right-4 bg-gradient-to-r from-purple-400 to-pink-400 text-white px-3 py-1 rounded-full text-sm font-semibold">
+                  Popular
+                </div>
+                <CardHeader className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+                  <CardTitle className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
+                      <span className="text-sm font-bold">💫</span>
+                    </div>
+                    Sangam Plan
+                  </CardTitle>
+                  <div className="text-3xl font-bold">
+                    ₹699<span className="text-lg font-normal">/month</span>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <ul className="space-y-3 mb-6">
+                    <li className="flex items-center gap-3">
+                      <Check className="w-5 h-5 text-green-500" />
+                      <span>50 swipes per day</span>
+                    </li>
+                    <li className="flex items-center gap-3">
+                      <Check className="w-5 h-5 text-green-500" />
+                      <span>Everything in Sparsh</span>
+                    </li>
+                    <li className="flex items-center gap-3">
+                      <Star className="w-5 h-5 text-yellow-500" />
+                      <span>5 Super Likes monthly</span>
+                    </li>
+                    <li className="flex items-center gap-3">
+                      <Sparkles className="w-5 h-5 text-purple-500" />
+                      <span>5 Message Highlights monthly</span>
+                    </li>
+                    <li className="flex items-center gap-3">
+                      <Check className="w-5 h-5 text-green-500" />
+                      <span>Higher profile visibility</span>
+                    </li>
+                  </ul>
+                  <Button
+                    onClick={() =>
+                      openPaymentModal({
+                        type: "plan",
+                        name: "Sangam Plan",
+                        price: 699,
+                        description: "1 month of Sangam access",
+                        features: [
+                          "50 swipes per day",
+                          "Everything in Sparsh",
+                          "5 Super Likes monthly",
+                          "5 Message Highlights monthly",
+                          "Higher profile visibility",
                         ],
                       })
                     }
                     className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
                     disabled={profile?.account_status === "premium"}
                   >
-                    {profile?.account_status === "premium" ? "Already Premium" : "Choose Premium Monthly"}
+                    {profile?.account_status === "premium" ? "Already Premium" : "Choose Sangam"}
                   </Button>
                 </CardContent>
               </Card>
 
-              {/* Premium Annual */}
+              {/* Samarpan Plan */}
               <Card className="relative overflow-hidden border-2 border-gold-200 hover:border-gold-300 transition-colors">
                 <div className="absolute top-4 right-4 bg-gradient-to-r from-yellow-400 to-orange-400 text-white px-3 py-1 rounded-full text-sm font-semibold">
-                  Save 40%
+                  Premium
                 </div>
                 <CardHeader className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white">
                   <CardTitle className="flex items-center gap-2">
                     <Crown className="w-6 h-6" />
-                    Premium Annual
+                    Samarpan Plan
                   </CardTitle>
                   <div className="text-3xl font-bold">
-                    ₹5999<span className="text-lg font-normal">/year</span>
+                    ₹1299<span className="text-lg font-normal">/month</span>
                   </div>
-                  <p className="text-sm opacity-90">Just ₹500/month - Save ₹6000!</p>
                 </CardHeader>
                 <CardContent className="p-6">
                   <ul className="space-y-3 mb-6">
                     <li className="flex items-center gap-3">
                       <Check className="w-5 h-5 text-green-500" />
-                      <span>Everything in Premium Monthly</span>
+                      <span>Unlimited swipes</span>
                     </li>
                     <li className="flex items-center gap-3">
                       <Check className="w-5 h-5 text-green-500" />
-                      <span>Unlimited Message Highlights</span>
+                      <span>Everything in Sangam</span>
+                    </li>
+                    <li className="flex items-center gap-3">
+                      <Star className="w-5 h-5 text-yellow-500" />
+                      <span>15 Super Likes monthly</span>
+                    </li>
+                    <li className="flex items-center gap-3">
+                      <Sparkles className="w-5 h-5 text-purple-500" />
+                      <span>15 Message Highlights monthly</span>
+                    </li>
+                    <li className="flex items-center gap-3">
+                      <Crown className="w-5 h-5 text-yellow-500" />
+                      <span>Highest profile visibility</span>
                     </li>
                     <li className="flex items-center gap-3">
                       <Check className="w-5 h-5 text-green-500" />
-                      <span>Priority Customer Support</span>
-                    </li>
-                    <li className="flex items-center gap-3">
-                      <Check className="w-5 h-5 text-green-500" />
-                      <span>Exclusive Events Access</span>
-                    </li>
-                    <li className="flex items-center gap-3">
-                      <Check className="w-5 h-5 text-green-500" />
-                      <span>Profile Boost (2x/month)</span>
+                      <span>Priority customer support</span>
                     </li>
                   </ul>
                   <Button
                     onClick={() =>
                       openPaymentModal({
                         type: "plan",
-                        name: "Premium Annual",
-                        price: 5999,
-                        description: "12 months of premium access",
+                        name: "Samarpan Plan",
+                        price: 1299,
+                        description: "1 month of Samarpan access",
                         features: [
-                          "Everything in Premium Monthly",
-                          "Unlimited Message Highlights",
-                          "Priority Customer Support",
-                          "Exclusive Events Access",
-                          "Profile Boost (2x/month)",
+                          "Unlimited swipes",
+                          "Everything in Sangam",
+                          "15 Super Likes monthly",
+                          "15 Message Highlights monthly",
+                          "Highest profile visibility",
+                          "Priority customer support",
                         ],
                       })
                     }
                     className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600"
                     disabled={profile?.account_status === "premium"}
                   >
-                    {profile?.account_status === "premium" ? "Already Premium" : "Choose Premium Annual"}
+                    {profile?.account_status === "premium" ? "Already Premium" : "Choose Samarpan"}
                   </Button>
                 </CardContent>
               </Card>
