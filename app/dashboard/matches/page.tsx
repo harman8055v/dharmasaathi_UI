@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Heart, Star, MapPin, GraduationCap, Briefcase, Calendar, MessageCircle, Lock } from "lucide-react"
+import { Heart, Star, MapPin, Briefcase, Calendar, MessageCircle, Lock } from "lucide-react"
 import MobileNav from "@/components/dashboard/mobile-nav"
 import type { User as SupabaseUser } from "@supabase/supabase-js"
 
@@ -390,91 +390,101 @@ export default function MatchesPage() {
               <div className="space-y-4">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">Your Matches</h2>
                 {matches.length > 0 ? (
-                  matches.map((match) => (
-                    <Card
-                      key={match.id}
-                      className="overflow-hidden hover:shadow-lg transition-all duration-300 bg-white/90 backdrop-blur-sm border-orange-100"
-                    >
-                      <CardContent className="p-6">
-                        <div className="flex items-start gap-4">
-                          <div className="relative">
-                            <img
-                              src={match.user_photos[0] || "/placeholder.svg"}
-                              alt={match.first_name}
-                              className="w-20 h-20 rounded-full object-cover border-4 border-white shadow-lg"
-                            />
-                            <div className="absolute -top-1 -right-1 w-6 h-6 bg-pink-500 rounded-full flex items-center justify-center">
-                              <Heart className="w-3 h-3 text-white fill-current" />
+                  <div className="grid gap-4">
+                    {matches.map((match) => (
+                      <Card
+                        key={match.id}
+                        className="overflow-hidden hover:shadow-md transition-all duration-200 bg-white/95 backdrop-blur-sm border-0 shadow-sm"
+                      >
+                        <CardContent className="p-0">
+                          <div className="flex items-center gap-4 p-4">
+                            {/* Profile Image */}
+                            <div className="relative flex-shrink-0">
+                              <img
+                                src={match.user_photos[0] || "/placeholder.svg"}
+                                alt={match.first_name}
+                                className="w-16 h-16 rounded-full object-cover border-2 border-white shadow-md"
+                              />
+                              <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-white"></div>
                             </div>
-                          </div>
 
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center gap-3">
-                                <h3 className="text-xl font-bold text-gray-900">
+                            {/* Profile Info */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between mb-1">
+                                <h3 className="text-lg font-semibold text-gray-900 truncate">
                                   {match.first_name} {match.last_name}
                                 </h3>
-                                <div className="px-3 py-1 bg-gradient-to-r from-green-100 to-emerald-100 border border-green-200 text-green-800 text-sm font-semibold rounded-full shadow-sm">
-                                  {match.compatibility}% Match
-                                </div>
-                              </div>
-                              <div className="text-xs text-gray-500">Active {match.last_active}</div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-2 text-sm text-gray-600 mb-3">
-                              <div className="flex items-center gap-1">
-                                <Calendar className="w-3 h-3" />
-                                <span>{match.age} years old</span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <MapPin className="w-3 h-3" />
-                                <span>
-                                  {match.city}, {match.state}
+                                <span className="text-xs text-gray-500 flex-shrink-0 ml-2">
+                                  Active {match.last_active}
                                 </span>
                               </div>
-                              <div className="flex items-center gap-1">
-                                <Briefcase className="w-3 h-3" />
-                                <span>{match.profession}</span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <GraduationCap className="w-3 h-3" />
-                                <span>{match.education}</span>
-                              </div>
-                            </div>
 
-                            <p className="text-gray-700 text-sm mb-3 line-clamp-2">{match.about_me}</p>
-
-                            <div className="flex flex-wrap gap-1 mb-4">
-                              {match.spiritual_org.slice(0, 2).map((org, index) => (
-                                <span
-                                  key={index}
-                                  className="px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded-full"
-                                >
-                                  {org}
+                              <div className="flex items-center gap-4 text-sm text-gray-600 mb-2">
+                                <span className="flex items-center gap-1">
+                                  <Calendar className="w-3 h-3" />
+                                  {match.age}
                                 </span>
-                              ))}
-                            </div>
+                                <span className="flex items-center gap-1">
+                                  <MapPin className="w-3 h-3" />
+                                  {match.city}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Briefcase className="w-3 h-3" />
+                                  {match.profession}
+                                </span>
+                              </div>
 
-                            <div className="flex justify-end">
-                              <Button
-                                size="sm"
-                                onClick={() => handleMessage(match.id)}
-                                className="bg-blue-600 hover:bg-blue-700 text-white"
-                              >
-                                <MessageCircle className="w-4 h-4 mr-2" />
-                                Chat
-                              </Button>
+                              <p className="text-sm text-gray-700 line-clamp-1 mb-3">{match.about_me}</p>
+
+                              {/* Spiritual Organizations */}
+                              <div className="flex flex-wrap gap-1 mb-3">
+                                {match.spiritual_org.slice(0, 2).map((org, index) => (
+                                  <span
+                                    key={index}
+                                    className="px-2 py-1 bg-orange-50 text-orange-700 text-xs rounded-full border border-orange-100"
+                                  >
+                                    {org}
+                                  </span>
+                                ))}
+                                {match.spiritual_org.length > 2 && (
+                                  <span className="px-2 py-1 bg-gray-50 text-gray-600 text-xs rounded-full border border-gray-100">
+                                    +{match.spiritual_org.length - 2} more
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))
+
+                          {/* Chat Button - Full Width */}
+                          <div className="border-t border-gray-100">
+                            <Button
+                              onClick={() => handleMessage(match.id)}
+                              className="w-full h-12 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-none rounded-b-lg font-medium"
+                            >
+                              <MessageCircle className="w-4 h-4 mr-2" />
+                              Start Conversation
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
                 ) : (
-                  <div className="text-center py-12">
-                    <Heart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold text-gray-600 mb-2">No matches yet</h3>
-                    <p className="text-gray-500">Keep swiping to find your perfect spiritual match!</p>
+                  <div className="text-center py-16">
+                    <div className="w-20 h-20 bg-gradient-to-br from-pink-100 to-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Heart className="w-10 h-10 text-pink-400" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-700 mb-2">No matches yet</h3>
+                    <p className="text-gray-500 max-w-sm mx-auto">
+                      Keep swiping to discover your perfect spiritual companion. Your journey to meaningful connections
+                      starts with each swipe!
+                    </p>
+                    <Button
+                      onClick={() => router.push("/dashboard")}
+                      className="mt-4 bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white"
+                    >
+                      Start Swiping
+                    </Button>
                   </div>
                 )}
               </div>
