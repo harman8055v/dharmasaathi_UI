@@ -219,7 +219,7 @@ export function ReferralProgram({ userId, userProfile }: ReferralProgramProps) {
           <p className="text-xs text-gray-600 mb-3">
             Please run the SQL script:{" "}
             <code className="bg-gray-100 px-2 py-1 rounded text-xs font-mono">
-              scripts/create-referral-system-v2.sql
+              scripts/fix-referral-system-final.sql
             </code>
           </p>
         </div>
