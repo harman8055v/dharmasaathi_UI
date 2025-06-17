@@ -271,11 +271,11 @@ export default function PaymentModal({ isOpen, onClose, item, onSuccess }: Payme
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md mx-4 max-h-[90vh] overflow-y-auto z-[60]">
-        <DialogHeader>
-          <DialogTitle>Complete Payment</DialogTitle>
+      <DialogContent className="fixed inset-0 w-screen h-screen max-w-none max-h-none m-0 rounded-none z-[100] bg-white overflow-y-auto">
+        <DialogHeader className="sticky top-0 bg-white border-b p-6 z-10">
+          <DialogTitle className="text-xl">Complete Payment</DialogTitle>
         </DialogHeader>
-        <div className="pb-20 md:pb-4">{renderPaymentStep()}</div>
+        <div className="p-6 pb-20 max-w-md mx-auto">{renderPaymentStep()}</div>
       </DialogContent>
     </Dialog>
   )
