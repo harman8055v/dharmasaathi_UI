@@ -21,6 +21,7 @@ import {
   FileCheck,
   DollarSign,
   Eye,
+  Headphones,
 } from "lucide-react"
 import MobileNav from "@/components/dashboard/mobile-nav"
 import PaymentModal from "@/components/payment/payment-modal"
@@ -164,7 +165,7 @@ export default function StorePage() {
       ],
       elite: [
         "Access to Elite verified profiles",
-        "Personal matchmaking concierge",
+        "Priority support",
         "Exclusive spiritual events & retreats",
         "In-depth compatibility analysis",
         "Enhanced privacy controls",
@@ -613,8 +614,8 @@ export default function StorePage() {
                           <span>Access to Elite verified profiles only</span>
                         </li>
                         <li className="flex items-center gap-3">
-                          <Users className="w-5 h-5 text-indigo-600" />
-                          <span>Personal matchmaking concierge</span>
+                          <Headphones className="w-5 h-5 text-indigo-600" />
+                          <span>Priority support</span>
                         </li>
                         <li className="flex items-center gap-3">
                           <Award className="w-5 h-5 text-indigo-600" />
@@ -710,7 +711,7 @@ export default function StorePage() {
                     }`}
                   >
                     {pkg.popular && (
-                      <div className="absolute top-4 right-4 bg-gradient-to-r from-yellow-400 to-orange-400 text-white px-3 py-1 rounded-full text-sm font-semibold">
+                      <div className="absolute top-2 left-2 bg-gradient-to-r from-yellow-400 to-orange-400 text-white px-3 py-1 rounded-full text-sm font-semibold z-10">
                         Popular
                       </div>
                     )}
@@ -762,7 +763,7 @@ export default function StorePage() {
                     }`}
                   >
                     {pkg.popular && (
-                      <div className="absolute top-4 right-4 bg-gradient-to-r from-purple-400 to-pink-400 text-white px-3 py-1 rounded-full text-sm font-semibold">
+                      <div className="absolute top-2 left-2 bg-gradient-to-r from-purple-400 to-pink-400 text-white px-3 py-1 rounded-full text-sm font-semibold z-10">
                         Popular
                       </div>
                     )}
