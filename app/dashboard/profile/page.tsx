@@ -5,7 +5,21 @@ import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ArrowLeft, Edit, Camera, MapPin, Briefcase, Heart, Eye, Users, Activity, Sparkles, X } from "lucide-react"
+import {
+  ArrowLeft,
+  Edit,
+  Camera,
+  MapPin,
+  Briefcase,
+  Heart,
+  Eye,
+  Users,
+  Activity,
+  Sparkles,
+  X,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react"
 import MobileNav from "@/components/dashboard/mobile-nav"
 import ProfileImageUploader from "@/components/dashboard/profile-image-uploader"
 
@@ -16,6 +30,7 @@ export default function ProfilePage() {
   const router = useRouter()
   const [userImages, setUserImages] = useState<string[]>([])
   const [showPreview, setShowPreview] = useState(false)
+  const [currentImageIndex, setCurrentImageIndex] = useState(0)
 
   useEffect(() => {
     async function getUser() {
@@ -48,6 +63,12 @@ export default function ProfilePage() {
 
     getUser()
   }, [router])
+
+  useEffect(() => {
+    if (showPreview) {
+      setCurrentImageIndex(0)
+    }
+  }, [showPreview])
 
   if (loading) {
     return (
@@ -460,10 +481,32 @@ export default function ProfilePage() {
                       <div className="flex h-full">
                         <div className="w-full h-full relative">
                           <img
-                            src={userImages[0] || "/placeholder.svg"}
+                            src={userImages[currentImageIndex] || "/placeholder.svg"}
                             alt={`${profile?.first_name} ${profile?.last_name}`}
                             className="w-full h-full object-cover"
                           />
+
+                          {/* Navigation Arrows */}
+                          {userImages.length > 1 && (
+                            <>
+                              <button
+                                onClick={() =>
+                                  setCurrentImageIndex((prev) => (prev === 0 ? userImages.length - 1 : prev - 1))
+                                }
+                                className="absolute left-4 top-1/2 transform -translate-y-1/2 w-10 h-10 bg-black/50 rounded-full flex items-center justify-center text-white hover:bg-black/70 transition-colors z-20"
+                              >
+                                <ChevronLeft className="w-6 h-6" />
+                              </button>
+                              <button
+                                onClick={() =>
+                                  setCurrentImageIndex((prev) => (prev === userImages.length - 1 ? 0 : prev + 1))
+                                }
+                                className="absolute right-4 top-1/2 transform -translate-y-1/2 w-10 h-10 bg-black/50 rounded-full flex items-center justify-center text-white hover:bg-black/70 transition-colors z-20"
+                              >
+                                <ChevronRight className="w-6 h-6" />
+                              </button>
+                            </>
+                          )}
                         </div>
                       </div>
 
@@ -471,9 +514,12 @@ export default function ProfilePage() {
                       {userImages.length > 1 && (
                         <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-3 z-20">
                           {userImages.map((_, idx) => (
-                            <div
+                            <button
                               key={idx}
-                              className={`w-3 h-3 rounded-full ${idx === 0 ? "bg-white scale-125" : "bg-white/60"}`}
+                              onClick={() => setCurrentImageIndex(idx)}
+                              className={`w-3 h-3 rounded-full transition-all ${
+                                idx === currentImageIndex ? "bg-white scale-125" : "bg-white/60 hover:bg-white/80"
+                              }`}
                             />
                           ))}
                         </div>
