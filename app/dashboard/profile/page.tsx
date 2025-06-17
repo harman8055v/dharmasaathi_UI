@@ -8,7 +8,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ArrowLeft, Edit, Camera, MapPin, Briefcase, Heart, Eye, Users, Activity, Sparkles, X } from "lucide-react"
 import MobileNav from "@/components/dashboard/mobile-nav"
 import ProfileImageUploader from "@/components/dashboard/profile-image-uploader"
-import SwipeCard from "@/components/dashboard/swipe-card"
 
 export default function ProfilePage() {
   const [user, setUser] = useState<any>(null)
@@ -442,25 +441,157 @@ export default function ProfilePage() {
             </Card>
           )}
 
-          {/* Profile Preview Modal */}
+          {/* Profile Preview Modal - Full Profile Dialog */}
           {showPreview && (
-            <div className="fixed inset-0 z-[100000]">
-              <div className="absolute inset-0 bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 p-4">
-                <div className="max-w-sm mx-auto h-full relative">
-                  <SwipeCard
-                    profile={profile}
-                    onSwipe={() => {}} // No-op for preview
-                    onUndo={() => {}} // No-op for preview
-                    showUndo={false}
-                    isTop={true}
-                    index={0}
-                  />
-                  <button
-                    onClick={() => setShowPreview(false)}
-                    className="absolute top-4 right-4 w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center text-gray-700 hover:bg-white transition-colors z-30"
-                  >
-                    <X className="w-6 h-6" />
-                  </button>
+            <div className="fixed inset-0 bg-black/50 z-[100000]" onClick={() => setShowPreview(false)}>
+              <div className="w-full h-screen bg-white overflow-y-auto relative" onClick={(e) => e.stopPropagation()}>
+                {/* Close Button */}
+                <button
+                  onClick={() => setShowPreview(false)}
+                  className="absolute top-4 right-4 w-10 h-10 bg-black/20 rounded-full flex items-center justify-center text-white hover:bg-black/40 transition-colors z-30"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+
+                <div className="pb-32">
+                  {/* Swipeable Photo Gallery */}
+                  {userImages && userImages.length > 0 && (
+                    <div className="relative h-[50vh] bg-gray-100 overflow-hidden">
+                      <div className="flex h-full transition-transform duration-300 ease-out">
+                        {userImages.map((photo: string, idx: number) => (
+                          <div key={idx} className="w-full h-full relative flex-shrink-0">
+                            <img
+                              src={photo || "/placeholder.svg"}
+                              alt={`${profile?.first_name} ${profile?.last_name} - Photo ${idx + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="p-6">
+                    {/* Profile Header */}
+                    <div className="flex items-center gap-4 mb-6">
+                      <div className="w-20 h-20 rounded-full overflow-hidden">
+                        <img
+                          src={userImages[0] || "/placeholder.svg"}
+                          alt={`${profile?.first_name} ${profile?.last_name}`}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div>
+                        <h3 className="text-2xl font-bold text-gray-900">
+                          {profile?.first_name} {profile?.last_name}
+                        </h3>
+                        <p className="text-gray-600">{calculateAge(profile?.birthdate)} years old</p>
+                      </div>
+                    </div>
+
+                    {/* About Section */}
+                    {profile?.about_me && (
+                      <div className="mb-6">
+                        <h4 className="text-lg font-semibold text-gray-900 mb-2">About Me</h4>
+                        <p className="text-gray-700 leading-relaxed">{profile.about_me}</p>
+                      </div>
+                    )}
+
+                    {/* Details Grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                      {profile?.city && profile?.state && (
+                        <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                          <MapPin className="w-5 h-5 text-gray-500" />
+                          <div>
+                            <p className="text-sm text-gray-500">Location</p>
+                            <p className="font-medium">
+                              {profile.city}, {profile.state}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {profile?.profession && (
+                        <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                          <Briefcase className="w-5 h-5 text-gray-500" />
+                          <div>
+                            <p className="text-sm text-gray-500">Profession</p>
+                            <p className="font-medium">{profile.profession}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {profile?.education && (
+                        <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                          <Edit className="w-5 h-5 text-gray-500" />
+                          <div>
+                            <p className="text-sm text-gray-500">Education</p>
+                            <p className="font-medium">{profile.education}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {profile?.diet && (
+                        <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                          <Sparkles className="w-5 h-5 text-gray-500" />
+                          <div>
+                            <p className="text-sm text-gray-500">Diet</p>
+                            <p className="font-medium">{profile.diet}</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Daily Practices */}
+                    {profile?.daily_practices && profile.daily_practices.length > 0 && (
+                      <div className="mb-6">
+                        <h4 className="text-lg font-semibold text-gray-900 mb-3">Daily Practices</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {profile.daily_practices.map((practice: string, index: number) => (
+                            <span key={index} className="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-sm">
+                              {practice}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Spiritual Organizations */}
+                    {profile?.spiritual_org && profile.spiritual_org.length > 0 && (
+                      <div className="mb-6">
+                        <h4 className="text-lg font-semibold text-gray-900 mb-3">Spiritual Organizations</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {profile.spiritual_org.map((org: string, index: number) => (
+                            <span key={index} className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm">
+                              {org}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Interests */}
+                    {profile?.interests && profile.interests.length > 0 && (
+                      <div className="mb-6">
+                        <h4 className="text-lg font-semibold text-gray-900 mb-3">Interests</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {profile.interests.map((interest: string, index: number) => (
+                            <span key={index} className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm">
+                              {interest}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Partner Preferences */}
+                    {profile?.partner_expectations && (
+                      <div className="mb-6">
+                        <h4 className="text-lg font-semibold text-gray-900 mb-2">What I'm Looking For</h4>
+                        <p className="text-gray-700 leading-relaxed">{profile.partner_expectations}</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

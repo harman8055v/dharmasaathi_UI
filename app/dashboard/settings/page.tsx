@@ -228,7 +228,7 @@ export default function SettingsPage() {
             </Button>
           </div>
 
-          <Tabs defaultValue="personal" className="space-y-6">
+          <Tabs defaultValue="personal" className="space-y-6 pb-32">
             <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="personal">Personal</TabsTrigger>
               <TabsTrigger value="spiritual">Spiritual</TabsTrigger>
@@ -880,6 +880,20 @@ export default function SettingsPage() {
               </Card>
             </TabsContent>
           </Tabs>
+
+          {/* Fixed Bottom Save Button */}
+          <div className="fixed bottom-24 left-0 right-0 bg-gradient-to-t from-white via-white to-transparent p-4 z-10">
+            <div className="max-w-4xl mx-auto">
+              <Button
+                onClick={handleSave}
+                disabled={saving}
+                className="w-full bg-gradient-to-r from-orange-500 to-pink-500 h-12 text-lg font-semibold"
+              >
+                <Save className="w-5 h-5 mr-2" />
+                {saving ? "Saving Changes..." : "Save All Changes"}
+              </Button>
+            </div>
+          </div>
         </div>
       </main>
     </div>
