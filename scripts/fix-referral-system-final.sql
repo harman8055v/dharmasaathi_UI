@@ -283,24 +283,36 @@ CREATE TRIGGER update_referral_rewards_updated_at
 -- Create indexes safely
 DO $$
 BEGIN
-    -- Only create indexes if tables exist
+    -- Only create indexes if tables and columns exist
     IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'referrals') THEN
-        CREATE INDEX IF NOT EXISTS idx_referrals_referrer_id ON referrals(referrer_id);
-        CREATE INDEX IF NOT EXISTS idx_referrals_status ON referrals(status);
-        
+        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'referrals' AND column_name = 'referrer_id') THEN
+            CREATE INDEX IF NOT EXISTS idx_referrals_referrer_id ON referrals(referrer_id);
+        END IF;
+
+        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'referrals' AND column_name = 'status') THEN
+            CREATE INDEX IF NOT EXISTS idx_referrals_status ON referrals(status);
+        END IF;
+
         -- Create index on referred_user_id if it exists
         IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'referrals' AND column_name = 'referred_user_id') THEN
             CREATE INDEX IF NOT EXISTS idx_referrals_referred_user_id ON referrals(referred_user_id);
         END IF;
-        
+
         -- Create index on referred_id if it exists
         IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'referrals' AND column_name = 'referred_id') THEN
             CREATE INDEX IF NOT EXISTS idx_referrals_referred_id ON referrals(referred_id);
         END IF;
     END IF;
-    
-    CREATE INDEX IF NOT EXISTS idx_referral_rewards_referrer_id ON referral_rewards(referrer_id);
-    CREATE INDEX IF NOT EXISTS idx_users_verification_status ON users(verification_status);
+
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'referral_rewards') THEN
+        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'referral_rewards' AND column_name = 'referrer_id') THEN
+            CREATE INDEX IF NOT EXISTS idx_referral_rewards_referrer_id ON referral_rewards(referrer_id);
+        END IF;
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'verification_status') THEN
+        CREATE INDEX IF NOT EXISTS idx_users_verification_status ON users(verification_status);
+    END IF;
 END $$;
 
 COMMIT;

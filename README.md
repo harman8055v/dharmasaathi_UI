@@ -170,6 +170,9 @@ NEXT_PUBLIC_DEBUG=false
 
 Ensure in your Supabase project settings that email confirmation is disabled so
 new users can sign in immediately.
+### Referral System Setup
+Run the SQL script `scripts/fix-referral-system-final.sql` in your Supabase project to create the referral tables, functions, and triggers. The script detects whatever columns exist in your `referrals` table and adds the missing pieces safely.
+
 
 **4. Run the app locally
 
