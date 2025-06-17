@@ -28,6 +28,13 @@ export default function MobileNav({ userProfile }: MobileNavProps) {
   const router = useRouter()
   const pathname = usePathname()
 
+  const isVerified =
+    userProfile?.verification_status === "verified" ||
+    ["active", "sparsh", "sangam", "samarpan", "premium", "elite"].includes(
+      userProfile?.account_status ?? "",
+    )
+  const showHeader = !(pathname === "/dashboard" && isVerified)
+
   const handleSignOut = async () => {
     await supabase.auth.signOut()
     router.push("/")
@@ -95,105 +102,113 @@ export default function MobileNav({ userProfile }: MobileNavProps) {
   return (
     <>
       {/* Top Header - Minimal */}
-      <header className="fixed top-0 left-0 right-0 z-40 bg-gradient-to-r from-orange-50 to-pink-50 backdrop-blur-md border-b border-orange-100/50">
-        <div className="flex items-center justify-between px-4 py-4">
-          {/* Logo on left */}
-          <div className="flex items-center">
-            <Image src="/logo.png" alt="DharmaSaathi" width={140} height={48} className="h-12 w-auto" />
-          </div>
+      {showHeader && (
+        <header className="fixed top-0 left-0 right-0 z-40 bg-gradient-to-r from-orange-50 to-pink-50 backdrop-blur-md border-b border-orange-100/50">
+          <div className="flex items-center justify-between px-4 py-4">
+            {/* Logo on left */}
+            <div className="flex items-center">
+              <Image src="/logo.png" alt="DharmaSaathi" width={140} height={48} className="h-12 w-auto" />
+            </div>
 
-          {/* User Profile Dropdown */}
-          <div className="relative">
-            <button
-              onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-              className="flex items-center gap-2 p-1 rounded-full hover:bg-white/50 transition-all duration-200 group"
-            >
-              <div className="relative">
-                <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-gradient-to-r from-orange-400 to-pink-400 shadow-lg group-hover:shadow-xl transition-all duration-200">
-                  <Image
-                    src={getUserPhoto() || "/placeholder.svg"}
-                    alt={userProfile?.first_name || "User"}
-                    width={40}
-                    height={40}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                {userProfile?.fast_track_verification && (
-                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white flex items-center justify-center">
-                    <div className="w-2 h-2 bg-white rounded-full"></div>
+            {/* User Profile Dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+                className="flex items-center gap-2 p-1 rounded-full hover:bg-white/50 transition-all duration-200 group"
+              >
+                <div className="relative">
+                  <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-gradient-to-r from-orange-400 to-pink-400 shadow-lg group-hover:shadow-xl transition-all duration-200">
+                    <Image
+                      src={getUserPhoto() || "/placeholder.svg"}
+                      alt={userProfile?.first_name || "User"}
+                      width={40}
+                      height={40}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
-                )}
-              </div>
-              <ChevronDown
-                className={`w-4 h-4 text-gray-600 transition-transform duration-200 ${isProfileMenuOpen ? "rotate-180" : ""}`}
-              />
-            </button>
+                  {userProfile?.fast_track_verification && (
+                    <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white flex items-center justify-center">
+                      <div className="w-2 h-2 bg-white rounded-full"></div>
+                    </div>
+                  )}
+                </div>
+                <ChevronDown
+                  className={`w-4 h-4 text-gray-600 transition-transform duration-200 ${isProfileMenuOpen ? "rotate-180" : ""}`}
+                />
+              </button>
 
-            {/* Profile Dropdown Menu */}
-            {isProfileMenuOpen && (
-              <>
-                <div className="fixed inset-0 z-30" onClick={() => setIsProfileMenuOpen(false)} />
-                <div className="absolute top-full right-0 mt-2 w-64 bg-white/95 backdrop-blur-md border border-orange-200 rounded-2xl shadow-2xl z-40 overflow-hidden animate-in slide-in-from-top-2 duration-200">
-                  {/* User Info */}
-                  <div className="p-4 bg-gradient-to-r from-orange-50 to-pink-50 border-b border-orange-100">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-orange-200">
-                        <Image
-                          src={getUserPhoto() || "/placeholder.svg"}
-                          alt={userProfile?.first_name || "User"}
-                          width={48}
-                          height={48}
-                          className="w-full h-full object-cover"
-                        />
+              {/* Profile Dropdown Menu */}
+              {isProfileMenuOpen && (
+                <>
+                  <div className="fixed inset-0 z-30" onClick={() => setIsProfileMenuOpen(false)} />
+                  <div className="absolute top-full right-0 mt-2 w-64 bg-white backdrop-blur-md border border-orange-200 rounded-2xl shadow-2xl z-40 overflow-hidden animate-in slide-in-from-top-2 duration-200">
+                    {/* User Info */}
+                    <div className="p-4 bg-gradient-to-r from-orange-50 to-pink-50 border-b border-orange-100">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-orange-200">
+                          <Image
+                            src={getUserPhoto() || "/placeholder.svg"}
+                            alt={userProfile?.first_name || "User"}
+                            width={48}
+                            height={48}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-semibold text-gray-900">
+                            {userProfile?.first_name} {userProfile?.last_name}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            {userProfile?.verification_status === "verified"
+                              ? "Verified"
+                              : userProfile?.verification_status === "rejected"
+                                ? "Verification Rejected"
+                                : userProfile?.fast_track_verification
+                                  ? "Fast Track Verification"
+                                  : "Profile Under Review"}
+                          </p>
+                        </div>
                       </div>
-                      <div className="flex-1">
-                        <p className="font-semibold text-gray-900">
-                          {userProfile?.first_name} {userProfile?.last_name}
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          {userProfile?.fast_track_verification ? "Fast Track Verification" : "Profile Under Review"}
-                        </p>
+                    </div>
+
+                    {/* Menu Items */}
+                    <div className="p-2">
+                      {settingsItems.map((item, index) => (
+                        <button
+                          key={item.href}
+                          onClick={() => {
+                            router.push(item.href)
+                            setIsProfileMenuOpen(false)
+                          }}
+                          className="flex items-center gap-3 w-full px-3 py-3 text-left text-gray-700 hover:bg-orange-50 hover:text-orange-600 rounded-xl transition-all duration-200 group"
+                          style={{ animationDelay: `${index * 50}ms` }}
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-orange-100 to-pink-100 flex items-center justify-center group-hover:from-orange-200 group-hover:to-pink-200 transition-all duration-200">
+                            <item.icon className="w-4 h-4" />
+                          </div>
+                          <span className="text-sm font-medium">{item.label}</span>
+                        </button>
+                      ))}
+
+                      <div className="border-t border-gray-200 mt-2 pt-2">
+                        <button
+                          onClick={handleSignOut}
+                          className="flex items-center gap-3 w-full px-3 py-3 text-left text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200 group"
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center group-hover:bg-red-200 transition-all duration-200">
+                            <LogOut className="w-4 h-4" />
+                          </div>
+                          <span className="text-sm font-medium">Sign Out</span>
+                        </button>
                       </div>
                     </div>
                   </div>
-
-                  {/* Menu Items */}
-                  <div className="p-2">
-                    {settingsItems.map((item, index) => (
-                      <button
-                        key={item.href}
-                        onClick={() => {
-                          router.push(item.href)
-                          setIsProfileMenuOpen(false)
-                        }}
-                        className="flex items-center gap-3 w-full px-3 py-3 text-left text-gray-700 hover:bg-orange-50 hover:text-orange-600 rounded-xl transition-all duration-200 group"
-                        style={{ animationDelay: `${index * 50}ms` }}
-                      >
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-orange-100 to-pink-100 flex items-center justify-center group-hover:from-orange-200 group-hover:to-pink-200 transition-all duration-200">
-                          <item.icon className="w-4 h-4" />
-                        </div>
-                        <span className="text-sm font-medium">{item.label}</span>
-                      </button>
-                    ))}
-
-                    <div className="border-t border-gray-200 mt-2 pt-2">
-                      <button
-                        onClick={handleSignOut}
-                        className="flex items-center gap-3 w-full px-3 py-3 text-left text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200 group"
-                      >
-                        <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center group-hover:bg-red-200 transition-all duration-200">
-                          <LogOut className="w-4 h-4" />
-                        </div>
-                        <span className="text-sm font-medium">Sign Out</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </>
-            )}
+                </>
+              )}
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
+      )}
 
       {/* Bottom Navigation - Mobile Fixed */}
       <div
@@ -206,14 +221,14 @@ export default function MobileNav({ userProfile }: MobileNavProps) {
           zIndex: 99999,
         }}
       >
-        <div className="p-4 pointer-events-none">
+        <div className="p-3 pointer-events-none">
           <div className="bg-white/95 backdrop-blur-xl border border-orange-200/50 rounded-3xl shadow-2xl shadow-orange-500/20 pointer-events-auto max-w-md mx-auto">
-            <div className="flex items-center justify-around px-2 py-4">
+            <div className="flex items-center justify-around px-2 py-3">
               {navItems.map((item) => (
                 <button
                   key={item.href}
                   onClick={() => handleNavItemClick(item.href)}
-                  className={`relative flex flex-col items-center gap-2 px-4 py-2 rounded-2xl transition-all duration-200 ${
+                  className={`relative flex flex-col items-center gap-1 px-3 py-2 rounded-2xl transition-all duration-200 ${
                     item.active
                       ? "bg-gradient-to-r from-orange-100 to-pink-100 text-orange-600 shadow-lg shadow-orange-500/20"
                       : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
@@ -226,11 +241,11 @@ export default function MobileNav({ userProfile }: MobileNavProps) {
 
                   {/* Icon */}
                   <div className="relative">
-                    <item.icon className={`w-6 h-6 ${item.active ? item.color : ""} transition-all duration-200`} />
+                    <item.icon className={`w-5 h-5 ${item.active ? item.color : ""} transition-all duration-200`} />
 
                     {/* Notification Badge (example for Messages) */}
                     {item.label === "Messages" && (
-                      <div className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+                      <div className="absolute -top-2 -right-2 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
                         <span className="text-xs text-white font-bold">3</span>
                       </div>
                     )}

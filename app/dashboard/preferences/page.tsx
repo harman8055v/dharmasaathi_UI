@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, Save, Heart, Users, MapPin } from "lucide-react"
 import MobileNav from "@/components/dashboard/mobile-nav"
 import { toast, Toaster } from "sonner"
+import { SPIRITUAL_ORGS } from "@/lib/constants/spiritual-orgs"
 
 export default function PartnerPreferencesPage() {
   const [user, setUser] = useState<any>(null)
@@ -104,6 +105,21 @@ export default function PartnerPreferencesPage() {
     }
   }
 
+  const handleMultiSelect = (value: string) => {
+    const current = preferences.preferred_spiritual_org || []
+    if (current.includes(value)) {
+      setPreferences({
+        ...preferences,
+        preferred_spiritual_org: current.filter((v) => v !== value),
+      })
+    } else {
+      setPreferences({
+        ...preferences,
+        preferred_spiritual_org: [...current, value],
+      })
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 flex items-center justify-center">
@@ -113,10 +129,10 @@ export default function PartnerPreferencesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 pb-20">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50">
       <MobileNav userProfile={profile} />
 
-      <main className="pt-20 px-4">
+      <main className="pt-24 pb-40 px-4 min-h-screen">
         <div className="max-w-2xl mx-auto">
           {/* Header */}
           <div className="flex items-center gap-3 mb-6">
@@ -279,9 +295,48 @@ export default function PartnerPreferencesPage() {
                       <SelectItem value="weekly">Weekly</SelectItem>
                       <SelectItem value="monthly">Monthly</SelectItem>
                       <SelectItem value="occasionally">Occasionally</SelectItem>
-                      <SelectItem value="festivals_only">Festivals Only</SelectItem>
-                    </SelectContent>
+                    <SelectItem value="festivals_only">Festivals Only</SelectItem>
+                  </SelectContent>
                   </Select>
+                </div>
+
+                <div>
+                  <Label>Preferred Spiritual Organizations</Label>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {SPIRITUAL_ORGS.map((org) => (
+                      <button
+                        key={org}
+                        type="button"
+                        onClick={() => handleMultiSelect(org)}
+                        className={`px-3 py-1 text-sm rounded-full ${
+                          preferences.preferred_spiritual_org.includes(org)
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        {org}
+                      </button>
+                    ))}
+                  </div>
+                  {preferences.preferred_spiritual_org.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {preferences.preferred_spiritual_org.map((org) => (
+                        <span
+                          key={org}
+                          className="inline-flex items-center bg-accent text-accent-foreground px-2 py-1 rounded-md text-xs"
+                        >
+                          {org}
+                          <button
+                            type="button"
+                            onClick={() => handleMultiSelect(org)}
+                            className="ml-1 text-muted-foreground hover:text-foreground"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

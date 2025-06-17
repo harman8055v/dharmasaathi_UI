@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
+import { debugLog } from "@/lib/logger"
 import OnboardingContainer from "@/components/onboarding/onboarding-container"
 import LoadingScreen from "@/components/onboarding/loading-screen"
 import type { User } from "@supabase/supabase-js"
@@ -33,12 +34,12 @@ export default function OnboardingPage() {
         }
 
         if (!user) {
-          console.log("No authenticated user found, redirecting to homepage")
+          debugLog("No authenticated user found, redirecting to homepage")
           router.push("/")
           return
         }
 
-        console.log("Authenticated user found:", user.id)
+        debugLog("Authenticated user found:", user.id)
         setUser(user)
 
         // Fetch user profile data
@@ -51,7 +52,7 @@ export default function OnboardingPage() {
         if (profileError) {
           if (profileError.code === "PGRST116") {
             // No profile found, create one with required fields
-            console.log("No profile found, creating new profile")
+            debugLog("No profile found, creating new profile")
             const newProfile: Partial<OnboardingProfile> = {
               id: user.id,
               email: user.email!, // Email is required and comes from auth
@@ -103,11 +104,11 @@ export default function OnboardingPage() {
           }
         } else {
           // Profile found
-          console.log("Profile found:", profileData)
+          debugLog("Profile found:", profileData)
 
           // If user has completed onboarding, redirect to dashboard
           if (profileData?.onboarding_completed) {
-            console.log("Onboarding already completed, redirecting to dashboard")
+            debugLog("Onboarding already completed, redirecting to dashboard")
             router.push("/dashboard")
             return
           }

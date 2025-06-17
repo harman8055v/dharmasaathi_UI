@@ -327,10 +327,11 @@ export default function AuthDialog({ isOpen, onClose, defaultMode }: AuthDialogP
               first_name: mobileAuthData.firstName,
               last_name: mobileAuthData.lastName,
               full_name: `${mobileAuthData.firstName} ${mobileAuthData.lastName}`,
-              mobile_number: mobileAuthData.mobileNumber,
-              email_verified: false,
-              mobile_verified: true,
-              onboarding_completed: false,
+            mobile_number: mobileAuthData.mobileNumber,
+            email_verified: false,
+            mobile_verified: true,
+            verification_status: 'pending',
+            onboarding_completed: false,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
             }
@@ -467,6 +468,7 @@ export default function AuthDialog({ isOpen, onClose, defaultMode }: AuthDialogP
             full_name: `${signupData.firstName} ${signupData.lastName}`,
             mobile_number: signupData.mobileNumber,
             email_verified: !!authData.user.email_confirmed_at, // Set based on auth status
+            verification_status: 'pending',
             onboarding_completed: false,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
