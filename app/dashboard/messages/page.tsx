@@ -5,9 +5,16 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { MessageCircle, Search, Send, ArrowLeft, Phone, Video, Info, Smile } from "lucide-react"
+import { MessageCircle, Search, Send, ArrowLeft, Smile, MoreVertical, UserX, Flag, Trash2, User } from "lucide-react"
 import MobileNav from "@/components/dashboard/mobile-nav"
 import type { User as SupabaseUser } from "@supabase/supabase-js"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu"
 
 export default function MessagesPage() {
   const [user, setUser] = useState<SupabaseUser | null>(null)
@@ -20,6 +27,11 @@ export default function MessagesPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const router = useRouter()
   const searchParams = useSearchParams()
+
+  const [showReportDialog, setShowReportDialog] = useState(false)
+  const [reportReason, setReportReason] = useState("")
+  const [reportDetails, setReportDetails] = useState("")
+  const [actionLoading, setActionLoading] = useState(false)
 
   // Mock conversations for verified users
   const mockConversations = [
@@ -173,6 +185,80 @@ export default function MessagesPage() {
     }
   }
 
+  const handleBlockUser = async () => {
+    if (!selectedConversation) return
+
+    setActionLoading(true)
+    try {
+      const response = await fetch("/api/messages/block", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ blocked_user_id: selectedConversation.id }),
+      })
+
+      if (response.ok) {
+        // Remove conversation from list and close chat
+        setConversations((prev) => prev.filter((conv) => conv.id !== selectedConversation.id))
+        setSelectedChat(null)
+        alert("User has been blocked successfully")
+      } else {
+        alert("Failed to block user")
+      }
+    } catch (error) {
+      console.error("Block error:", error)
+      alert("Failed to block user")
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const handleReportUser = async () => {
+    if (!selectedConversation || !reportReason.trim()) return
+
+    setActionLoading(true)
+    try {
+      const response = await fetch("/api/messages/report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          reported_user_id: selectedConversation.id,
+          reason: reportReason,
+          details: reportDetails,
+        }),
+      })
+
+      if (response.ok) {
+        setShowReportDialog(false)
+        setReportReason("")
+        setReportDetails("")
+        alert("Report submitted successfully")
+      } else {
+        alert("Failed to submit report")
+      }
+    } catch (error) {
+      console.error("Report error:", error)
+      alert("Failed to submit report")
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const handleDeleteChat = () => {
+    if (!selectedConversation) return
+
+    if (confirm(`Are you sure you want to delete your conversation with ${selectedConversation.name}?`)) {
+      // Remove conversation from list and close chat
+      setConversations((prev) => prev.filter((conv) => conv.id !== selectedConversation.id))
+      setSelectedChat(null)
+    }
+  }
+
+  const handleViewProfile = () => {
+    if (!selectedConversation) return
+    // For now, just show an alert. In a real app, this would navigate to the profile
+    alert(`Viewing profile of ${selectedConversation.name}`)
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 flex items-center justify-center">
@@ -281,15 +367,33 @@ export default function MessagesPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="sm">
-                          <Phone className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm">
-                          <Video className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm">
-                          <Info className="w-4 h-4" />
-                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" disabled={actionLoading}>
+                              <MoreVertical className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuItem onClick={handleViewProfile}>
+                              <User className="w-4 h-4 mr-2" />
+                              View Profile
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => setShowReportDialog(true)}>
+                              <Flag className="w-4 h-4 mr-2" />
+                              Report User
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={handleBlockUser} className="text-red-600">
+                              <UserX className="w-4 h-4 mr-2" />
+                              Block User
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={handleDeleteChat} className="text-red-600">
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Delete Chat
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </div>
 
@@ -340,6 +444,61 @@ export default function MessagesPage() {
                         </Button>
                       </div>
                     </div>
+
+                    {/* Report Dialog */}
+                    {showReportDialog && (
+                      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                        <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                          <h3 className="text-lg font-semibold mb-4">Report User</h3>
+                          <div className="space-y-4">
+                            <div>
+                              <label className="block text-sm font-medium mb-2">Reason for reporting</label>
+                              <select
+                                value={reportReason}
+                                onChange={(e) => setReportReason(e.target.value)}
+                                className="w-full p-2 border border-gray-300 rounded-md"
+                              >
+                                <option value="">Select a reason</option>
+                                <option value="inappropriate_content">Inappropriate Content</option>
+                                <option value="harassment">Harassment</option>
+                                <option value="spam">Spam</option>
+                                <option value="fake_profile">Fake Profile</option>
+                                <option value="other">Other</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium mb-2">Additional details (optional)</label>
+                              <textarea
+                                value={reportDetails}
+                                onChange={(e) => setReportDetails(e.target.value)}
+                                placeholder="Provide more details about the issue..."
+                                className="w-full p-2 border border-gray-300 rounded-md h-20 resize-none"
+                              />
+                            </div>
+                          </div>
+                          <div className="flex gap-3 mt-6">
+                            <Button
+                              variant="outline"
+                              onClick={() => {
+                                setShowReportDialog(false)
+                                setReportReason("")
+                                setReportDetails("")
+                              }}
+                              className="flex-1"
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              onClick={handleReportUser}
+                              disabled={!reportReason.trim() || actionLoading}
+                              className="flex-1 bg-red-600 hover:bg-red-700"
+                            >
+                              {actionLoading ? "Submitting..." : "Submit Report"}
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </>
                 ) : (
                   <div className="flex-1 flex items-center justify-center">
