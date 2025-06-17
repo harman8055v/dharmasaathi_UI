@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Shield, Lock, CreditCard, Smartphone, Building, CheckCircle, X } from "lucide-react"
+import { Shield, Lock, CreditCard, Smartphone, Building, CheckCircle } from "lucide-react"
 import { toast } from "sonner"
 
 interface PaymentModalProps {
@@ -180,16 +180,16 @@ export default function PaymentModal({ isOpen, onClose, item, onSuccess }: Payme
         return (
           <>
             {/* Item Details */}
-            <Card className="mb-6">
-              <CardContent className="p-4">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="font-semibold text-lg">{item.name}</h3>
-                    <p className="text-gray-600 text-sm">{item.description}</p>
+            <Card className="mb-4 sm:mb-6">
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex justify-between items-start mb-3 sm:mb-4">
+                  <div className="flex-1 pr-3">
+                    <h3 className="font-semibold text-base sm:text-lg">{item.name}</h3>
+                    <p className="text-gray-600 text-xs sm:text-sm">{item.description}</p>
                   </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-orange-600">₹{item.price}</div>
-                    {item.count && <div className="text-sm text-gray-500">{item.count} items</div>}
+                  <div className="text-right flex-shrink-0">
+                    <div className="text-xl sm:text-2xl font-bold text-orange-600">₹{item.price}</div>
+                    {item.count && <div className="text-xs sm:text-sm text-gray-500">{item.count} items</div>}
                   </div>
                 </div>
 
@@ -212,29 +212,31 @@ export default function PaymentModal({ isOpen, onClose, item, onSuccess }: Payme
             {/* Payment Methods */}
             <div className="mb-6">
               <h4 className="font-medium mb-3">Accepted Payment Methods</h4>
-              <div className="grid grid-cols-3 gap-3">
-                <div className="flex flex-col items-center p-3 border rounded-lg">
-                  <Smartphone className="w-6 h-6 text-blue-600 mb-1" />
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
+                <div className="flex flex-col items-center p-2 sm:p-3 border rounded-lg">
+                  <Smartphone className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 mb-1" />
                   <span className="text-xs text-center">UPI</span>
                 </div>
-                <div className="flex flex-col items-center p-3 border rounded-lg">
-                  <CreditCard className="w-6 h-6 text-green-600 mb-1" />
+                <div className="flex flex-col items-center p-2 sm:p-3 border rounded-lg">
+                  <CreditCard className="w-5 h-5 sm:w-6 sm:h-6 text-green-600 mb-1" />
                   <span className="text-xs text-center">Cards</span>
                 </div>
-                <div className="flex flex-col items-center p-3 border rounded-lg">
-                  <Building className="w-6 h-6 text-purple-600 mb-1" />
+                <div className="flex flex-col items-center p-2 sm:p-3 border rounded-lg col-span-2 sm:col-span-1">
+                  <Building className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600 mb-1" />
                   <span className="text-xs text-center">Net Banking</span>
                 </div>
               </div>
             </div>
 
             {/* Trust Elements */}
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-              <div className="flex items-center gap-3">
-                <Shield className="w-6 h-6 text-green-600" />
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-green-600 flex-shrink-0" />
                 <div>
-                  <h4 className="font-medium text-green-800">Secure Payment</h4>
-                  <p className="text-sm text-green-700">Your payment is protected by 256-bit SSL encryption</p>
+                  <h4 className="font-medium text-green-800 text-sm sm:text-base">Secure Payment</h4>
+                  <p className="text-xs sm:text-sm text-green-700">
+                    Your payment is protected by 256-bit SSL encryption
+                  </p>
                 </div>
               </div>
             </div>
@@ -245,14 +247,14 @@ export default function PaymentModal({ isOpen, onClose, item, onSuccess }: Payme
             </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-3">
-              <Button variant="outline" onClick={onClose} className="flex-1">
+            <div className="flex flex-col sm:flex-row gap-3 sticky bottom-0 bg-white pt-4 border-t sm:border-t-0 sm:bg-transparent sm:pt-0">
+              <Button variant="outline" onClick={onClose} className="flex-1 h-12 sm:h-10">
                 Cancel
               </Button>
               <Button
                 onClick={handlePayment}
                 disabled={isProcessing}
-                className="flex-1 bg-orange-600 hover:bg-orange-700"
+                className="flex-1 h-12 sm:h-10 bg-orange-600 hover:bg-orange-700"
               >
                 {isProcessing ? "Processing..." : `Pay ₹${item.price}`}
               </Button>
@@ -269,16 +271,11 @@ export default function PaymentModal({ isOpen, onClose, item, onSuccess }: Payme
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md mx-4 max-h-[90vh] overflow-y-auto z-[60]">
         <DialogHeader>
-          <div className="flex items-center justify-between">
-            <DialogTitle>Complete Payment</DialogTitle>
-            <Button variant="ghost" size="sm" onClick={onClose}>
-              <X className="w-4 h-4" />
-            </Button>
-          </div>
+          <DialogTitle>Complete Payment</DialogTitle>
         </DialogHeader>
-        {renderPaymentStep()}
+        <div className="pb-20 md:pb-4">{renderPaymentStep()}</div>
       </DialogContent>
     </Dialog>
   )
