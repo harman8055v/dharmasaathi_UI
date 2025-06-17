@@ -266,25 +266,40 @@
     }
   }
 
-  /* Modal mobile optimizations */
-  @media (max-width: 768px) {
-    [data-radix-dialog-content] {
-      max-height: calc(100vh - 120px) !important;
-      margin-bottom: 80px;
-    }
-
-    .payment-modal-content {
-      padding-bottom: 100px;
-    }
-  }
-
   /* Ensure modals appear above bottom navigation */
   [data-radix-dialog-overlay] {
-    z-index: 60;
+    z-index: 150 !important;
   }
 
   [data-radix-dialog-content] {
-    z-index: 61;
+    z-index: 200 !important;
+  }
+
+  /* Payment modal specific styles */
+  .payment-modal-overlay {
+    z-index: 150 !important;
+  }
+
+  .payment-modal-content {
+    z-index: 200 !important;
+    margin-bottom: 0 !important;
+  }
+
+  /* Mobile safe area for payment modal */
+  @media (max-width: 768px) {
+    [data-radix-dialog-content] {
+      max-height: calc(100vh - 60px) !important;
+      margin-bottom: 0 !important;
+      top: 30px !important;
+    }
+
+    .payment-modal-content {
+      padding-bottom: 20px;
+    }
+
+    .mb-safe {
+      margin-bottom: env(safe-area-inset-bottom, 20px);
+    }
   }
 }
 

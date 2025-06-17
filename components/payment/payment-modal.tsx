@@ -255,7 +255,7 @@ export default function PaymentModal({ isOpen, onClose, item, onSuccess }: Payme
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg mx-auto max-h-[90vh] p-0 gap-0 z-[100]">
+      <DialogContent className="max-w-lg mx-auto max-h-[90vh] p-0 gap-0 z-[200] fixed top-[5%] left-1/2 transform -translate-x-1/2">
         {/* Header */}
         <DialogHeader className="px-6 py-4 border-b bg-white sticky top-0 z-10">
           <div className="flex items-center justify-between">
@@ -271,8 +271,8 @@ export default function PaymentModal({ isOpen, onClose, item, onSuccess }: Payme
 
         {/* Footer */}
         {paymentStep === "details" && (
-          <div className="px-6 py-4 border-t bg-gray-50 sticky bottom-0">
-            <div className="flex gap-3">
+          <div className="px-6 py-4 border-t bg-gray-50 sticky bottom-0 z-10">
+            <div className="flex gap-3 mb-safe">
               <Button variant="outline" onClick={onClose} className="flex-1" disabled={isProcessing}>
                 Cancel
               </Button>
