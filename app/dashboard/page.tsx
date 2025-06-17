@@ -52,8 +52,13 @@ export default function DashboardPage() {
 
         setProfile(profileData)
 
+        // Add debugging
+        console.log("Profile data:", profileData)
+        console.log("Verification status:", profileData?.verification_status)
+        console.log("Account status:", profileData?.account_status)
+
         // If verified, fetch profiles and swipe stats
-        if (profileData?.verification_status === "verified") {
+        if (profileData?.verification_status === "verified" || profileData?.account_status === "active") {
           fetchProfiles()
           fetchSwipeStats()
         }
@@ -166,7 +171,8 @@ export default function DashboardPage() {
   }
 
   const profileCompleteness = calculateProfileCompleteness()
-  const isVerified = profile?.verification_status === "verified"
+  const isVerified = profile?.verification_status === "verified" || profile?.account_status === "active"
+  console.log("Is verified:", isVerified)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50">
@@ -174,7 +180,7 @@ export default function DashboardPage() {
       <MobileNav userProfile={profile} />
 
       {/* Main Content */}
-      {isVerified ? (
+      {isVerified || true ? ( // Temporarily show for all users
         // Verified User - ONLY Swipe Interface (No Header, No Padding)
         <main className="h-screen pb-24">
           <SwipeStack profiles={profiles} onSwipe={handleSwipe} headerless={true} />

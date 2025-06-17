@@ -20,8 +20,16 @@ export default function SwipeStack({ profiles: initialProfiles, onSwipe, headerl
   const [swipeStats, setSwipeStats] = useState<any>(null)
   const [loading, setLoading] = useState(false)
 
+  console.log("SwipeStack rendered with:", {
+    profilesCount: initialProfiles.length,
+    headerless,
+    currentIndex,
+    hasProfiles: profiles.length > 0,
+  })
+
   // Fetch swipe stats and profiles on mount
   useEffect(() => {
+    console.log("SwipeStack useEffect running")
     fetchSwipeStats()
     fetchProfiles()
   }, [])
@@ -40,10 +48,15 @@ export default function SwipeStack({ profiles: initialProfiles, onSwipe, headerl
 
   const fetchProfiles = async () => {
     try {
+      console.log("Fetching profiles...")
       const response = await fetch("/api/profiles/discover")
+      console.log("Profiles response:", response.status)
       if (response.ok) {
         const data = await response.json()
+        console.log("Profiles data:", data)
         setProfiles(data.profiles || [])
+      } else {
+        console.error("Failed to fetch profiles:", response.status)
       }
     } catch (error) {
       console.error("Error fetching profiles:", error)
