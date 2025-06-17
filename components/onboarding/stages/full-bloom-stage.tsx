@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useState } from "react"
-import { Loader2, Upload, X } from 'lucide-react'
+import { Loader2, Upload, X, Quote } from "lucide-react"
 import Image from "next/image"
 import type { OnboardingData } from "@/lib/types/onboarding"
 
@@ -16,11 +16,12 @@ interface FullBloomStageProps {
 
 export default function FullBloomStage({ formData, onChange, onNext, isLoading, error }: FullBloomStageProps) {
   // Destructure with null defaults
-  const { about_me = null, partner_expectations = null, user_photos = [] } = formData
+  const { about_me = null, partner_expectations = null, user_photos = [], favorite_spiritual_quote = null } = formData
 
   const [localFormData, setLocalFormData] = useState({
     about_me: about_me || "",
     partner_expectations: partner_expectations || "",
+    favorite_spiritual_quote: favorite_spiritual_quote || "",
   })
   const [photos, setPhotos] = useState<File[]>([])
   const [photoUrls, setPhotoUrls] = useState<string[]>(user_photos)
@@ -105,6 +106,7 @@ export default function FullBloomStage({ formData, onChange, onNext, isLoading, 
       const dataToSave: Partial<OnboardingData> = {
         about_me: localFormData.about_me.trim() || null,
         partner_expectations: localFormData.partner_expectations.trim() || null,
+        favorite_spiritual_quote: localFormData.favorite_spiritual_quote.trim() || null,
         user_photos: uploadedPhotoUrls,
       }
 
@@ -120,6 +122,7 @@ export default function FullBloomStage({ formData, onChange, onNext, isLoading, 
     const dataToSave: Partial<OnboardingData> = {
       about_me: null,
       partner_expectations: null,
+      favorite_spiritual_quote: null,
       user_photos: [],
     }
     onChange(dataToSave) // Update local form data
@@ -131,7 +134,9 @@ export default function FullBloomStage({ formData, onChange, onNext, isLoading, 
       <div className="text-center mb-6">
         <div className="text-4xl mb-4">🌸</div>
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Your blossom is complete—add the finishing touches!</h2>
-        <p className="text-gray-600">Share your story and what you're looking for in a partner</p>
+        <p className="text-gray-600">
+          Share your story, spiritual inspiration, and what you're looking for in a partner
+        </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -154,10 +159,33 @@ export default function FullBloomStage({ formData, onChange, onNext, isLoading, 
           {errors.about_me && <p className="text-red-500 text-sm">{errors.about_me}</p>}
         </div>
 
+        {/* Favorite Spiritual Quote */}
+        <div className="space-y-2">
+          <label
+            htmlFor="favorite_spiritual_quote"
+            className="block text-sm font-medium text-foreground flex items-center gap-2"
+          >
+            <Quote className="w-4 h-4 text-orange-500" />
+            Favorite Spiritual Quote (Optional)
+          </label>
+          <textarea
+            id="favorite_spiritual_quote"
+            name="favorite_spiritual_quote"
+            value={localFormData.favorite_spiritual_quote}
+            onChange={handleChange}
+            rows={3}
+            placeholder="Share a spiritual quote that inspires you... (e.g., from Bhagavad Gita, Upanishads, or your spiritual teacher)"
+            className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-1 focus:ring-primary bg-gradient-to-r from-orange-50 to-amber-50"
+          />
+          <p className="text-xs text-gray-500">
+            This will be beautifully displayed on your profile to inspire potential matches
+          </p>
+        </div>
+
         {/* Partner Expectations */}
         <div className="space-y-2">
           <label htmlFor="partner_expectations" className="block text-sm font-medium text-foreground">
-            Partner Expectations
+            Partner Expectations (Optional)
           </label>
           <textarea
             id="partner_expectations"

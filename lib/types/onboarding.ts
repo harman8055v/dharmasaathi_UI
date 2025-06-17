@@ -34,6 +34,7 @@ export interface OnboardingData {
   // Text fields
   about_me: string | null
   partner_expectations: string | null
+  favorite_spiritual_quote: string | null // Add this new field
 }
 
 export interface OnboardingProfile extends OnboardingData {
@@ -42,7 +43,7 @@ export interface OnboardingProfile extends OnboardingData {
   first_name?: string
   last_name?: string
   mobile_number?: string
-  verification_status?: 'pending' | 'verified' | 'rejected'
+  verification_status?: "pending" | "verified" | "rejected"
   onboarding_completed?: boolean
   updated_at?: string
 }

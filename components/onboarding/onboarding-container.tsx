@@ -69,6 +69,7 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
     user_photos: [],
     about_me: null,
     partner_expectations: null,
+    favorite_spiritual_quote: null, // Add this new field
   })
 
   // Initialize form data from existing profile
@@ -97,6 +98,7 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
         user_photos: profile.user_photos || [],
         about_me: profile.about_me || null,
         partner_expectations: profile.partner_expectations || null,
+        favorite_spiritual_quote: profile.favorite_spiritual_quote || null, // Add this new field
       })
 
       // Determine current stage based on completed data
