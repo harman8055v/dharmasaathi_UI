@@ -32,13 +32,13 @@ const superLikePackages = [
   { count: 4, price: 199, popular: false },
   { count: 10, price: 399, popular: true },
   { count: 40, price: 999, popular: false },
-]
+];
 
 const highlightPackages = [
   { count: 4, price: 199, popular: false },
   { count: 10, price: 399, popular: true },
   { count: 40, price: 999, popular: false },
-]
+];
 
 export default function StorePage() {
   const [user, setUser] = useState<SupabaseUser | null>(null)
@@ -136,7 +136,7 @@ export default function StorePage() {
       monthly: { price: 49000, duration: "month" },
       quarterly: { price: 129000, duration: "3 months", savings: "12%" },
     },
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50">
