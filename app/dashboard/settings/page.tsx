@@ -4,121 +4,133 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useStates, useCities } from "@/lib/hooks/useLocations"
-import { SPIRITUAL_ORGS } from "@/lib/constants/spiritual-orgs"
-import { DAILY_PRACTICES } from "@/lib/constants/daily-practices"
-import {
-  ArrowLeft,
-  MapPin,
-  User,
-  Mail,
-  CheckCircle,
-  Phone,
-  Shield,
-  Save,
-  Briefcase,
-  Heart,
-  Trash2,
-  Ban,
-} from "lucide-react"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogFooter,
-  DialogTitle,
-  DialogDescription,
-  DialogTrigger,
-} from "@/components/ui/dialog"
+import { Textarea } from "@/components/ui/textarea"
+import { ArrowLeft, Save, User, Heart, Briefcase, Users, Activity, Target } from "lucide-react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Checkbox } from "@/components/ui/checkbox"
 import MobileNav from "@/components/dashboard/mobile-nav"
-import { toast } from "sonner"
-import { formatMobileNumber, validateMobileNumber } from "@/lib/types/onboarding"
 
-export default function AccountSettingsPage() {
-  const [user, setUser] = useState<any>(null)
+const SPIRITUAL_ORGANIZATIONS = [
+  "ISKCON",
+  "Art of Living",
+  "Isha Foundation",
+  "Brahma Kumaris",
+  "Chinmaya Mission",
+  "Ramakrishna Mission",
+  "Satsang Foundation",
+  "Radha Soami",
+  "Osho International",
+  "Ananda Marga",
+  "Self-Realization Fellowship",
+  "Transcendental Meditation",
+  "Vipassana Meditation",
+  "Arya Samaj",
+  "RSS",
+  "VHP",
+  "Bharat Sevashram Sangha",
+]
+
+const DAILY_PRACTICES = [
+  "Morning Prayer",
+  "Evening Prayer",
+  "Meditation",
+  "Yoga",
+  "Pranayama",
+  "Mantra Chanting",
+  "Scripture Reading",
+  "Kirtan/Bhajan",
+  "Seva (Service)",
+  "Fasting",
+  "Pilgrimage",
+  "Satsang",
+  "Japa",
+  "Aarti",
+  "Puja",
+]
+
+const SCRIPTURES = [
+  "Bhagavad Gita",
+  "Ramayana",
+  "Mahabharata",
+  "Vedas",
+  "Upanishads",
+  "Puranas",
+  "Yoga Sutras",
+  "Brahma Sutra",
+  "Guru Granth Sahib",
+  "Tripitaka",
+  "Agamas",
+  "Tantras",
+  "Bhagavata Purana",
+]
+
+const SPIRITUAL_GOALS = [
+  "Self-Realization",
+  "Moksha",
+  "Inner Peace",
+  "Spiritual Growth",
+  "Service to Humanity",
+  "Divine Love",
+  "Wisdom",
+  "Compassion",
+  "Detachment",
+  "Mindfulness",
+  "God Realization",
+  "Liberation",
+]
+
+const INTERESTS = [
+  "Reading",
+  "Music",
+  "Dance",
+  "Art",
+  "Cooking",
+  "Gardening",
+  "Travel",
+  "Photography",
+  "Writing",
+  "Sports",
+  "Movies",
+  "Nature",
+  "Volunteering",
+  "Learning Languages",
+  "Philosophy",
+  "History",
+  "Science",
+  "Technology",
+]
+
+const HOBBIES = [
+  "Painting",
+  "Singing",
+  "Playing Instruments",
+  "Crafts",
+  "Collecting",
+  "Board Games",
+  "Puzzles",
+  "Hiking",
+  "Swimming",
+  "Cycling",
+  "Running",
+  "Martial Arts",
+  "Dancing",
+  "Pottery",
+  "Knitting",
+  "Woodworking",
+]
+
+export default function SettingsPage() {
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const router = useRouter()
 
-  // Mobile verification states
-  const [mobileVerificationStep, setMobileVerificationStep] = useState<"edit" | "verify">("edit")
-  const [newMobileNumber, setNewMobileNumber] = useState("")
-  const [otp, setOtp] = useState("")
-  const [sendingOtp, setSendingOtp] = useState(false)
-  const [verifyingOtp, setVerifyingOtp] = useState(false)
-  const [resendTimer, setResendTimer] = useState(0)
-
-  const [deactivateOpen, setDeactivateOpen] = useState(false)
-  const [deleteOpen, setDeleteOpen] = useState(false)
-  const [processingDeactivate, setProcessingDeactivate] = useState(false)
-  const [processingDelete, setProcessingDelete] = useState(false)
-
-  const statesList = useStates()
-  const selectedState = statesList.find((s) => s.name === formData.state)
-  const citiesList = useCities(selectedState?.state_code || null)
-
-  const [formData, setFormData] = useState({
-    first_name: "",
-    last_name: "",
-    email: "",
-    mobile_number: "",
-    city: "",
-    state: "",
-    country: "",
-    birthdate: "",
-    height: "",
-    gender: "",
-    education: "",
-    profession: "",
-    annual_income: "",
-    diet: "",
-    temple_visit_freq: "",
-    vanaprastha_interest: "",
-    artha_vs_moksha: "",
-    spiritual_org: [],
-    daily_practices: [],
-  })
-
-  const educationLevels = [
-    "High School",
-    "Diploma",
-    "Bachelor's Degree",
-    "Master's Degree",
-    "Doctorate",
-    "Professional Degree",
-    "Other",
-  ]
-
-  const incomeRanges = [
-    "Less than ₹5,00,000",
-    "₹5,00,000 - ₹10,00,000",
-    "₹10,00,000 - ₹15,00,000",
-    "₹15,00,000 - ₹25,00,000",
-    "₹25,00,000 - ₹50,00,000",
-    "₹50,00,000 - ₹75,00,000",
-    "₹75,00,000 - ₹1,00,00,000",
-    "More than ₹1,00,00,000",
-    "Prefer not to say",
-  ]
-
-  const dietOptions = [
-    "Vegetarian",
-    "Vegan",
-    "Eggetarian",
-    "Non-Vegetarian",
-  ]
-
-  const templeFreqOptions = ["Daily", "Weekly", "Monthly", "Rarely", "Never"]
-  const vanaprasthaOptions = ["yes", "no", "open"]
-  const arthaMokshaOptions = ["Artha-focused", "Moksha-focused", "Balance"]
-
   useEffect(() => {
-    async function getUser() {
+    async function getProfile() {
       try {
         const {
           data: { user },
@@ -128,8 +140,6 @@ export default function AccountSettingsPage() {
           return
         }
 
-        setUser(user)
-
         const { data: profileData, error } = await supabase.from("users").select("*").eq("id", user.id).single()
 
         if (error) {
@@ -138,28 +148,6 @@ export default function AccountSettingsPage() {
         }
 
         setProfile(profileData)
-        setFormData({
-          first_name: profileData.first_name || "",
-          last_name: profileData.last_name || "",
-          email: profileData.email || "",
-          mobile_number: profileData.mobile_number || "",
-          city: profileData.city || "",
-          state: profileData.state || "",
-          country: profileData.country || "",
-          birthdate: profileData.birthdate || "",
-          height: profileData.height || "",
-          gender: profileData.gender || "",
-          education: profileData.education || "",
-          profession: profileData.profession || "",
-          annual_income: profileData.annual_income || "",
-          diet: profileData.diet || "",
-          temple_visit_freq: profileData.temple_visit_freq || "",
-          vanaprastha_interest: profileData.vanaprastha_interest || "",
-          artha_vs_moksha: profileData.artha_vs_moksha || "",
-          spiritual_org: profileData.spiritual_org || [],
-          daily_practices: profileData.daily_practices || [],
-        })
-        setNewMobileNumber(profileData.mobile_number || "")
         setLoading(false)
       } catch (error) {
         console.error("Error:", error)
@@ -167,772 +155,731 @@ export default function AccountSettingsPage() {
       }
     }
 
-    getUser()
+    getProfile()
   }, [router])
 
-  const handleMobileNumberChange = (value: string) => {
-    const formatted = formatMobileNumber(value)
-    setNewMobileNumber(formatted)
-  }
-
-  const handleSendOtp = async () => {
-    if (!validateMobileNumber(newMobileNumber)) {
-      toast.error("Please enter a valid mobile number (e.g., +919876543210)")
-      return
-    }
-
-    if (newMobileNumber === formData.mobile_number) {
-      toast.error("Please enter a different mobile number")
-      return
-    }
-
-    setSendingOtp(true)
-    try {
-      // Update the user's phone number in auth.users table - same as onboarding
-      const { data: updateData, error: updateError } = await supabase.auth.updateUser({
-        phone: newMobileNumber,
-      })
-
-      if (updateError) throw updateError
-
-      setMobileVerificationStep("verify")
-      setResendTimer(60)
-      toast.success(`OTP sent to ${newMobileNumber}`)
-
-      // Start countdown timer
-      const timer = setInterval(() => {
-        setResendTimer((prev) => {
-          if (prev <= 1) {
-            clearInterval(timer)
-            return 0
-          }
-          return prev - 1
-        })
-      }, 1000)
-    } catch (error: any) {
-      console.error("Send OTP error:", error)
-      if (error.message?.includes("Signups not allowed")) {
-        toast.error("OTP service is currently unavailable. Please try again later.")
-      } else {
-        toast.error("Failed to send OTP. Please try again.")
-      }
-    } finally {
-      setSendingOtp(false)
-    }
-  }
-
-  const handleVerifyOtp = async () => {
-    if (!otp || otp.length !== 6) {
-      toast.error("Please enter a valid 6-digit OTP")
-      return
-    }
-
-    setVerifyingOtp(true)
-    try {
-      // Verify OTP using the same method as onboarding
-      const { data, error: verifyError } = await supabase.auth.verifyOtp({
-        phone: newMobileNumber,
-        token: otp,
-        type: "phone_change",
-      })
-
-      if (verifyError) throw verifyError
-
-      if (data.user) {
-        // Update the mobile_verified status in users table
-        const { error: updateError } = await supabase
-          .from("users")
-          .update({
-            mobile_number: newMobileNumber,
-            mobile_verified: true,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", data.user.id)
-
-        if (updateError) {
-          console.error("Error updating mobile_verified status:", updateError)
-          toast.error("OTP verified, but failed to update profile. Please contact support.")
-          return
-        }
-
-        // Update form data and reset verification state
-        setFormData({ ...formData, mobile_number: newMobileNumber })
-        setMobileVerificationStep("edit")
-        setOtp("")
-        toast.success("Mobile number verified and updated successfully!")
-
-        // Update profile state
-        setProfile({ ...profile, mobile_number: newMobileNumber, mobile_verified: true })
-      }
-    } catch (error: any) {
-      console.error("Verify OTP error:", error)
-      if (error.message?.includes("Invalid token") || error.message?.includes("invalid")) {
-        toast.error("Invalid OTP. Please check and try again.")
-      } else if (error.message?.includes("expired")) {
-        toast.error("OTP has expired. Please request a new one.")
-      } else {
-        toast.error("Failed to verify OTP. Please try again.")
-      }
-    } finally {
-      setVerifyingOtp(false)
-    }
-  }
-
-  const handleResendOtp = async () => {
-    if (resendTimer > 0) return
-
-    setSendingOtp(true)
-    try {
-      const { error } = await supabase.auth.updateUser({
-        phone: newMobileNumber,
-      })
-
-      if (error) throw error
-
-      setResendTimer(60)
-      const timer = setInterval(() => {
-        setResendTimer((prev) => {
-          if (prev <= 1) {
-            clearInterval(timer)
-            return 0
-          }
-          return prev - 1
-        })
-      }, 1000)
-
-      toast.success("OTP resent successfully")
-    } catch (error: any) {
-      console.error("Resend OTP error:", error)
-      toast.error("Failed to resend OTP. Please try again.")
-    } finally {
-      setSendingOtp(false)
-    }
-  }
-
-  const cancelMobileVerification = () => {
-    setMobileVerificationStep("edit")
-    setNewMobileNumber(formData.mobile_number)
-    setOtp("")
-    setResendTimer(0)
-  }
-
-  const handleDeactivateAccount = async () => {
-    if (!user) return
-    setProcessingDeactivate(true)
-    try {
-      const { error } = await supabase
-        .from("users")
-        .update({
-          account_status: "deactivated",
-          deactivated_at: new Date().toISOString(),
-        })
-        .eq("id", user.id)
-
-      if (error) throw error
-
-      toast.success("Account deactivated")
-      await supabase.auth.signOut()
-      router.push("/")
-    } catch (error) {
-      console.error("Deactivate error:", error)
-      toast.error("Failed to deactivate account")
-    } finally {
-      setProcessingDeactivate(false)
-      setDeactivateOpen(false)
-    }
-  }
-
-  const handleDeleteAccount = async () => {
-    if (!user) return
-    setProcessingDelete(true)
-    try {
-      const { error } = await supabase
-        .from("users")
-        .update({
-          account_status: "deleted",
-          deactivated_at: new Date().toISOString(),
-        })
-        .eq("id", user.id)
-
-      if (error) throw error
-
-      toast.success("Account deleted")
-      await supabase.auth.signOut()
-      router.push("/")
-    } catch (error) {
-      console.error("Delete error:", error)
-      toast.error("Failed to delete account")
-    } finally {
-      setProcessingDelete(false)
-      setDeleteOpen(false)
-    }
-  }
-
   const handleSave = async () => {
+    if (!profile) return
+
     setSaving(true)
     try {
-      const { error } = await supabase.from("users").update(formData).eq("id", user.id)
+      const { error } = await supabase.from("users").update(profile).eq("id", profile.id)
 
-      if (error) throw error
-
-      toast.success("Account settings updated successfully!")
-      setProfile({ ...profile, ...formData })
+      if (error) {
+        console.error("Error updating profile:", error)
+        alert("Error updating profile. Please try again.")
+      } else {
+        alert("Profile updated successfully!")
+        router.push("/dashboard/profile")
+      }
     } catch (error) {
-      console.error("Error updating profile:", error)
-      toast.error("Failed to update account settings. Please try again.")
+      console.error("Error:", error)
+      alert("Error updating profile. Please try again.")
     } finally {
       setSaving(false)
     }
   }
 
+  const updateProfile = (field: string, value: any) => {
+    setProfile((prev: any) => ({ ...prev, [field]: value }))
+  }
+
+  const toggleArrayItem = (field: string, item: string) => {
+    setProfile((prev: any) => {
+      const currentArray = prev[field] || []
+      const newArray = currentArray.includes(item)
+        ? currentArray.filter((i: string) => i !== item)
+        : [...currentArray, item]
+      return { ...prev, [field]: newArray }
+    })
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading settings...</p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 pb-40">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50">
       <MobileNav userProfile={profile} />
 
-      <main className="pt-20 px-4">
-        <div className="max-w-2xl mx-auto">
+      <main className="pt-24 pb-40 px-4 min-h-screen">
+        <div className="max-w-4xl mx-auto">
           {/* Header */}
-          <div className="flex items-center gap-3 mb-6">
-            <Button variant="ghost" size="sm" onClick={() => router.back()} className="p-2">
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Account Settings</h1>
-              <p className="text-gray-600">Manage your personal information</p>
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <Button variant="ghost" size="sm" onClick={() => router.back()} className="p-2">
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Edit Profile</h1>
+                <p className="text-gray-600">Update your profile information</p>
+              </div>
             </div>
-          </div>
-
-          <div className="space-y-6">
-            {/* Personal Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="w-5 h-5" />
-                  Personal Information
-                </CardTitle>
-                <CardDescription>Update your basic personal details</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="first_name">First Name</Label>
-                    <Input
-                      id="first_name"
-                      value={formData.first_name}
-                      onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-                      placeholder="Enter first name"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="last_name">Last Name</Label>
-                    <Input
-                      id="last_name"
-                      value={formData.last_name}
-                      onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                      placeholder="Enter last name"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="gender">Gender</Label>
-                  <Select
-                    value={formData.gender}
-                    onValueChange={(value) => setFormData({ ...formData, gender: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select gender" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Male">Male</SelectItem>
-                      <SelectItem value="Female">Female</SelectItem>
-                      <SelectItem value="Other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="birthdate">Date of Birth</Label>
-                  <Input
-                    id="birthdate"
-                    type="date"
-                    value={formData.birthdate}
-                    onChange={(e) => setFormData({ ...formData, birthdate: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="height">Height (cm)</Label>
-                  <Input
-                    id="height"
-                    type="number"
-                    value={formData.height}
-                    onChange={(e) => setFormData({ ...formData, height: e.target.value })}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Contact Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Mail className="w-5 h-5" />
-                  Contact Information
-                </CardTitle>
-                <CardDescription>Manage your email and phone number</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="email">Email Address</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="Enter email address"
-                  />
-                </div>
-
-                {/* Mobile Number with OTP Verification */}
-                <div>
-                  <Label htmlFor="mobile_number" className="flex items-center gap-2">
-                    Mobile Number
-                    {formData.mobile_number && profile?.mobile_verified && (
-                      <span className="flex items-center gap-1 text-xs text-green-600">
-                        <CheckCircle className="w-3 h-3" />
-                        Verified
-                      </span>
-                    )}
-                  </Label>
-
-                  {mobileVerificationStep === "edit" ? (
-                    <div className="space-y-3">
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <Phone className="h-4 w-4 text-gray-400" />
-                        </div>
-                        <Input
-                          id="mobile_number"
-                          type="tel"
-                          value={newMobileNumber}
-                          onChange={(e) => handleMobileNumberChange(e.target.value)}
-                          placeholder="+91 98765 43210"
-                          className="pl-10"
-                        />
-                      </div>
-                      <p className="mt-1 text-xs text-gray-500">Include country code (e.g., +91 for India)</p>
-                      {newMobileNumber !== formData.mobile_number && newMobileNumber && (
-                        <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                          <Shield className="w-4 h-4 text-amber-600" />
-                          <div className="flex-1">
-                            <p className="text-sm text-amber-800">Mobile number change requires verification</p>
-                          </div>
-                          <Button
-                            onClick={handleSendOtp}
-                            disabled={sendingOtp}
-                            size="sm"
-                            className="bg-amber-600 hover:bg-amber-700"
-                          >
-                            {sendingOtp ? "Sending..." : "Verify"}
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Phone className="w-4 h-4 text-green-600" />
-                          <span className="text-sm font-medium text-green-800">Verify New Mobile Number</span>
-                        </div>
-                        <p className="text-sm text-green-700 mb-3">
-                          We've sent a 6-digit code to: <strong>{newMobileNumber}</strong>
-                        </p>
-
-                        <div className="space-y-3">
-                          <Input
-                            type="text"
-                            inputMode="numeric"
-                            pattern="[0-9]*"
-                            maxLength={6}
-                            value={otp}
-                            onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-                            placeholder="Enter 6-digit OTP"
-                            className="text-center text-lg tracking-widest"
-                            autoFocus
-                          />
-
-                          <div className="flex gap-2">
-                            <Button
-                              onClick={handleVerifyOtp}
-                              disabled={verifyingOtp || otp.length !== 6}
-                              className="flex-1 bg-green-600 hover:bg-green-700"
-                            >
-                              {verifyingOtp ? "Verifying..." : "Verify OTP"}
-                            </Button>
-                            <Button onClick={cancelMobileVerification} variant="outline" className="flex-1">
-                              Cancel
-                            </Button>
-                          </div>
-
-                          <div className="text-center">
-                            <button
-                              type="button"
-                              onClick={handleResendOtp}
-                              disabled={resendTimer > 0 || sendingOtp}
-                              className="text-sm text-green-600 hover:text-green-700 font-medium disabled:text-gray-400 disabled:cursor-not-allowed"
-                            >
-                              {resendTimer > 0 ? `Resend OTP in ${resendTimer}s` : "Resend OTP"}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setMobileVerificationStep("edit")
-                          setOtp("")
-                        }}
-                        className="w-full text-sm text-blue-600 hover:text-blue-700 underline"
-                      >
-                        Change mobile number
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Location Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MapPin className="w-5 h-5" />
-                  Location
-                </CardTitle>
-                <CardDescription>Update your location details</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="city">City</Label>
-                  <Input
-                    id="city"
-                    value={formData.city}
-                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                    placeholder="Select city"
-                    list="city-list"
-                  />
-                  <datalist id="city-list">
-                    {citiesList.map((c) => (
-                      <option key={c.id} value={c.name} />
-                    ))}
-                  </datalist>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="state">State</Label>
-                    <Input
-                      id="state"
-                      value={formData.state}
-                      onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                      placeholder="Select state"
-                      list="state-list"
-                    />
-                    <datalist id="state-list">
-                      {statesList.map((s) => (
-                        <option key={s.id} value={s.name} />
-                      ))}
-                    </datalist>
-                  </div>
-                  <div>
-                    <Label htmlFor="country">Country</Label>
-                    <Input
-                      id="country"
-                      value={formData.country}
-                      onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                      placeholder="Enter country"
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Professional Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Briefcase className="w-5 h-5" />
-                  Professional Information
-                </CardTitle>
-                <CardDescription>Update your work and education details</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="education">Education</Label>
-                  <Select
-                    value={formData.education}
-                    onValueChange={(value) => setFormData({ ...formData, education: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select education level" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {educationLevels.map((level) => (
-                        <SelectItem key={level} value={level}>
-                          {level}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="profession">Profession</Label>
-                  <Input
-                    id="profession"
-                    value={formData.profession}
-                    onChange={(e) => setFormData({ ...formData, profession: e.target.value })}
-                    placeholder="Enter profession"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="annual_income">Annual Income</Label>
-                  <Select
-                    value={formData.annual_income}
-                    onValueChange={(value) => setFormData({ ...formData, annual_income: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select income range" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {incomeRanges.map((range) => (
-                        <SelectItem key={range} value={range}>
-                          {range}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Spiritual Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Heart className="w-5 h-5" />
-                  Spiritual Information
-                </CardTitle>
-                <CardDescription>Share your spiritual preferences</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label>Spiritual Organizations</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {SPIRITUAL_ORGS.map((org) => (
-                      <button
-                        key={org}
-                        type="button"
-                        onClick={() => {
-                          const arr = formData.spiritual_org.includes(org)
-                            ? formData.spiritual_org.filter((o: string) => o !== org)
-                            : [...formData.spiritual_org, org]
-                          setFormData({ ...formData, spiritual_org: arr })
-                        }}
-                        className={`px-3 py-1 text-sm rounded-full ${formData.spiritual_org.includes(org) ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
-                      >
-                        {org}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <Label>Daily Practices</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {DAILY_PRACTICES.map((p) => (
-                      <button
-                        key={p}
-                        type="button"
-                        onClick={() => {
-                          const arr = formData.daily_practices.includes(p)
-                            ? formData.daily_practices.filter((d: string) => d !== p)
-                            : [...formData.daily_practices, p]
-                          setFormData({ ...formData, daily_practices: arr })
-                        }}
-                        className={`px-3 py-1 text-sm rounded-full ${formData.daily_practices.includes(p) ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
-                      >
-                        {p}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="diet">Diet</Label>
-                  <Select
-                    value={formData.diet}
-                    onValueChange={(value) => setFormData({ ...formData, diet: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select diet" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {dietOptions.map((option) => (
-                        <SelectItem key={option} value={option}>
-                          {option}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="temple_visit_freq">Temple Visit Frequency</Label>
-                  <Select
-                    value={formData.temple_visit_freq}
-                    onValueChange={(value) => setFormData({ ...formData, temple_visit_freq: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select frequency" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {templeFreqOptions.map((option) => (
-                        <SelectItem key={option} value={option}>
-                          {option}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="vanaprastha_interest">Interest in Vanaprastha</Label>
-                  <Select
-                    value={formData.vanaprastha_interest}
-                    onValueChange={(value) => setFormData({ ...formData, vanaprastha_interest: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select interest" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {vanaprasthaOptions.map((option) => (
-                        <SelectItem key={option} value={option}>
-                          {option}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="artha_vs_moksha">Artha vs Moksha</Label>
-                  <Select
-                    value={formData.artha_vs_moksha}
-                    onValueChange={(value) => setFormData({ ...formData, artha_vs_moksha: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select preference" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {arthaMokshaOptions.map((option) => (
-                        <SelectItem key={option} value={option}>
-                          {option}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Save Button */}
-            <Button
-              onClick={handleSave}
-              disabled={saving || mobileVerificationStep === "verify"}
-              className="w-full bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600"
-            >
+            <Button onClick={handleSave} disabled={saving} className="bg-gradient-to-r from-orange-500 to-pink-500">
               <Save className="w-4 h-4 mr-2" />
               {saving ? "Saving..." : "Save Changes"}
             </Button>
-
-            {mobileVerificationStep === "verify" && (
-              <p className="text-sm text-amber-600 text-center">
-                Please verify your new mobile number before saving changes
-              </p>
-            )}
-
-            {/* Deactivate Account */}
-            <Dialog open={deactivateOpen} onOpenChange={setDeactivateOpen}>
-              <DialogTrigger asChild>
-                <Button variant="secondary" className="w-full mt-6">
-                  <Ban className="w-4 h-4 mr-2" />
-                  Deactivate Account
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Deactivate Account</DialogTitle>
-                  <DialogDescription>
-                    Are you sure you want to deactivate your account?
-                  </DialogDescription>
-                </DialogHeader>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setDeactivateOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={handleDeactivateAccount}
-                    disabled={processingDeactivate}
-                    variant="destructive"
-                  >
-                    {processingDeactivate ? "Processing..." : "Deactivate"}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-
-            {/* Delete Account */}
-            <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-              <DialogTrigger asChild>
-                <Button variant="destructive" className="w-full mt-2">
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Delete Account
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Delete Account</DialogTitle>
-                  <DialogDescription>
-                    This will permanently delete your account. Continue?
-                  </DialogDescription>
-                </DialogHeader>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setDeleteOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={handleDeleteAccount}
-                    disabled={processingDelete}
-                    variant="destructive"
-                  >
-                    {processingDelete ? "Deleting..." : "Delete"}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
           </div>
+
+          <Tabs defaultValue="personal" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-5">
+              <TabsTrigger value="personal">Personal</TabsTrigger>
+              <TabsTrigger value="spiritual">Spiritual</TabsTrigger>
+              <TabsTrigger value="lifestyle">Lifestyle</TabsTrigger>
+              <TabsTrigger value="interests">Interests</TabsTrigger>
+              <TabsTrigger value="preferences">Preferences</TabsTrigger>
+            </TabsList>
+
+            {/* Personal Information */}
+            <TabsContent value="personal">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <User className="w-5 h-5" />
+                    Personal Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="first_name">First Name</Label>
+                      <Input
+                        id="first_name"
+                        value={profile?.first_name || ""}
+                        onChange={(e) => updateProfile("first_name", e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="last_name">Last Name</Label>
+                      <Input
+                        id="last_name"
+                        value={profile?.last_name || ""}
+                        onChange={(e) => updateProfile("last_name", e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="birthdate">Date of Birth</Label>
+                      <Input
+                        id="birthdate"
+                        type="date"
+                        value={profile?.birthdate || ""}
+                        onChange={(e) => updateProfile("birthdate", e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="gender">Gender</Label>
+                      <Select value={profile?.gender || ""} onValueChange={(value) => updateProfile("gender", value)}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select gender" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Male">Male</SelectItem>
+                          <SelectItem value="Female">Female</SelectItem>
+                          <SelectItem value="Other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="height">Height</Label>
+                      <Input
+                        id="height"
+                        placeholder="e.g., 5'8&quot;"
+                        value={profile?.height || ""}
+                        onChange={(e) => updateProfile("height", e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="mother_tongue">Mother Tongue</Label>
+                      <Input
+                        id="mother_tongue"
+                        value={profile?.mother_tongue || ""}
+                        onChange={(e) => updateProfile("mother_tongue", e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <Label htmlFor="city">City</Label>
+                      <Input
+                        id="city"
+                        value={profile?.city || ""}
+                        onChange={(e) => updateProfile("city", e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="state">State</Label>
+                      <Input
+                        id="state"
+                        value={profile?.state || ""}
+                        onChange={(e) => updateProfile("state", e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="country">Country</Label>
+                      <Input
+                        id="country"
+                        value={profile?.country || ""}
+                        onChange={(e) => updateProfile("country", e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Family & Background */}
+                  <div className="space-y-4 pt-4 border-t">
+                    <h3 className="text-lg font-semibold flex items-center gap-2">
+                      <Users className="w-5 h-5" />
+                      Family & Background
+                    </h3>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="marital_status">Marital Status</Label>
+                        <Select
+                          value={profile?.marital_status || ""}
+                          onValueChange={(value) => updateProfile("marital_status", value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Never Married">Never Married</SelectItem>
+                            <SelectItem value="Divorced">Divorced</SelectItem>
+                            <SelectItem value="Widowed">Widowed</SelectItem>
+                            <SelectItem value="Separated">Separated</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label htmlFor="family_type">Family Type</Label>
+                        <Select
+                          value={profile?.family_type || ""}
+                          onValueChange={(value) => updateProfile("family_type", value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Joint Family">Joint Family</SelectItem>
+                            <SelectItem value="Nuclear Family">Nuclear Family</SelectItem>
+                            <SelectItem value="Extended Family">Extended Family</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="family_values">Family Values</Label>
+                        <Select
+                          value={profile?.family_values || ""}
+                          onValueChange={(value) => updateProfile("family_values", value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select values" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Traditional">Traditional</SelectItem>
+                            <SelectItem value="Moderate">Moderate</SelectItem>
+                            <SelectItem value="Liberal">Liberal</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label htmlFor="caste">Caste</Label>
+                        <Input
+                          id="caste"
+                          value={profile?.caste || ""}
+                          onChange={(e) => updateProfile("caste", e.target.value)}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="gotra">Gotra</Label>
+                      <Input
+                        id="gotra"
+                        value={profile?.gotra || ""}
+                        onChange={(e) => updateProfile("gotra", e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Professional Information */}
+                  <div className="space-y-4 pt-4 border-t">
+                    <h3 className="text-lg font-semibold flex items-center gap-2">
+                      <Briefcase className="w-5 h-5" />
+                      Professional Information
+                    </h3>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="education">Education</Label>
+                        <Input
+                          id="education"
+                          value={profile?.education || ""}
+                          onChange={(e) => updateProfile("education", e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="profession">Profession</Label>
+                        <Input
+                          id="profession"
+                          value={profile?.profession || ""}
+                          onChange={(e) => updateProfile("profession", e.target.value)}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="annual_income">Annual Income</Label>
+                      <Select
+                        value={profile?.annual_income || ""}
+                        onValueChange={(value) => updateProfile("annual_income", value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select income range" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Below 3 Lakhs">Below ₹3 Lakhs</SelectItem>
+                          <SelectItem value="3-5 Lakhs">₹3-5 Lakhs</SelectItem>
+                          <SelectItem value="5-10 Lakhs">₹5-10 Lakhs</SelectItem>
+                          <SelectItem value="10-15 Lakhs">₹10-15 Lakhs</SelectItem>
+                          <SelectItem value="15-25 Lakhs">₹15-25 Lakhs</SelectItem>
+                          <SelectItem value="25-50 Lakhs">₹25-50 Lakhs</SelectItem>
+                          <SelectItem value="Above 50 Lakhs">Above ₹50 Lakhs</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="about_me">About Me</Label>
+                    <Textarea
+                      id="about_me"
+                      rows={4}
+                      value={profile?.about_me || ""}
+                      onChange={(e) => updateProfile("about_me", e.target.value)}
+                      placeholder="Tell us about yourself..."
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Spiritual Information */}
+            <TabsContent value="spiritual">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Heart className="w-5 h-5" />
+                    Spiritual Profile
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Basic Spiritual Preferences */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="diet">Diet Preference</Label>
+                      <Select value={profile?.diet || ""} onValueChange={(value) => updateProfile("diet", value)}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select diet" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Vegetarian">Vegetarian</SelectItem>
+                          <SelectItem value="Vegan">Vegan</SelectItem>
+                          <SelectItem value="Eggetarian">Eggetarian</SelectItem>
+                          <SelectItem value="Non-Vegetarian">Non-Vegetarian</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="temple_visit_freq">Temple Visit Frequency</Label>
+                      <Select
+                        value={profile?.temple_visit_freq || ""}
+                        onValueChange={(value) => updateProfile("temple_visit_freq", value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select frequency" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Daily">Daily</SelectItem>
+                          <SelectItem value="Weekly">Weekly</SelectItem>
+                          <SelectItem value="Monthly">Monthly</SelectItem>
+                          <SelectItem value="Rarely">Rarely</SelectItem>
+                          <SelectItem value="Never">Never</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Advanced Spiritual Practices */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="meditation_frequency">Meditation Practice</Label>
+                      <Select
+                        value={profile?.meditation_frequency || ""}
+                        onValueChange={(value) => updateProfile("meditation_frequency", value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select frequency" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Daily">Daily</SelectItem>
+                          <SelectItem value="Weekly">Weekly</SelectItem>
+                          <SelectItem value="Monthly">Monthly</SelectItem>
+                          <SelectItem value="Rarely">Rarely</SelectItem>
+                          <SelectItem value="Never">Never</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="yoga_frequency">Yoga Practice</Label>
+                      <Select
+                        value={profile?.yoga_frequency || ""}
+                        onValueChange={(value) => updateProfile("yoga_frequency", value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select frequency" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Daily">Daily</SelectItem>
+                          <SelectItem value="Weekly">Weekly</SelectItem>
+                          <SelectItem value="Monthly">Monthly</SelectItem>
+                          <SelectItem value="Rarely">Rarely</SelectItem>
+                          <SelectItem value="Never">Never</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="scripture_study">Scripture Study</Label>
+                      <Select
+                        value={profile?.scripture_study || ""}
+                        onValueChange={(value) => updateProfile("scripture_study", value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select frequency" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Daily">Daily</SelectItem>
+                          <SelectItem value="Weekly">Weekly</SelectItem>
+                          <SelectItem value="Monthly">Monthly</SelectItem>
+                          <SelectItem value="Rarely">Rarely</SelectItem>
+                          <SelectItem value="Never">Never</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="pilgrimage_interest">Pilgrimage Interest</Label>
+                      <Select
+                        value={profile?.pilgrimage_interest || ""}
+                        onValueChange={(value) => updateProfile("pilgrimage_interest", value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select interest" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Very High">Very High</SelectItem>
+                          <SelectItem value="High">High</SelectItem>
+                          <SelectItem value="Moderate">Moderate</SelectItem>
+                          <SelectItem value="Low">Low</SelectItem>
+                          <SelectItem value="None">None</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="vanaprastha_interest">Vanaprastha Interest</Label>
+                      <Select
+                        value={profile?.vanaprastha_interest || ""}
+                        onValueChange={(value) => updateProfile("vanaprastha_interest", value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select interest" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="yes">Yes</SelectItem>
+                          <SelectItem value="no">No</SelectItem>
+                          <SelectItem value="open">Open to Discussion</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="artha_vs_moksha">Life Philosophy</Label>
+                      <Select
+                        value={profile?.artha_vs_moksha || ""}
+                        onValueChange={(value) => updateProfile("artha_vs_moksha", value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select philosophy" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Artha-focused">Artha-focused (Material)</SelectItem>
+                          <SelectItem value="Moksha-focused">Moksha-focused (Spiritual)</SelectItem>
+                          <SelectItem value="Balance">Balanced Approach</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Spiritual Organizations */}
+                  <div>
+                    <Label>Spiritual Organizations</Label>
+                    <div className="grid grid-cols-3 gap-2 mt-2 max-h-48 overflow-y-auto border rounded-lg p-3">
+                      {SPIRITUAL_ORGANIZATIONS.map((org) => (
+                        <div key={org} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`org-${org}`}
+                            checked={profile?.spiritual_org?.includes(org) || false}
+                            onCheckedChange={() => toggleArrayItem("spiritual_org", org)}
+                          />
+                          <Label htmlFor={`org-${org}`} className="text-sm">
+                            {org}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Daily Practices */}
+                  <div>
+                    <Label>Daily Spiritual Practices</Label>
+                    <div className="grid grid-cols-3 gap-2 mt-2 max-h-48 overflow-y-auto border rounded-lg p-3">
+                      {DAILY_PRACTICES.map((practice) => (
+                        <div key={practice} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`practice-${practice}`}
+                            checked={profile?.daily_practices?.includes(practice) || false}
+                            onCheckedChange={() => toggleArrayItem("daily_practices", practice)}
+                          />
+                          <Label htmlFor={`practice-${practice}`} className="text-sm">
+                            {practice}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Favorite Scriptures */}
+                  <div>
+                    <Label>Favorite Scriptures</Label>
+                    <div className="grid grid-cols-3 gap-2 mt-2 max-h-48 overflow-y-auto border rounded-lg p-3">
+                      {SCRIPTURES.map((scripture) => (
+                        <div key={scripture} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`scripture-${scripture}`}
+                            checked={profile?.favorite_scriptures?.includes(scripture) || false}
+                            onCheckedChange={() => toggleArrayItem("favorite_scriptures", scripture)}
+                          />
+                          <Label htmlFor={`scripture-${scripture}`} className="text-sm">
+                            {scripture}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Spiritual Goals */}
+                  <div>
+                    <Label>Spiritual Goals</Label>
+                    <div className="grid grid-cols-3 gap-2 mt-2 max-h-48 overflow-y-auto border rounded-lg p-3">
+                      {SPIRITUAL_GOALS.map((goal) => (
+                        <div key={goal} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`goal-${goal}`}
+                            checked={profile?.spiritual_goals?.includes(goal) || false}
+                            onCheckedChange={() => toggleArrayItem("spiritual_goals", goal)}
+                          />
+                          <Label htmlFor={`goal-${goal}`} className="text-sm">
+                            {goal}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Lifestyle */}
+            <TabsContent value="lifestyle">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Activity className="w-5 h-5" />
+                    Lifestyle & Habits
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="smoking">Smoking</Label>
+                      <Select value={profile?.smoking || ""} onValueChange={(value) => updateProfile("smoking", value)}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select option" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Never">Never</SelectItem>
+                          <SelectItem value="Occasionally">Occasionally</SelectItem>
+                          <SelectItem value="Regularly">Regularly</SelectItem>
+                          <SelectItem value="Trying to Quit">Trying to Quit</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="drinking">Drinking</Label>
+                      <Select
+                        value={profile?.drinking || ""}
+                        onValueChange={(value) => updateProfile("drinking", value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select option" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Never">Never</SelectItem>
+                          <SelectItem value="Socially">Socially</SelectItem>
+                          <SelectItem value="Occasionally">Occasionally</SelectItem>
+                          <SelectItem value="Regularly">Regularly</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="exercise_frequency">Exercise Frequency</Label>
+                      <Select
+                        value={profile?.exercise_frequency || ""}
+                        onValueChange={(value) => updateProfile("exercise_frequency", value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select frequency" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Daily">Daily</SelectItem>
+                          <SelectItem value="4-6 times a week">4-6 times a week</SelectItem>
+                          <SelectItem value="2-3 times a week">2-3 times a week</SelectItem>
+                          <SelectItem value="Once a week">Once a week</SelectItem>
+                          <SelectItem value="Rarely">Rarely</SelectItem>
+                          <SelectItem value="Never">Never</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="sleep_schedule">Sleep Schedule</Label>
+                      <Select
+                        value={profile?.sleep_schedule || ""}
+                        onValueChange={(value) => updateProfile("sleep_schedule", value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select schedule" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Early Bird (Before 10 PM)">Early Bird (Before 10 PM)</SelectItem>
+                          <SelectItem value="Regular (10 PM - 12 AM)">Regular (10 PM - 12 AM)</SelectItem>
+                          <SelectItem value="Night Owl (After 12 AM)">Night Owl (After 12 AM)</SelectItem>
+                          <SelectItem value="Irregular">Irregular</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Interests & Hobbies */}
+            <TabsContent value="interests">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Target className="w-5 h-5" />
+                    Interests & Hobbies
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Interests */}
+                  <div>
+                    <Label>Interests</Label>
+                    <div className="grid grid-cols-3 gap-2 mt-2 max-h-48 overflow-y-auto border rounded-lg p-3">
+                      {INTERESTS.map((interest) => (
+                        <div key={interest} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`interest-${interest}`}
+                            checked={profile?.interests?.includes(interest) || false}
+                            onCheckedChange={() => toggleArrayItem("interests", interest)}
+                          />
+                          <Label htmlFor={`interest-${interest}`} className="text-sm">
+                            {interest}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Hobbies */}
+                  <div>
+                    <Label>Hobbies</Label>
+                    <div className="grid grid-cols-3 gap-2 mt-2 max-h-48 overflow-y-auto border rounded-lg p-3">
+                      {HOBBIES.map((hobby) => (
+                        <div key={hobby} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`hobby-${hobby}`}
+                            checked={profile?.hobbies?.includes(hobby) || false}
+                            onCheckedChange={() => toggleArrayItem("hobbies", hobby)}
+                          />
+                          <Label htmlFor={`hobby-${hobby}`} className="text-sm">
+                            {hobby}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Partner Preferences */}
+            <TabsContent value="preferences">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Heart className="w-5 h-5" />
+                    Partner Preferences
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div>
+                    <Label htmlFor="partner_expectations">What are you looking for in a partner?</Label>
+                    <Textarea
+                      id="partner_expectations"
+                      rows={6}
+                      value={profile?.partner_expectations || ""}
+                      onChange={(e) => updateProfile("partner_expectations", e.target.value)}
+                      placeholder="Describe your ideal partner and what you're looking for in a relationship..."
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
       </main>
     </div>

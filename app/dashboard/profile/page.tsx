@@ -5,9 +5,10 @@ import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ArrowLeft, Edit, Camera, MapPin, Briefcase, Heart } from "lucide-react"
+import { ArrowLeft, Edit, Camera, MapPin, Briefcase, Heart, Eye, Users, Activity, Sparkles, X } from "lucide-react"
 import MobileNav from "@/components/dashboard/mobile-nav"
 import ProfileImageUploader from "@/components/dashboard/profile-image-uploader"
+import SwipeCard from "@/components/dashboard/swipe-card"
 
 export default function ProfilePage() {
   const [user, setUser] = useState<any>(null)
@@ -15,6 +16,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true)
   const router = useRouter()
   const [userImages, setUserImages] = useState<string[]>([])
+  const [showPreview, setShowPreview] = useState(false)
 
   useEffect(() => {
     async function getUser() {
@@ -89,13 +91,23 @@ export default function ProfilePage() {
                 <p className="text-gray-600">View and manage your profile</p>
               </div>
             </div>
-            <Button
-              onClick={() => router.push("/dashboard/settings")}
-              className="bg-gradient-to-r from-orange-500 to-pink-500"
-            >
-              <Edit className="w-4 h-4 mr-2" />
-              Edit
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => setShowPreview(true)}
+                variant="outline"
+                className="border-orange-200 text-orange-600 hover:bg-orange-50"
+              >
+                <Eye className="w-4 h-4 mr-2" />
+                Preview
+              </Button>
+              <Button
+                onClick={() => router.push("/dashboard/settings")}
+                className="bg-gradient-to-r from-orange-500 to-pink-500"
+              >
+                <Edit className="w-4 h-4 mr-2" />
+                Edit
+              </Button>
+            </div>
           </div>
 
           <div className="space-y-6">
@@ -239,6 +251,220 @@ export default function ProfilePage() {
               </Card>
             )}
           </div>
+
+          {/* Family & Background */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="w-5 h-5" />
+                Family & Background
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-gray-500">Marital Status</p>
+                  <p className="font-medium">{profile?.marital_status || "Not specified"}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Family Type</p>
+                  <p className="font-medium">{profile?.family_type || "Not specified"}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-gray-500">Family Values</p>
+                  <p className="font-medium">{profile?.family_values || "Not specified"}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Caste</p>
+                  <p className="font-medium">{profile?.caste || "Not specified"}</p>
+                </div>
+              </div>
+              {profile?.gotra && (
+                <div>
+                  <p className="text-sm text-gray-500">Gotra</p>
+                  <p className="font-medium">{profile.gotra}</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Lifestyle & Habits */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="w-5 h-5" />
+                Lifestyle & Habits
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-gray-500">Smoking</p>
+                  <p className="font-medium">{profile?.smoking || "Not specified"}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Drinking</p>
+                  <p className="font-medium">{profile?.drinking || "Not specified"}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-gray-500">Exercise</p>
+                  <p className="font-medium">{profile?.exercise_frequency || "Not specified"}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Sleep Schedule</p>
+                  <p className="font-medium">{profile?.sleep_schedule || "Not specified"}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Enhanced Spiritual Information */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Heart className="w-5 h-5" />
+                Detailed Spiritual Profile
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-gray-500">Meditation Practice</p>
+                  <p className="font-medium">{profile?.meditation_frequency || "Not specified"}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Yoga Practice</p>
+                  <p className="font-medium">{profile?.yoga_frequency || "Not specified"}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-gray-500">Scripture Study</p>
+                  <p className="font-medium">{profile?.scripture_study || "Not specified"}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Pilgrimage Interest</p>
+                  <p className="font-medium">{profile?.pilgrimage_interest || "Not specified"}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-gray-500">Vanaprastha Interest</p>
+                  <p className="font-medium">{profile?.vanaprastha_interest || "Not specified"}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Life Philosophy</p>
+                  <p className="font-medium">{profile?.artha_vs_moksha || "Not specified"}</p>
+                </div>
+              </div>
+              {profile?.favorite_scriptures && profile.favorite_scriptures.length > 0 && (
+                <div>
+                  <p className="text-sm text-gray-500">Favorite Scriptures</p>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {profile.favorite_scriptures.map((scripture: string, index: number) => (
+                      <span key={index} className="px-2 py-1 bg-purple-100 text-purple-700 text-sm rounded-full">
+                        {scripture}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {profile?.spiritual_goals && profile.spiritual_goals.length > 0 && (
+                <div>
+                  <p className="text-sm text-gray-500">Spiritual Goals</p>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {profile.spiritual_goals.map((goal: string, index: number) => (
+                      <span key={index} className="px-2 py-1 bg-indigo-100 text-indigo-700 text-sm rounded-full">
+                        {goal}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Interests & Hobbies */}
+          {(profile?.interests && profile.interests.length > 0) ||
+            (profile?.hobbies && profile.hobbies.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Sparkles className="w-5 h-5" />
+                    Interests & Hobbies
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {profile?.interests && profile.interests.length > 0 && (
+                    <div>
+                      <p className="text-sm text-gray-500 mb-2">Interests</p>
+                      <div className="flex flex-wrap gap-2">
+                        {profile.interests.map((interest: string, index: number) => (
+                          <span key={index} className="px-3 py-1 bg-green-100 text-green-700 text-sm rounded-full">
+                            {interest}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {profile?.hobbies && profile.hobbies.length > 0 && (
+                    <div>
+                      <p className="text-sm text-gray-500 mb-2">Hobbies</p>
+                      <div className="flex flex-wrap gap-2">
+                        {profile.hobbies.map((hobby: string, index: number) => (
+                          <span key={index} className="px-3 py-1 bg-blue-100 text-blue-700 text-sm rounded-full">
+                            {hobby}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+
+          {/* Partner Preferences */}
+          {profile?.partner_expectations && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Heart className="w-5 h-5" />
+                  Partner Preferences
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-700 leading-relaxed">{profile.partner_expectations}</p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Profile Preview Modal */}
+          {showPreview && (
+            <div className="fixed inset-0 z-[100000]">
+              <div className="absolute inset-0 bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 p-4">
+                <div className="max-w-sm mx-auto h-full relative">
+                  <SwipeCard
+                    profile={profile}
+                    onSwipe={() => {}} // No-op for preview
+                    onUndo={() => {}} // No-op for preview
+                    showUndo={false}
+                    isTop={true}
+                    index={0}
+                  />
+                  <button
+                    onClick={() => setShowPreview(false)}
+                    className="absolute top-4 right-4 w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center text-gray-700 hover:bg-white transition-colors z-30"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </main>
     </div>
