@@ -5,9 +5,27 @@ import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Star, Sparkles, Crown, Check, Gift, Shield } from "lucide-react"
+import {
+  Star,
+  Sparkles,
+  Crown,
+  Check,
+  Gift,
+  Shield,
+  Diamond,
+  BadgeCheck,
+  Award,
+  Gem,
+  Lock,
+  Users,
+  MapPin,
+  FileCheck,
+  DollarSign,
+  Heart,
+} from "lucide-react"
 import MobileNav from "@/components/dashboard/mobile-nav"
 import PaymentModal from "@/components/payment/payment-modal"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { User as SupabaseUser } from "@supabase/supabase-js"
 import { Toaster } from "sonner"
 
@@ -34,6 +52,7 @@ export default function StorePage() {
     isOpen: false,
     item: null,
   })
+  const [billingCycle, setBillingCycle] = useState<"monthly" | "quarterly">("monthly")
   const router = useRouter()
 
   const openPaymentModal = (item: any) => {
@@ -100,6 +119,26 @@ export default function StorePage() {
     )
   }
 
+  // Plan pricing based on billing cycle
+  const planPricing = {
+    sparsh: {
+      monthly: { price: 399, duration: "month" },
+      quarterly: { price: 999, duration: "3 months", savings: "16%" },
+    },
+    sangam: {
+      monthly: { price: 699, duration: "month" },
+      quarterly: { price: 1799, duration: "3 months", savings: "14%" },
+    },
+    samarpan: {
+      monthly: { price: 1299, duration: "month" },
+      quarterly: { price: 2999, duration: "3 months", savings: "23%" },
+    },
+    elite: {
+      monthly: { price: 49000, duration: "month" },
+      quarterly: { price: 129000, duration: "3 months", savings: "12%" },
+    },
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50">
       <MobileNav userProfile={profile} />
@@ -113,7 +152,7 @@ export default function StorePage() {
             <p className="text-gray-600">Enhance your spiritual matchmaking journey</p>
 
             {/* Current Status */}
-            <div className="mt-4 flex justify-center gap-4 text-sm">
+            <div className="mt-4 flex flex-wrap justify-center gap-3 text-sm">
               <div className="bg-white/80 px-3 py-1 rounded-full">
                 <span className="text-gray-600">Super Likes: </span>
                 <span className="font-semibold text-orange-600">{profile?.super_likes_count || 0}</span>
@@ -128,22 +167,28 @@ export default function StorePage() {
                   Premium Active
                 </div>
               )}
+              {profile?.account_status === "elite" && (
+                <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-3 py-1 rounded-full">
+                  <Diamond className="w-4 h-4 inline mr-1" />
+                  Elite Active
+                </div>
+              )}
             </div>
           </div>
 
           {/* Trust Banner */}
           <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 mb-8 border border-green-200">
-            <div className="flex items-center justify-center gap-4 text-sm text-gray-700">
+            <div className="flex flex-wrap items-center justify-center gap-4 text-sm text-gray-700">
               <div className="flex items-center gap-2">
                 <Shield className="w-4 h-4 text-green-600" />
                 <span>Secure Payments</span>
               </div>
-              <div className="w-1 h-4 bg-gray-300"></div>
+              <div className="hidden md:block w-1 h-4 bg-gray-300"></div>
               <div className="flex items-center gap-2">
                 <Check className="w-4 h-4 text-green-600" />
                 <span>Instant Activation</span>
               </div>
-              <div className="w-1 h-4 bg-gray-300"></div>
+              <div className="hidden md:block w-1 h-4 bg-gray-300"></div>
               <div className="flex items-center gap-2">
                 <Gift className="w-4 h-4 text-green-600" />
                 <span>No Hidden Charges</span>
@@ -154,6 +199,26 @@ export default function StorePage() {
           {/* Premium Plans */}
           <div className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Choose Your Plan</h2>
+
+            {/* Billing Cycle Selector */}
+            <div className="flex justify-center mb-8">
+              <Tabs
+                defaultValue="monthly"
+                value={billingCycle}
+                onValueChange={(value) => setBillingCycle(value as "monthly" | "quarterly")}
+                className="w-full max-w-md"
+              >
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="monthly">Monthly</TabsTrigger>
+                  <TabsTrigger value="quarterly">
+                    Quarterly
+                    <span className="ml-2 bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full">
+                      Save up to 23%
+                    </span>
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
 
             {/* Free Plan - Drishti */}
             <div className="mb-6">
@@ -210,8 +275,14 @@ export default function StorePage() {
                     Sparsh Plan
                   </CardTitle>
                   <div className="text-3xl font-bold">
-                    ₹399<span className="text-lg font-normal">/month</span>
+                    ₹{planPricing.sparsh[billingCycle].price}
+                    <span className="text-lg font-normal">/{planPricing.sparsh[billingCycle].duration}</span>
                   </div>
+                  {billingCycle === "quarterly" && (
+                    <div className="text-sm bg-white/20 px-2 py-0.5 rounded-full w-fit mt-1">
+                      Save {planPricing.sparsh.quarterly.savings}
+                    </div>
+                  )}
                 </CardHeader>
                 <CardContent className="p-6">
                   <ul className="space-y-3 mb-6">
@@ -236,21 +307,26 @@ export default function StorePage() {
                     onClick={() =>
                       openPaymentModal({
                         type: "plan",
-                        name: "Sparsh Plan",
-                        price: 399,
-                        description: "1 month of Sparsh access",
+                        name: `Sparsh Plan (${billingCycle === "monthly" ? "1 month" : "3 months"})`,
+                        price: planPricing.sparsh[billingCycle].price,
+                        description: `${billingCycle === "monthly" ? "1 month" : "3 months"} of Sparsh access`,
                         features: [
                           "20 swipes per day",
                           "Unlimited messaging",
                           "View all matches",
                           "Basic profile visibility",
-                        ],
+                          billingCycle === "quarterly"
+                            ? `Save ${planPricing.sparsh.quarterly.savings} compared to monthly`
+                            : "",
+                        ].filter(Boolean),
                       })
                     }
                     className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
-                    disabled={profile?.account_status === "premium"}
+                    disabled={profile?.account_status === "premium" || profile?.account_status === "elite"}
                   >
-                    {profile?.account_status === "premium" ? "Already Premium" : "Choose Sparsh"}
+                    {profile?.account_status === "premium" || profile?.account_status === "elite"
+                      ? "Already Premium"
+                      : "Choose Sparsh"}
                   </Button>
                 </CardContent>
               </Card>
@@ -268,8 +344,14 @@ export default function StorePage() {
                     Sangam Plan
                   </CardTitle>
                   <div className="text-3xl font-bold">
-                    ₹699<span className="text-lg font-normal">/month</span>
+                    ₹{planPricing.sangam[billingCycle].price}
+                    <span className="text-lg font-normal">/{planPricing.sangam[billingCycle].duration}</span>
                   </div>
+                  {billingCycle === "quarterly" && (
+                    <div className="text-sm bg-white/20 px-2 py-0.5 rounded-full w-fit mt-1">
+                      Save {planPricing.sangam.quarterly.savings}
+                    </div>
+                  )}
                 </CardHeader>
                 <CardContent className="p-6">
                   <ul className="space-y-3 mb-6">
@@ -298,22 +380,27 @@ export default function StorePage() {
                     onClick={() =>
                       openPaymentModal({
                         type: "plan",
-                        name: "Sangam Plan",
-                        price: 699,
-                        description: "1 month of Sangam access",
+                        name: `Sangam Plan (${billingCycle === "monthly" ? "1 month" : "3 months"})`,
+                        price: planPricing.sangam[billingCycle].price,
+                        description: `${billingCycle === "monthly" ? "1 month" : "3 months"} of Sangam access`,
                         features: [
                           "50 swipes per day",
                           "Everything in Sparsh",
                           "5 Super Likes monthly",
                           "5 Message Highlights monthly",
                           "Higher profile visibility",
-                        ],
+                          billingCycle === "quarterly"
+                            ? `Save ${planPricing.sangam.quarterly.savings} compared to monthly`
+                            : "",
+                        ].filter(Boolean),
                       })
                     }
                     className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-                    disabled={profile?.account_status === "premium"}
+                    disabled={profile?.account_status === "premium" || profile?.account_status === "elite"}
                   >
-                    {profile?.account_status === "premium" ? "Already Premium" : "Choose Sangam"}
+                    {profile?.account_status === "premium" || profile?.account_status === "elite"
+                      ? "Already Premium"
+                      : "Choose Sangam"}
                   </Button>
                 </CardContent>
               </Card>
@@ -329,8 +416,14 @@ export default function StorePage() {
                     Samarpan Plan
                   </CardTitle>
                   <div className="text-3xl font-bold">
-                    ₹1299<span className="text-lg font-normal">/month</span>
+                    ₹{planPricing.samarpan[billingCycle].price}
+                    <span className="text-lg font-normal">/{planPricing.samarpan[billingCycle].duration}</span>
                   </div>
+                  {billingCycle === "quarterly" && (
+                    <div className="text-sm bg-white/20 px-2 py-0.5 rounded-full w-fit mt-1">
+                      Save {planPricing.samarpan.quarterly.savings}
+                    </div>
+                  )}
                 </CardHeader>
                 <CardContent className="p-6">
                   <ul className="space-y-3 mb-6">
@@ -363,9 +456,9 @@ export default function StorePage() {
                     onClick={() =>
                       openPaymentModal({
                         type: "plan",
-                        name: "Samarpan Plan",
-                        price: 1299,
-                        description: "1 month of Samarpan access",
+                        name: `Samarpan Plan (${billingCycle === "monthly" ? "1 month" : "3 months"})`,
+                        price: planPricing.samarpan[billingCycle].price,
+                        description: `${billingCycle === "monthly" ? "1 month" : "3 months"} of Samarpan access`,
                         features: [
                           "Unlimited swipes",
                           "Everything in Sangam",
@@ -373,14 +466,205 @@ export default function StorePage() {
                           "15 Message Highlights monthly",
                           "Highest profile visibility",
                           "Priority customer support",
-                        ],
+                          billingCycle === "quarterly"
+                            ? `Save ${planPricing.samarpan.quarterly.savings} compared to monthly`
+                            : "",
+                        ].filter(Boolean),
                       })
                     }
                     className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600"
-                    disabled={profile?.account_status === "premium"}
+                    disabled={profile?.account_status === "premium" || profile?.account_status === "elite"}
                   >
-                    {profile?.account_status === "premium" ? "Already Premium" : "Choose Samarpan"}
+                    {profile?.account_status === "premium" || profile?.account_status === "elite"
+                      ? "Already Premium"
+                      : "Choose Samarpan"}
                   </Button>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          {/* Elite Plan */}
+          <div className="mb-16">
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-10 rounded-xl"></div>
+              <Card className="relative overflow-hidden border-2 border-indigo-300 shadow-xl bg-gradient-to-r from-white to-indigo-50">
+                <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-indigo-500 to-purple-600 opacity-10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+                <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-pink-500 to-purple-600 opacity-10 rounded-full translate-y-1/2 -translate-x-1/2"></div>
+
+                <div className="absolute top-6 left-6 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-2 rounded-full text-sm font-semibold shadow-lg">
+                  <div className="flex items-center gap-2">
+                    <Diamond className="w-4 h-4" />
+                    <span>Exclusive</span>
+                  </div>
+                </div>
+
+                <CardHeader className="pt-16 pb-8 text-center">
+                  <div className="mx-auto w-20 h-20 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full flex items-center justify-center mb-4 shadow-lg">
+                    <Diamond className="w-10 h-10 text-white" />
+                  </div>
+                  <CardTitle className="text-3xl font-bold text-gray-900 mb-2">Elite Membership</CardTitle>
+                  <p className="text-gray-600 max-w-md mx-auto">
+                    For discerning individuals seeking the perfect spiritual partner with verified credentials
+                  </p>
+
+                  <div className="mt-6 text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">
+                    ₹{planPricing.elite[billingCycle].price}
+                    <span className="text-xl font-normal text-gray-600">
+                      /{planPricing.elite[billingCycle].duration}
+                    </span>
+                  </div>
+                  {billingCycle === "quarterly" && (
+                    <div className="text-sm bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full w-fit mx-auto mt-2">
+                      Save {planPricing.elite.quarterly.savings}
+                    </div>
+                  )}
+                </CardHeader>
+
+                <CardContent className="px-6 pb-8">
+                  <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-indigo-200 mb-8">
+                    <h3 className="text-xl font-semibold text-gray-900 mb-4 text-center">
+                      Elite Verification Standards
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                          <DollarSign className="w-5 h-5 text-green-600" />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-gray-900">Income Verified</h4>
+                          <p className="text-sm text-gray-600">
+                            Members with verified high income status (₹25L+ annually)
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                          <Users className="w-5 h-5 text-blue-600" />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-gray-900">Family Verified</h4>
+                          <p className="text-sm text-gray-600">Background checks on family history and reputation</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
+                          <MapPin className="w-5 h-5 text-purple-600" />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-gray-900">Location Verified</h4>
+                          <p className="text-sm text-gray-600">Confirmed residence in premium neighborhoods</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0">
+                          <FileCheck className="w-5 h-5 text-orange-600" />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-gray-900">Credit Score Verified</h4>
+                          <p className="text-sm text-gray-600">Members with excellent financial responsibility</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-6 mb-8">
+                    <h3 className="text-xl font-semibold text-gray-900 mb-4">Exclusive Benefits</h3>
+                    <ul className="space-y-4">
+                      <li className="flex items-start gap-3">
+                        <BadgeCheck className="w-6 h-6 text-indigo-600 flex-shrink-0" />
+                        <div>
+                          <span className="font-medium text-gray-900">Access to Elite Pool</span>
+                          <p className="text-sm text-gray-600">
+                            Connect exclusively with other high-achieving spiritual individuals
+                          </p>
+                        </div>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <Award className="w-6 h-6 text-indigo-600 flex-shrink-0" />
+                        <div>
+                          <span className="font-medium text-gray-900">Personal Matchmaking Concierge</span>
+                          <p className="text-sm text-gray-600">
+                            Dedicated relationship manager to help find your perfect match
+                          </p>
+                        </div>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <Gem className="w-6 h-6 text-indigo-600 flex-shrink-0" />
+                        <div>
+                          <span className="font-medium text-gray-900">Exclusive Events</span>
+                          <p className="text-sm text-gray-600">
+                            Invitations to curated spiritual retreats and networking events
+                          </p>
+                        </div>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <Heart className="w-6 h-6 text-indigo-600 flex-shrink-0" />
+                        <div>
+                          <span className="font-medium text-gray-900">Compatibility Analysis</span>
+                          <p className="text-sm text-gray-600">
+                            In-depth spiritual and personality compatibility reports
+                          </p>
+                        </div>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <Lock className="w-6 h-6 text-indigo-600 flex-shrink-0" />
+                        <div>
+                          <span className="font-medium text-gray-900">Enhanced Privacy</span>
+                          <p className="text-sm text-gray-600">
+                            Advanced privacy controls and discreet matching options
+                          </p>
+                        </div>
+                      </li>
+                    </ul>
+                  </div>
+
+                  {/* Trust Elements */}
+                  <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4 mb-8">
+                    <div className="flex items-center gap-3 justify-center">
+                      <Shield className="w-5 h-5 text-indigo-600" />
+                      <span className="text-indigo-800 font-medium">100% Confidentiality Guaranteed</span>
+                    </div>
+                  </div>
+
+                  {/* Testimonials */}
+                  <div className="mb-8 bg-white/70 rounded-lg p-4 border border-gray-200">
+                    <h4 className="font-medium text-gray-900 mb-3 text-center">What Our Elite Members Say</h4>
+                    <div className="italic text-gray-600 text-sm text-center">
+                      "As a successful entrepreneur with spiritual values, finding someone who understands both worlds
+                      was impossible until I joined DharmaSaathi Elite. Within two months, I found my perfect match."
+                      <div className="mt-2 font-medium text-gray-800">— Rajiv S., CEO & Meditation Practitioner</div>
+                    </div>
+                  </div>
+
+                  <Button
+                    onClick={() =>
+                      openPaymentModal({
+                        type: "plan",
+                        name: `Elite Membership (${billingCycle === "monthly" ? "1 month" : "3 months"})`,
+                        price: planPricing.elite[billingCycle].price,
+                        description: `${billingCycle === "monthly" ? "1 month" : "3 months"} of Elite Membership`,
+                        features: [
+                          "Access to Elite verified profiles",
+                          "Personal matchmaking concierge",
+                          "Exclusive spiritual events",
+                          "In-depth compatibility analysis",
+                          "Enhanced privacy controls",
+                          billingCycle === "quarterly"
+                            ? `Save ${planPricing.elite.quarterly.savings} compared to monthly`
+                            : "",
+                        ].filter(Boolean),
+                      })
+                    }
+                    className="w-full h-14 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-lg"
+                    disabled={profile?.account_status === "elite"}
+                  >
+                    {profile?.account_status === "elite" ? "Already Elite Member" : "Join Elite Membership"}
+                  </Button>
+
+                  <p className="text-xs text-gray-500 text-center mt-4">
+                    Elite membership is subject to verification. Our team will contact you within 24 hours.
+                  </p>
                 </CardContent>
               </Card>
             </div>
@@ -472,7 +756,7 @@ export default function StorePage() {
           <div className="mb-8">
             <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
               <CardContent className="p-6">
-                <div className="flex items-start gap-4">
+                <div className="flex flex-col sm:flex-row items-start gap-4">
                   <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center">
                     <Gift className="w-6 h-6 text-white" />
                   </div>
@@ -483,7 +767,7 @@ export default function StorePage() {
                       referral program!
                     </p>
                     <Button
-                      onClick={() => router.push("/dashboard")}
+                      onClick={() => router.push("/dashboard/referrals")}
                       className="bg-green-600 hover:bg-green-700 text-white"
                     >
                       Learn More About Referrals
