@@ -268,20 +268,20 @@
 
   /* Ensure modals appear above bottom navigation */
   [data-radix-dialog-overlay] {
-    z-index: 150 !important;
+    z-index: 100000 !important;
   }
 
   [data-radix-dialog-content] {
-    z-index: 200 !important;
+    z-index: 100001 !important;
   }
 
   /* Payment modal specific styles */
   .payment-modal-overlay {
-    z-index: 150 !important;
+    z-index: 100000 !important;
   }
 
   .payment-modal-content {
-    z-index: 200 !important;
+    z-index: 100001 !important;
     margin-bottom: 0 !important;
   }
 
