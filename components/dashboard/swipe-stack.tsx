@@ -6,6 +6,7 @@ import SwipeCard from "./swipe-card"
 import { Button } from "@/components/ui/button"
 import { Heart, X, Star, RotateCcw, Clock, Zap } from "lucide-react"
 import { toast } from "sonner"
+import { supabase } from "@/lib/supabase"
 
 interface SwipeStackProps {
   profiles: any[]
@@ -50,8 +51,23 @@ export default function SwipeStack({ profiles: initialProfiles, onSwipe, headerl
 
   const fetchSwipeStats = async () => {
     try {
-      // include credentials on every call
-      const response = await fetch("/api/swipe/stats", { credentials: "include" })
+      // Get the current session
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+
+      if (!session?.access_token) {
+        throw new Error("No valid session")
+      }
+
+      // include credentials and authorization header
+      const response = await fetch("/api/swipe/stats", {
+        credentials: "include",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      })
+
       // if the response isn’t OK, throw to trigger your error state
       if (!response.ok) {
         throw new Error(`Failed to fetch swipe stats: ${response.status}`)
@@ -68,7 +84,23 @@ export default function SwipeStack({ profiles: initialProfiles, onSwipe, headerl
   const fetchProfiles = async () => {
     try {
       console.log("Fetching profiles...")
-      const response = await fetch("/api/profiles/discover", { credentials: "include" })
+
+      // Get the current session
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+
+      if (!session?.access_token) {
+        throw new Error("No valid session")
+      }
+
+      const response = await fetch("/api/profiles/discover", {
+        credentials: "include",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      })
+
       console.log("Profiles response:", response.status)
       if (!response.ok) {
         throw new Error(`Failed to fetch profiles: ${response.status}`)
