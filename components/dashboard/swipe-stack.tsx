@@ -17,9 +17,7 @@ export default function SwipeStack({ profiles, onSwipe, headerless = false }: Sw
   const [isAnimating, setIsAnimating] = useState(false)
   const [history, setHistory] = useState<number[]>([])
 
-  // CONFLICT #1 resolved: track undo availability
   const showUndo = history.length > 0
-
   const visibleProfiles = profiles.slice(currentIndex, currentIndex + 3)
 
   const handleUndo = () => {
@@ -37,8 +35,7 @@ export default function SwipeStack({ profiles, onSwipe, headerless = false }: Sw
     onSwipe(direction, profileId)
 
     setTimeout(() => {
-      // CONFLICT #2 resolved: only record left/right swipes
-      if (direction === "left" || "right") {
+      if (direction === "left" || direction === "right") {
         setHistory((prev) => [...prev, currentIndex])
       }
       setCurrentIndex((prev) => prev + 1)
@@ -75,8 +72,8 @@ export default function SwipeStack({ profiles, onSwipe, headerless = false }: Sw
   }
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="relative flex-1 px-4 py-2">
+    <div className="h-full flex flex-col">
+      <div className="flex-1 relative px-4 py-4">
         <div className="relative w-full max-w-sm mx-auto h-full">
           <AnimatePresence mode="popLayout">
             {visibleProfiles.map((profile, index) => (
@@ -85,7 +82,6 @@ export default function SwipeStack({ profiles, onSwipe, headerless = false }: Sw
                 profile={profile}
                 onSwipe={handleSwipe}
                 onUndo={handleUndo}
-                // CONFLICT #3 resolved: only top card shows undo
                 showUndo={showUndo && index === 0}
                 isTop={index === 0}
                 index={index}

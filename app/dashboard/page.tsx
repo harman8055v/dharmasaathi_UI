@@ -20,7 +20,6 @@ export default function DashboardPage() {
   const [profiles, setProfiles] = useState<any[]>([])
   const [loadingProfiles, setLoadingProfiles] = useState(false)
   const router = useRouter()
-  const [swipesRemaining, setSwipesRemaining] = useState(999) // Default to unlimited
 
   // Mock profiles for demonstration - replace with actual API call
   const mockProfiles = [
@@ -203,26 +202,14 @@ export default function DashboardPage() {
       <MobileNav userProfile={profile} />
 
       {/* Main Content */}
-      <main className={`${isVerified ? "pt-4 pb-32" : "pt-16 pb-32"} min-h-screen flex flex-col`}>
-        {isVerified ? (
-          // Verified User - Swipe Interface with proper spacing to avoid navbar overlap
-          <div className="flex-1 flex flex-col h-screen">
-            {/* Compact Header for verified users - fixed height */}
-            <div className="flex-shrink-0 text-center py-4 px-4 bg-gradient-to-r from-orange-50 to-pink-50">
-              <h1 className="text-lg font-semibold text-gray-900">Find Your Match</h1>
-              <div className="flex items-center justify-center gap-4 text-sm text-gray-600 mt-1">
-                <span>Swipes: {swipesRemaining === 999 ? "Unlimited" : swipesRemaining}</span>
-                <span>•</span>
-                <span>Super Likes: {profile?.super_likes_count || 0}</span>
-              </div>
-            </div>
-            {/* Swipe Stack - takes remaining space */}
-            <div className="flex-1 overflow-hidden">
-              <SwipeStack profiles={profiles} onSwipe={handleSwipe} headerless={true} />
-            </div>
-          </div>
-        ) : (
-          // Non-verified User - Original Dashboard
+      {isVerified ? (
+        // Verified User - ONLY Swipe Interface (No Header, No Padding)
+        <main className="h-screen pb-24">
+          <SwipeStack profiles={profiles} onSwipe={handleSwipe} headerless={true} />
+        </main>
+      ) : (
+        // Non-verified User - Original Dashboard with header
+        <main className="pt-16 pb-32 min-h-screen flex flex-col">
           <div className="px-4 space-y-6 max-w-4xl mx-auto">
             {/* Welcome Section */}
             <div className="text-center">
@@ -423,8 +410,8 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
-        )}
-      </main>
+        </main>
+      )}
     </div>
   )
 }
