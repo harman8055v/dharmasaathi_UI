@@ -17,6 +17,12 @@ import {
   ChevronLeft,
   ChevronRight,
   RotateCcw,
+  User,
+  Users,
+  MessageCircle,
+  Ruler,
+  Activity,
+  Palette,
 } from "lucide-react"
 import Image from "next/image"
 
@@ -592,10 +598,10 @@ export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, 
                 </div>
               )}
 
-              <div className="p-6">
+              <div className="p-6 space-y-8">
                 {/* Profile Header */}
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="w-20 h-20 rounded-full overflow-hidden">
+                <div className="flex items-center gap-4">
+                  <div className="w-20 h-20 rounded-full overflow-hidden ring-4 ring-orange-100">
                     <Image
                       src={getCurrentImage() || "/placeholder.svg"}
                       alt={`${profile.first_name} ${profile.last_name}`}
@@ -604,91 +610,303 @@ export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, 
                       className="w-full h-full object-cover"
                     />
                   </div>
-                  <div>
-                    <h3 className="text-2xl font-bold text-gray-900">
+                  <div className="flex-1">
+                    <h3 className="text-3xl font-bold text-gray-900 mb-1">
                       {profile.first_name} {profile.last_name}
                     </h3>
-                    <p className="text-gray-600">{calculateAge(profile.birthdate)} years old</p>
+                    <p className="text-lg text-gray-600 mb-2">{calculateAge(profile.birthdate)} years old</p>
+                    <div className="flex items-center gap-2 text-gray-500">
+                      <MapPin className="w-4 h-4" />
+                      <span>
+                        {profile.city}, {profile.state}
+                      </span>
+                    </div>
                   </div>
                 </div>
+
+                {/* Favorite Quote Section */}
+                {profile.favorite_quote && (
+                  <div className="bg-gradient-to-r from-orange-50 to-pink-50 rounded-2xl p-6 border border-orange-100">
+                    <div className="text-center">
+                      <div className="text-4xl text-orange-400 mb-3">❝</div>
+                      <blockquote className="text-lg text-gray-800 font-medium italic leading-relaxed mb-3">
+                        {profile.favorite_quote}
+                      </blockquote>
+                      {profile.quote_author && (
+                        <cite className="text-sm text-gray-600 font-medium">— {profile.quote_author}</cite>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {/* About Section */}
                 {profile.about_me && (
-                  <div className="mb-6">
-                    <h4 className="text-lg font-semibold text-gray-900 mb-2">About Me</h4>
-                    <p className="text-gray-700 leading-relaxed">{profile.about_me}</p>
+                  <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                    <h4 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                      <User className="w-5 h-5 text-orange-500" />
+                      About Me
+                    </h4>
+                    <p className="text-gray-700 leading-relaxed text-base">{profile.about_me}</p>
                   </div>
                 )}
 
-                {/* Details Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                  {profile.city && profile.state && (
-                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                      <MapPin className="w-5 h-5 text-gray-500" />
-                      <div>
-                        <p className="text-sm text-gray-500">Location</p>
-                        <p className="font-medium">
-                          {profile.city}, {profile.state}
-                        </p>
+                {/* Essential Details Grid */}
+                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                  <h4 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <Info className="w-5 h-5 text-blue-500" />
+                    Essential Details
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {profile.profession && (
+                      <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-xl">
+                        <Briefcase className="w-5 h-5 text-blue-600" />
+                        <div>
+                          <p className="text-sm text-blue-600 font-medium">Profession</p>
+                          <p className="font-semibold text-gray-900">{profile.profession}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {profile.education && (
+                      <div className="flex items-center gap-3 p-4 bg-green-50 rounded-xl">
+                        <GraduationCap className="w-5 h-5 text-green-600" />
+                        <div>
+                          <p className="text-sm text-green-600 font-medium">Education</p>
+                          <p className="font-semibold text-gray-900">{profile.education}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {profile.diet && (
+                      <div className="flex items-center gap-3 p-4 bg-purple-50 rounded-xl">
+                        <Sparkles className="w-5 h-5 text-purple-600" />
+                        <div>
+                          <p className="text-sm text-purple-600 font-medium">Diet</p>
+                          <p className="font-semibold text-gray-900">{profile.diet}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {profile.mother_tongue && (
+                      <div className="flex items-center gap-3 p-4 bg-pink-50 rounded-xl">
+                        <MessageCircle className="w-5 h-5 text-pink-600" />
+                        <div>
+                          <p className="text-sm text-pink-600 font-medium">Mother Tongue</p>
+                          <p className="font-semibold text-gray-900">{profile.mother_tongue}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {profile.height && (
+                      <div className="flex items-center gap-3 p-4 bg-indigo-50 rounded-xl">
+                        <Ruler className="w-5 h-5 text-indigo-600" />
+                        <div>
+                          <p className="text-sm text-indigo-600 font-medium">Height</p>
+                          <p className="font-semibold text-gray-900">{profile.height}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {profile.marital_status && (
+                      <div className="flex items-center gap-3 p-4 bg-rose-50 rounded-xl">
+                        <Heart className="w-5 h-5 text-rose-600" />
+                        <div>
+                          <p className="text-sm text-rose-600 font-medium">Marital Status</p>
+                          <p className="font-semibold text-gray-900">{profile.marital_status}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Spiritual Journey */}
+                <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl p-6 border border-orange-200">
+                  <h4 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <Star className="w-5 h-5 text-orange-500" />
+                    Spiritual Journey
+                  </h4>
+
+                  {/* Daily Practices */}
+                  {profile.daily_practices && profile.daily_practices.length > 0 && (
+                    <div className="mb-6">
+                      <h5 className="text-lg font-semibold text-gray-800 mb-3">Daily Practices</h5>
+                      <div className="flex flex-wrap gap-2">
+                        {profile.daily_practices.map((practice: string, index: number) => (
+                          <span
+                            key={index}
+                            className="px-4 py-2 bg-orange-100 text-orange-800 rounded-full text-sm font-medium border border-orange-200"
+                          >
+                            {practice}
+                          </span>
+                        ))}
                       </div>
                     </div>
                   )}
 
-                  {profile.profession && (
-                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                      <Briefcase className="w-5 h-5 text-gray-500" />
-                      <div>
-                        <p className="text-sm text-gray-500">Profession</p>
-                        <p className="font-medium">{profile.profession}</p>
+                  {/* Spiritual Organizations */}
+                  {profile.spiritual_org && profile.spiritual_org.length > 0 && (
+                    <div className="mb-6">
+                      <h5 className="text-lg font-semibold text-gray-800 mb-3">Spiritual Organizations</h5>
+                      <div className="flex flex-wrap gap-2">
+                        {profile.spiritual_org.map((org: string, index: number) => (
+                          <span
+                            key={index}
+                            className="px-4 py-2 bg-purple-100 text-purple-800 rounded-full text-sm font-medium border border-purple-200"
+                          >
+                            {org}
+                          </span>
+                        ))}
                       </div>
                     </div>
                   )}
 
-                  {profile.education && (
-                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                      <GraduationCap className="w-5 h-5 text-gray-500" />
-                      <div>
-                        <p className="text-sm text-gray-500">Education</p>
-                        <p className="font-medium">{profile.education}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {profile.diet && (
-                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                      <Sparkles className="w-5 h-5 text-gray-500" />
-                      <div>
-                        <p className="text-sm text-gray-500">Diet</p>
-                        <p className="font-medium">{profile.diet}</p>
+                  {/* Spiritual Goals */}
+                  {profile.spiritual_goals && profile.spiritual_goals.length > 0 && (
+                    <div>
+                      <h5 className="text-lg font-semibold text-gray-800 mb-3">Spiritual Goals</h5>
+                      <div className="flex flex-wrap gap-2">
+                        {profile.spiritual_goals.map((goal: string, index: number) => (
+                          <span
+                            key={index}
+                            className="px-4 py-2 bg-blue-100 text-blue-800 rounded-full text-sm font-medium border border-blue-200"
+                          >
+                            {goal}
+                          </span>
+                        ))}
                       </div>
                     </div>
                   )}
                 </div>
 
-                {/* Spiritual Practices */}
-                {profile.daily_practices && profile.daily_practices.length > 0 && (
-                  <div className="mb-6">
-                    <h4 className="text-lg font-semibold text-gray-900 mb-3">Daily Practices</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {profile.daily_practices.map((practice: string, index: number) => (
-                        <span key={index} className="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-sm">
-                          {practice}
+                {/* Family & Background */}
+                {(profile.family_type || profile.caste || profile.gotra || profile.family_values) && (
+                  <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                    <h4 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                      <Users className="w-5 h-5 text-green-500" />
+                      Family & Background
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {profile.family_type && (
+                        <div className="p-4 bg-green-50 rounded-xl">
+                          <p className="text-sm text-green-600 font-medium mb-1">Family Type</p>
+                          <p className="font-semibold text-gray-900">{profile.family_type}</p>
+                        </div>
+                      )}
+                      {profile.caste && (
+                        <div className="p-4 bg-blue-50 rounded-xl">
+                          <p className="text-sm text-blue-600 font-medium mb-1">Caste</p>
+                          <p className="font-semibold text-gray-900">{profile.caste}</p>
+                        </div>
+                      )}
+                      {profile.gotra && (
+                        <div className="p-4 bg-purple-50 rounded-xl">
+                          <p className="text-sm text-purple-600 font-medium mb-1">Gotra</p>
+                          <p className="font-semibold text-gray-900">{profile.gotra}</p>
+                        </div>
+                      )}
+                      {profile.family_values && (
+                        <div className="p-4 bg-orange-50 rounded-xl">
+                          <p className="text-sm text-orange-600 font-medium mb-1">Family Values</p>
+                          <p className="font-semibold text-gray-900">{profile.family_values}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Lifestyle & Habits */}
+                {(profile.smoking || profile.drinking || profile.exercise_frequency || profile.sleep_schedule) && (
+                  <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                    <h4 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                      <Activity className="w-5 h-5 text-red-500" />
+                      Lifestyle & Habits
+                    </h4>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                      {profile.smoking && (
+                        <div className="text-center p-3 bg-red-50 rounded-xl">
+                          <p className="text-xs text-red-600 font-medium mb-1">Smoking</p>
+                          <p className="text-sm font-semibold text-gray-900">{profile.smoking}</p>
+                        </div>
+                      )}
+                      {profile.drinking && (
+                        <div className="text-center p-3 bg-amber-50 rounded-xl">
+                          <p className="text-xs text-amber-600 font-medium mb-1">Drinking</p>
+                          <p className="text-sm font-semibold text-gray-900">{profile.drinking}</p>
+                        </div>
+                      )}
+                      {profile.exercise_frequency && (
+                        <div className="text-center p-3 bg-green-50 rounded-xl">
+                          <p className="text-xs text-green-600 font-medium mb-1">Exercise</p>
+                          <p className="text-sm font-semibold text-gray-900">{profile.exercise_frequency}</p>
+                        </div>
+                      )}
+                      {profile.sleep_schedule && (
+                        <div className="text-center p-3 bg-blue-50 rounded-xl">
+                          <p className="text-xs text-blue-600 font-medium mb-1">Sleep</p>
+                          <p className="text-sm font-semibold text-gray-900">{profile.sleep_schedule}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Interests & Hobbies */}
+                {profile.interests && profile.interests.length > 0 && (
+                  <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                    <h4 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                      <Palette className="w-5 h-5 text-pink-500" />
+                      Interests & Hobbies
+                    </h4>
+                    <div className="flex flex-wrap gap-3">
+                      {profile.interests.map((interest: string, index: number) => (
+                        <span
+                          key={index}
+                          className="px-4 py-2 bg-gradient-to-r from-pink-100 to-purple-100 text-gray-800 rounded-full text-sm font-medium border border-pink-200"
+                        >
+                          {interest}
                         </span>
                       ))}
                     </div>
                   </div>
                 )}
 
-                {/* Spiritual Organizations */}
-                {profile.spiritual_org && profile.spiritual_org.length > 0 && (
-                  <div className="mb-6">
-                    <h4 className="text-lg font-semibold text-gray-900 mb-3">Spiritual Organizations</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {profile.spiritual_org.map((org: string, index: number) => (
-                        <span key={index} className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm">
-                          {org}
-                        </span>
-                      ))}
+                {/* Partner Preferences */}
+                {(profile.partner_age_min ||
+                  profile.partner_education ||
+                  profile.partner_profession ||
+                  profile.partner_location) && (
+                  <div className="bg-gradient-to-br from-rose-50 to-pink-50 rounded-2xl p-6 border border-rose-200">
+                    <h4 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                      <Heart className="w-5 h-5 text-rose-500" />
+                      Looking For
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {profile.partner_age_min && profile.partner_age_max && (
+                        <div className="p-4 bg-white/70 rounded-xl">
+                          <p className="text-sm text-rose-600 font-medium mb-1">Age Range</p>
+                          <p className="font-semibold text-gray-900">
+                            {profile.partner_age_min} - {profile.partner_age_max} years
+                          </p>
+                        </div>
+                      )}
+                      {profile.partner_education && (
+                        <div className="p-4 bg-white/70 rounded-xl">
+                          <p className="text-sm text-rose-600 font-medium mb-1">Education</p>
+                          <p className="font-semibold text-gray-900">{profile.partner_education}</p>
+                        </div>
+                      )}
+                      {profile.partner_profession && (
+                        <div className="p-4 bg-white/70 rounded-xl">
+                          <p className="text-sm text-rose-600 font-medium mb-1">Profession</p>
+                          <p className="font-semibold text-gray-900">{profile.partner_profession}</p>
+                        </div>
+                      )}
+                      {profile.partner_location && (
+                        <div className="p-4 bg-white/70 rounded-xl">
+                          <p className="text-sm text-rose-600 font-medium mb-1">Location</p>
+                          <p className="font-semibold text-gray-900">{profile.partner_location}</p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
