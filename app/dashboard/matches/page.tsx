@@ -184,9 +184,9 @@ export default function MatchesPage() {
             // Verified User - Full Matches Interface
             <>
               {/* Header */}
-              <div className="text-center mb-6">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Your Matches 💕</h1>
-                <p className="text-gray-600">Connect with compatible spiritual souls</p>
+              <div className="mb-6">
+                <h1 className="text-xl font-semibold text-gray-900 mb-1">Your Matches</h1>
+                <p className="text-sm text-gray-600">Connect with compatible spiritual souls</p>
               </div>
 
               {/* Search and Filter */}
@@ -351,9 +351,9 @@ export default function MatchesPage() {
             // Non-verified User - Original content
             <>
               {/* Header */}
-              <div className="text-center mb-8">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Find Your Spiritual Match 💕</h1>
-                <p className="text-gray-600">Discover compatible souls on the same spiritual journey</p>
+              <div className="mb-6">
+                <h1 className="text-xl font-semibold text-gray-900 mb-1">Your Matches</h1>
+                <p className="text-sm text-gray-600">Discover compatible souls on the same spiritual journey</p>
               </div>
 
               {/* Verification Required Notice */}

@@ -200,7 +200,8 @@ export default function MessagesPage() {
                 className={`bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-orange-100 flex flex-col ${selectedChat ? "hidden lg:flex" : ""}`}
               >
                 <div className="p-6 border-b border-gray-100">
-                  <h1 className="text-2xl font-bold text-gray-900 mb-4">Messages 💬</h1>
+                  <h1 className="text-xl font-semibold text-gray-900 mb-1">Messages</h1>
+                  <p className="text-sm text-gray-600 mb-4">Connect with your spiritual matches</p>
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <Input
@@ -355,9 +356,9 @@ export default function MessagesPage() {
             // Non-verified User - Original content
             <div className="max-w-4xl mx-auto">
               {/* Header */}
-              <div className="text-center mb-8">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Messages 💬</h1>
-                <p className="text-gray-600">Connect with your spiritual matches</p>
+              <div className="mb-6">
+                <h1 className="text-xl font-semibold text-gray-900 mb-1">Messages</h1>
+                <p className="text-sm text-gray-600">Connect with your spiritual matches</p>
               </div>
 
               {/* Verification Required Notice */}

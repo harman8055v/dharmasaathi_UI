@@ -86,8 +86,8 @@ export default function ProfilePage() {
                 <ArrowLeft className="w-5 h-5" />
               </Button>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">My Profile</h1>
-                <p className="text-gray-600">View and manage your profile</p>
+                <h1 className="text-xl font-semibold text-gray-900">My Profile</h1>
+                <p className="text-sm text-gray-600">View and manage your profile</p>
               </div>
             </div>
             <div className="flex gap-2">

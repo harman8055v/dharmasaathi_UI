@@ -218,8 +218,8 @@ export default function SettingsPage() {
                 <ArrowLeft className="w-5 h-5" />
               </Button>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Edit Profile</h1>
-                <p className="text-gray-600">Update your profile information</p>
+                <h1 className="text-xl font-semibold text-gray-900">Edit Profile</h1>
+                <p className="text-sm text-gray-600">Update your profile information</p>
               </div>
             </div>
             <Button onClick={handleSave} disabled={saving} className="bg-gradient-to-r from-orange-500 to-pink-500">

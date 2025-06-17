@@ -160,8 +160,8 @@ export default function ReferralsPage() {
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Referral Program</h1>
-              <p className="text-gray-600">Invite friends and unlock exclusive benefits</p>
+              <h1 className="text-xl font-semibold text-gray-900">Referral Program</h1>
+              <p className="text-sm text-gray-600">Invite friends and unlock exclusive benefits</p>
             </div>
           </div>
 
