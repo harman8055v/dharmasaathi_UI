@@ -303,16 +303,13 @@ export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, 
 
                   {/* Quick Info Tags */}
                   <div className="flex flex-wrap gap-2">
-                    {profile.diet && (
-                      <span className="px-2 py-1 bg-white/20 rounded-full text-xs backdrop-blur-sm">
-                        {profile.diet}
-                      </span>
-                    )}
-                    {profile.education && (
-                      <span className="px-2 py-1 bg-white/20 rounded-full text-xs backdrop-blur-sm">
-                        {profile.education}
-                      </span>
-                    )}
+                    {profile.spiritual_org &&
+                      profile.spiritual_org.length > 0 &&
+                      profile.spiritual_org.slice(0, 2).map((org: string, index: number) => (
+                        <span key={index} className="px-2 py-1 bg-white/20 rounded-full text-xs backdrop-blur-sm">
+                          {org}
+                        </span>
+                      ))}
                   </div>
                 </div>
               </div>
