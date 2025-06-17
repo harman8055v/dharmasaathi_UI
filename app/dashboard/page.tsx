@@ -18,118 +18,8 @@ export default function DashboardPage() {
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [profiles, setProfiles] = useState<any[]>([])
-  const [loadingProfiles, setLoadingProfiles] = useState(false)
+  const [swipeStats, setSwipeStats] = useState<any>(null)
   const router = useRouter()
-
-  // Mock profiles for demonstration - replace with actual API call
-  const mockProfiles = [
-    {
-      id: "1",
-      first_name: "Priya",
-      last_name: "Sharma",
-      birthdate: "1995-03-15",
-      city: "Mumbai",
-      state: "Maharashtra",
-      profession: "Software Engineer",
-      education: "B.Tech Computer Science",
-      diet: "Vegetarian",
-      mother_tongue: "Hindi",
-      height: "5'4\"",
-      marital_status: "Never Married",
-      family_type: "Nuclear Family",
-      caste: "Brahmin",
-      gotra: "Bharadwaj",
-      family_values: "Traditional with Modern Outlook",
-      smoking: "Never",
-      drinking: "Never",
-      exercise_frequency: "Daily",
-      sleep_schedule: "Early Bird",
-      favorite_quote: "The mind is everything. What you think you become.",
-      quote_author: "Buddha",
-      about_me:
-        "Passionate about spirituality and technology. Love practicing yoga and meditation daily. Looking for someone who shares similar values and interests in personal growth. I believe in living a balanced life where ancient wisdom meets modern innovation.",
-      user_photos: ["/abstract-spiritual-avatar-1.png", "/abstract-spiritual-avatar-2.png"],
-      daily_practices: ["Meditation", "Yoga", "Prayer", "Journaling"],
-      spiritual_org: ["Art of Living", "Isha Foundation"],
-      spiritual_goals: ["Self-Realization", "Inner Peace", "Service to Humanity"],
-      interests: ["Reading", "Traveling", "Cooking", "Photography", "Classical Music", "Nature Walks"],
-      partner_age_min: 28,
-      partner_age_max: 35,
-      partner_education: "Graduate or Higher",
-      partner_profession: "Any",
-      partner_location: "Mumbai or nearby cities",
-    },
-    {
-      id: "2",
-      first_name: "Arjun",
-      last_name: "Patel",
-      birthdate: "1992-07-22",
-      city: "Ahmedabad",
-      state: "Gujarat",
-      profession: "Doctor",
-      education: "MBBS",
-      diet: "Vegetarian",
-      mother_tongue: "Gujarati",
-      height: "5'10\"",
-      marital_status: "Never Married",
-      family_type: "Joint Family",
-      caste: "Patel",
-      family_values: "Traditional",
-      smoking: "Never",
-      drinking: "Occasionally",
-      exercise_frequency: "4-5 times a week",
-      sleep_schedule: "Night Owl",
-      favorite_quote: "Service to others is the rent you pay for your room here on earth.",
-      quote_author: "Muhammad Ali",
-      about_me:
-        "Dedicated to serving others through medicine and spirituality. Believe in the power of compassion and mindfulness in healing. Looking for a life partner who values service and spiritual growth.",
-      user_photos: ["/abstract-spiritual-avatar-3.png", "/abstract-spiritual-avatar-4.png"],
-      daily_practices: ["Meditation", "Chanting", "Reading Scriptures"],
-      spiritual_org: ["Brahma Kumaris"],
-      spiritual_goals: ["Compassionate Service", "Spiritual Wisdom", "Divine Connection"],
-      interests: ["Medical Research", "Volunteering", "Classical Dance", "Ayurveda", "Spiritual Books"],
-      partner_age_min: 25,
-      partner_age_max: 30,
-      partner_education: "Graduate",
-      partner_profession: "Healthcare or Education",
-      partner_location: "Gujarat",
-    },
-    {
-      id: "3",
-      first_name: "Ananya",
-      last_name: "Reddy",
-      birthdate: "1994-11-08",
-      city: "Hyderabad",
-      state: "Telangana",
-      profession: "Teacher",
-      education: "M.Ed",
-      diet: "Vegan",
-      mother_tongue: "Telugu",
-      height: "5'2\"",
-      marital_status: "Never Married",
-      family_type: "Nuclear Family",
-      caste: "Reddy",
-      family_values: "Progressive",
-      smoking: "Never",
-      drinking: "Never",
-      exercise_frequency: "Daily",
-      sleep_schedule: "Early Bird",
-      favorite_quote: "Be yourself; everyone else is already taken.",
-      quote_author: "Oscar Wilde",
-      about_me:
-        "Teaching is my passion, and I believe in nurturing young minds with spiritual values. Love nature, books, and meaningful conversations. Seeking a partner who values education and personal growth.",
-      user_photos: ["/abstract-spiritual-avatar-2.png", "/abstract-spiritual-avatar-1.png"],
-      daily_practices: ["Meditation", "Yoga", "Journaling", "Nature Walks"],
-      spiritual_org: ["Osho International", "Vipassana"],
-      spiritual_goals: ["Mindful Living", "Educational Excellence", "Environmental Consciousness"],
-      interests: ["Teaching", "Environmental Conservation", "Organic Gardening", "Poetry", "Hiking"],
-      partner_age_min: 26,
-      partner_age_max: 32,
-      partner_education: "Post Graduate",
-      partner_profession: "Education or Social Work",
-      partner_location: "Hyderabad or Bangalore",
-    },
-  ]
 
   useEffect(() => {
     async function getUser() {
@@ -162,9 +52,11 @@ export default function DashboardPage() {
 
         setProfile(profileData)
 
-        // For demo purposes, set mock profiles
-        // In production, fetch actual profiles based on user preferences
-        setProfiles(mockProfiles)
+        // If verified, fetch profiles and swipe stats
+        if (profileData?.verification_status === "verified") {
+          fetchProfiles()
+          fetchSwipeStats()
+        }
 
         setLoading(false)
       } catch (error) {
@@ -175,6 +67,30 @@ export default function DashboardPage() {
 
     getUser()
   }, [router])
+
+  const fetchProfiles = async () => {
+    try {
+      const response = await fetch("/api/profiles/discover")
+      if (response.ok) {
+        const data = await response.json()
+        setProfiles(data.profiles || [])
+      }
+    } catch (error) {
+      console.error("Error fetching profiles:", error)
+    }
+  }
+
+  const fetchSwipeStats = async () => {
+    try {
+      const response = await fetch("/api/swipe/stats")
+      if (response.ok) {
+        const stats = await response.json()
+        setSwipeStats(stats)
+      }
+    } catch (error) {
+      console.error("Error fetching swipe stats:", error)
+    }
+  }
 
   const calculateProfileCompleteness = () => {
     if (!profile) return 0
@@ -232,12 +148,10 @@ export default function DashboardPage() {
     )
   }
 
-  const handleSwipe = (direction: "left" | "right", profileId: string) => {
+  const handleSwipe = (direction: "left" | "right" | "superlike", profileId: string) => {
     debugLog(`Swiped ${direction} on profile ${profileId}`)
-    // Here you would typically:
-    // 1. Send the swipe action to your backend
-    // 2. Update user preferences/matches
-    // 3. Handle match notifications if it's a mutual like
+    // Refresh stats after swipe
+    fetchSwipeStats()
   }
 
   if (loading) {
