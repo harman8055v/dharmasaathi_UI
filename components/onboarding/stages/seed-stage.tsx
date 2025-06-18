@@ -68,17 +68,15 @@ export default function SeedStage({ formData, onChange, onNext, isLoading, user,
     try {
       console.log("Sending OTP to:", mobileNumber)
 
-      // Update the user's phone number in auth.users table
-      const { data: updateData, error: updateError } = await supabase.auth.updateUser({
-        phone: mobileNumber,
-      })
+      // Send login OTP to the provided phone number
+      const { error } = await supabase.auth.signInWithOtp({ phone: mobileNumber })
 
-      if (updateError) {
-        console.error("Update user error:", updateError)
-        throw updateError
+      if (error) {
+        console.error("Error sending OTP:", error)
+        throw error
       }
 
-      console.log("User phone updated successfully:", updateData)
+      // Mark OTP as sent and start the resend timer
       setOtpSent(true)
       setIsUserEditing(false)
       setResendTimer(60)
@@ -119,61 +117,39 @@ export default function SeedStage({ formData, onChange, onNext, isLoading, user,
     try {
       console.log("Verifying OTP:", otp, "for phone:", mobileNumber)
 
-      // Try different OTP verification types
-      const verificationAttempts = [{ type: "phone_change" as const }, { type: "sms" as const }]
+      // Verify the OTP using the login-OTP flow
+      const { data, error } = await supabase.auth.verifyOtp({
+        phone: mobileNumber,
+        token: otp,
+        type: "sms",
+      })
 
-      let verificationSuccess = false
-      let lastError = null
-
-      for (const attempt of verificationAttempts) {
-        try {
-          console.log(`Attempting verification with type: ${attempt.type}`)
-
-          const { data, error: verifyError } = await supabase.auth.verifyOtp({
-            phone: mobileNumber,
-            token: otp,
-            type: attempt.type,
-          })
-
-          if (verifyError) {
-            console.error(`Verification failed with type ${attempt.type}:`, verifyError)
-            lastError = verifyError
-            continue
-          }
-
-          if (data.user) {
-            console.log("OTP verification successful:", data.user.id)
-
-            // Update the mobile_verified status in your 'users' table
-            const { error: updateError } = await supabase
-              .from("users")
-              .update({
-                mobile_number: mobileNumber,
-                mobile_verified: true,
-                updated_at: new Date().toISOString(),
-              })
-              .eq("id", data.user.id)
-
-            if (updateError) {
-              console.error("Error updating mobile_verified status:", updateError)
-              setLocalError("OTP verified, but failed to update profile. Please contact support.")
-              return
-            }
-
-            setIsMobileVerified(true)
-            onChange({ mobile_number: mobileNumber, mobile_verified: true })
-            onNext({ mobile_verified: true })
-            verificationSuccess = true
-            break
-          }
-        } catch (attemptError) {
-          console.error(`Attempt with type ${attempt.type} failed:`, attemptError)
-          lastError = attemptError
-        }
+      if (error) {
+        throw error
       }
 
-      if (!verificationSuccess) {
-        throw lastError || new Error("All verification attempts failed")
+      if (data.user) {
+        console.log("OTP verification successful:", data.user.id)
+
+        // Update the mobile_verified status in your 'users' table
+        const { error: updateError } = await supabase
+          .from("users")
+          .update({
+            mobile_number: mobileNumber,
+            mobile_verified: true,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", data.user.id)
+
+        if (updateError) {
+          console.error("Error updating mobile_verified status:", updateError)
+          setLocalError("OTP verified, but failed to update profile. Please contact support.")
+          return
+        }
+
+        setIsMobileVerified(true)
+        onChange({ mobile_number: mobileNumber, mobile_verified: true })
+        onNext({ mobile_verified: true })
       }
     } catch (err: any) {
       console.error("Error verifying OTP:", err)
