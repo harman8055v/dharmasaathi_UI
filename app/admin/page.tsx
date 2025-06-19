@@ -141,14 +141,7 @@ export default function AdminDashboard() {
   const fetchAdminData = async () => {
     setLoading(true)
     try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
-      const token = session?.access_token
       const response = await fetch("/api/admin/dashboard", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
         credentials: "include",
       })
 
