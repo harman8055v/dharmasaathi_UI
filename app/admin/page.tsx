@@ -126,6 +126,7 @@ export default function AdminDashboard() {
     completedProfiles: 0,
   })
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [filterStatus, setFilterStatus] = useState("all")
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
@@ -140,24 +141,56 @@ export default function AdminDashboard() {
 
   const fetchAdminData = async () => {
     setLoading(true)
+    setError(null)
     try {
-      const response = await fetch("/api/admin/dashboard", {
-        credentials: "include",
-      })
+      console.log("Fetching admin data...")
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch admin data")
+      // Check if user is authenticated first
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession()
+
+      if (sessionError) {
+        console.error("Session error:", sessionError)
+        throw new Error("Authentication failed")
       }
 
-      const { users: usersData, stats } = await response.json()
+      if (!session) {
+        console.error("No session found")
+        throw new Error("Please log in to access admin dashboard")
+      }
 
-      setUsers(usersData || [])
-      setStats(stats)
+      console.log("User authenticated:", session.user.email)
+
+      const response = await fetch("/api/admin/dashboard", {
+        method: "GET",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+
+      console.log("API response status:", response.status)
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        console.error("API error:", errorData)
+        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`)
+      }
+
+      const data = await response.json()
+      console.log("Received data:", { usersCount: data.users?.length, stats: data.stats })
+
+      setUsers(data.users || [])
+      setStats(data.stats || {})
     } catch (error) {
       console.error("Error fetching admin data:", error)
+      const errorMessage = error instanceof Error ? error.message : "Failed to fetch admin data"
+      setError(errorMessage)
       toast({
         title: "Error",
-        description: "Failed to fetch admin data",
+        description: errorMessage,
         variant: "destructive",
       })
     } finally {
@@ -414,6 +447,25 @@ export default function AdminDashboard() {
         <div className="text-center">
           <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-4 text-orange-500" />
           <p className="text-gray-600">Loading admin dashboard...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-pink-50 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-6">
+          <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-red-500" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Admin Dashboard Error</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <Button onClick={fetchAdminData} className="mr-2">
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Retry
+          </Button>
+          <Button variant="outline" onClick={() => (window.location.href = "/")}>
+            Go Home
+          </Button>
         </div>
       </div>
     )
