@@ -74,6 +74,7 @@ interface User {
   diet: string
   temple_visit_freq: string
   onboarding_completed: boolean
+  last_login_at: string
 }
 
 interface AdminStats {
@@ -169,7 +170,8 @@ export default function AdminDashboard() {
           annual_income,
           diet,
           temple_visit_freq,
-          onboarding_completed
+          onboarding_completed,
+          last_login_at
         `)
         .order("created_at", { ascending: false })
 
@@ -201,17 +203,28 @@ export default function AdminDashboard() {
       const femaleUsers = usersData?.filter((u) => u.gender === "Female").length || 0
       const completedProfiles = usersData?.filter((u) => u.onboarding_completed === true).length || 0
 
-      // Fetch matches count
-      const { count: matchesCount } = await supabase
-        .from("swipe_actions")
-        .select("*", { count: "exact", head: true })
-        .eq("action", "like")
+      // Fetch matches count - using try-catch for optional tables
+      let matchesCount = 0
+      try {
+        const { count } = await supabase
+          .from("swipe_actions")
+          .select("*", { count: "exact", head: true })
+          .eq("action", "like")
+        matchesCount = count || 0
+      } catch (error) {
+        console.log("Swipe actions table not found or accessible")
+        matchesCount = 0
+      }
 
-      // Fetch messages count (if messages table exists)
-      const { count: messagesCount } = await supabase
-        .from("messages")
-        .select("*", { count: "exact", head: true })
-        .catch(() => ({ count: 0 }))
+      // Fetch messages count - using try-catch for optional tables
+      let messagesCount = 0
+      try {
+        const { count } = await supabase.from("messages").select("*", { count: "exact", head: true })
+        messagesCount = count || 0
+      } catch (error) {
+        console.log("Messages table not found or accessible")
+        messagesCount = 0
+      }
 
       setStats({
         totalUsers,
@@ -219,8 +232,8 @@ export default function AdminDashboard() {
         verifiedUsers,
         premiumUsers,
         todaySignups,
-        totalMatches: matchesCount || 0,
-        totalMessages: messagesCount || 0,
+        totalMatches: matchesCount,
+        totalMessages: messagesCount,
         pendingVerifications,
         maleUsers,
         femaleUsers,
@@ -307,42 +320,53 @@ export default function AdminDashboard() {
     setSelectedUser(user)
 
     try {
-      // Fetch user's recent messages
-      const { data: messagesData } = await supabase
-        .from("messages")
-        .select(`
-          id,
-          sender_id,
-          receiver_id,
-          message,
-          created_at,
-          sender:sender_id(first_name, last_name),
-          receiver:receiver_id(first_name, last_name)
-        `)
-        .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
-        .order("created_at", { ascending: false })
-        .limit(10)
-        .catch(() => ({ data: [] }))
+      // Fetch user's recent messages - using try-catch for optional tables
+      let messagesData: any[] = []
+      try {
+        const { data } = await supabase
+          .from("messages")
+          .select(`
+            id,
+            sender_id,
+            receiver_id,
+            message,
+            created_at
+          `)
+          .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+          .order("created_at", { ascending: false })
+          .limit(10)
 
-      // Fetch user's matches/swipes
-      const { data: swipesData } = await supabase
-        .from("swipe_actions")
-        .select(`
-          id,
-          swiper_id,
-          swiped_id,
-          action,
-          created_at,
-          swiped_user:swiped_id(first_name, last_name)
-        `)
-        .eq("swiper_id", user.id)
-        .eq("action", "like")
-        .order("created_at", { ascending: false })
-        .limit(10)
-        .catch(() => ({ data: [] }))
+        messagesData = data || []
+      } catch (error) {
+        console.log("Messages table not accessible")
+        messagesData = []
+      }
 
-      setUserMessages(messagesData || [])
-      setUserMatches(swipesData || [])
+      // Fetch user's matches/swipes - using try-catch for optional tables
+      let swipesData: any[] = []
+      try {
+        const { data } = await supabase
+          .from("swipe_actions")
+          .select(`
+            id,
+            swiper_id,
+            swiped_id,
+            action,
+            created_at
+          `)
+          .eq("swiper_id", user.id)
+          .eq("action", "like")
+          .order("created_at", { ascending: false })
+          .limit(10)
+
+        swipesData = data || []
+      } catch (error) {
+        console.log("Swipe actions table not accessible")
+        swipesData = []
+      }
+
+      setUserMessages(messagesData)
+      setUserMatches(swipesData)
     } catch (error) {
       console.error("Error fetching user details:", error)
     }
@@ -379,17 +403,18 @@ export default function AdminDashboard() {
   const exportData = async () => {
     try {
       const csvContent = [
-        ["Name", "Email", "Phone", "Gender", "Location", "Status", "Verification", "Joined"].join(","),
+        ["Name", "Email", "Phone", "Gender", "Location", "Status", "Verification", "Joined", "Last Login"].join(","),
         ...users.map((user) =>
           [
-            `${user.first_name} ${user.last_name}`,
-            user.email,
-            user.mobile_number,
-            user.gender,
-            `${user.city}, ${user.state}`,
-            user.account_status,
-            user.verification_status,
+            `${user.first_name || ""} ${user.last_name || ""}`,
+            user.email || "",
+            user.mobile_number || "",
+            user.gender || "",
+            `${user.city || ""}, ${user.state || ""}`,
+            user.account_status || "basic",
+            user.verification_status || "pending",
             new Date(user.created_at).toLocaleDateString(),
+            user.last_login_at ? new Date(user.last_login_at).toLocaleDateString() : "Never",
           ].join(","),
         ),
       ].join("\n")
@@ -658,6 +683,11 @@ export default function AdminDashboard() {
                           <p className="text-sm text-gray-500">
                             {user.city && user.state ? `${user.city}, ${user.state}` : "Location not set"}
                           </p>
+                          {user.last_login_at && (
+                            <p className="text-xs text-gray-400">
+                              Last login: {new Date(user.last_login_at).toLocaleDateString()}
+                            </p>
+                          )}
                         </div>
                       </div>
                       <div className="text-right">
@@ -760,6 +790,11 @@ export default function AdminDashboard() {
                             </Badge>
                             {user.gender && <Badge variant="outline">{user.gender}</Badge>}
                             {user.birthdate && <Badge variant="outline">{calculateAge(user.birthdate)} years</Badge>}
+                            {user.last_login_at && (
+                              <Badge variant="outline" className="text-xs">
+                                Last: {new Date(user.last_login_at).toLocaleDateString()}
+                              </Badge>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -1121,6 +1156,12 @@ export default function AdminDashboard() {
                       <Calendar className="w-4 h-4 inline mr-2" />
                       Joined {new Date(selectedUser.created_at).toLocaleDateString()}
                     </p>
+                    {selectedUser.last_login_at && (
+                      <p>
+                        <Calendar className="w-4 h-4 inline mr-2" />
+                        Last login {new Date(selectedUser.last_login_at).toLocaleDateString()}
+                      </p>
+                    )}
                   </div>
                 </div>
                 <div>
@@ -1178,9 +1219,6 @@ export default function AdminDashboard() {
                   <div className="space-y-2 max-h-32 overflow-y-auto">
                     {userMessages.map((message) => (
                       <div key={message.id} className="text-sm bg-gray-50 p-2 rounded">
-                        <p className="font-medium">
-                          {message.sender_name} → {message.receiver_name}
-                        </p>
                         <p className="text-gray-600">{message.message}</p>
                         <p className="text-xs text-gray-400">{new Date(message.created_at).toLocaleString()}</p>
                       </div>
