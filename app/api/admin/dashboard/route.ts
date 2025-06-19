@@ -1,29 +1,26 @@
-import { NextRequest, NextResponse } from "next/server"
+import { type NextRequest, NextResponse } from "next/server"
+import { cookies } from "next/headers"
+import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
 import { createClient } from "@supabase/supabase-js"
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createClient(
+    const supabaseAuth = createRouteHandlerClient({ cookies })
+    const supabaseAdmin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
     )
 
-    const authHeader = request.headers.get("authorization")
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
-    const token = authHeader.replace("Bearer ", "")
     const {
       data: { user },
       error: authError,
-    } = await supabase.auth.getUser(token)
+    } = await supabaseAuth.auth.getUser()
 
     if (authError || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { data: users, error: usersError } = await supabase
+    const { data: users, error: usersError } = await supabaseAdmin
       .from("users")
       .select(
         `
@@ -76,7 +73,7 @@ export async function GET(request: NextRequest) {
 
     let matchesCount = 0
     try {
-      const { count } = await supabase
+      const { count } = await supabaseAdmin
         .from("swipe_actions")
         .select("*", { count: "exact", head: true })
         .eq("action", "like")
@@ -87,7 +84,9 @@ export async function GET(request: NextRequest) {
 
     let messagesCount = 0
     try {
-      const { count } = await supabase.from("messages").select("*", { count: "exact", head: true })
+      const { count } = await supabaseAdmin
+        .from("messages")
+        .select("*", { count: "exact", head: true })
       messagesCount = count || 0
     } catch (e) {
       messagesCount = 0
