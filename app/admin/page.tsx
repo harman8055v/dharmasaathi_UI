@@ -141,104 +141,25 @@ export default function AdminDashboard() {
   const fetchAdminData = async () => {
     setLoading(true)
     try {
-      // Fetch all users with complete data
-      const { data: usersData, error: usersError } = await supabase
-        .from("users")
-        .select(`
-          id,
-          first_name,
-          last_name,
-          email,
-          mobile_number,
-          birthdate,
-          gender,
-          city,
-          state,
-          country,
-          account_status,
-          verification_status,
-          created_at,
-          updated_at,
-          user_photos,
-          is_active,
-          email_verified,
-          mobile_verified,
-          about_me,
-          partner_expectations,
-          education,
-          profession,
-          annual_income,
-          diet,
-          temple_visit_freq,
-          onboarding_completed,
-          last_login_at
-        `)
-        .order("created_at", { ascending: false })
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+      const token = session?.access_token
+      const response = await fetch("/api/admin/dashboard", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: "include",
+      })
 
-      if (usersError) {
-        console.error("Error fetching users:", usersError)
-        toast({
-          title: "Error",
-          description: "Failed to fetch users data",
-          variant: "destructive",
-        })
-        return
+      if (!response.ok) {
+        throw new Error("Failed to fetch admin data")
       }
+
+      const { users: usersData, stats } = await response.json()
 
       setUsers(usersData || [])
-
-      // Calculate comprehensive stats
-      const totalUsers = usersData?.length || 0
-      const activeUsers = usersData?.filter((u) => u.is_active !== false).length || 0
-      const verifiedUsers = usersData?.filter((u) => u.verification_status === "verified").length || 0
-      const premiumUsers =
-        usersData?.filter((u) => ["premium", "elite", "sparsh", "sangam", "samarpan"].includes(u.account_status))
-          .length || 0
-
-      const today = new Date().toISOString().split("T")[0]
-      const todaySignups = usersData?.filter((u) => u.created_at?.startsWith(today)).length || 0
-
-      const pendingVerifications = usersData?.filter((u) => u.verification_status === "pending").length || 0
-      const maleUsers = usersData?.filter((u) => u.gender === "Male").length || 0
-      const femaleUsers = usersData?.filter((u) => u.gender === "Female").length || 0
-      const completedProfiles = usersData?.filter((u) => u.onboarding_completed === true).length || 0
-
-      // Fetch matches count - using try-catch for optional tables
-      let matchesCount = 0
-      try {
-        const { count } = await supabase
-          .from("swipe_actions")
-          .select("*", { count: "exact", head: true })
-          .eq("action", "like")
-        matchesCount = count || 0
-      } catch (error) {
-        console.log("Swipe actions table not found or accessible")
-        matchesCount = 0
-      }
-
-      // Fetch messages count - using try-catch for optional tables
-      let messagesCount = 0
-      try {
-        const { count } = await supabase.from("messages").select("*", { count: "exact", head: true })
-        messagesCount = count || 0
-      } catch (error) {
-        console.log("Messages table not found or accessible")
-        messagesCount = 0
-      }
-
-      setStats({
-        totalUsers,
-        activeUsers,
-        verifiedUsers,
-        premiumUsers,
-        todaySignups,
-        totalMatches: matchesCount,
-        totalMessages: messagesCount,
-        pendingVerifications,
-        maleUsers,
-        femaleUsers,
-        completedProfiles,
-      })
+      setStats(stats)
     } catch (error) {
       console.error("Error fetching admin data:", error)
       toast({
