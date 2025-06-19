@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -31,6 +32,8 @@ import {
   Download,
   RefreshCw,
   AlertTriangle,
+  LogOut,
+  User,
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -47,7 +50,7 @@ import { Label } from "@/components/ui/label"
 import { toast } from "@/hooks/use-toast"
 import Image from "next/image"
 
-interface User {
+interface UserType {
   id: string
   first_name: string
   last_name: string
@@ -75,6 +78,7 @@ interface User {
   temple_visit_freq: string
   onboarding_completed: boolean
   last_login_at: string
+  role: string
 }
 
 interface AdminStats {
@@ -110,8 +114,16 @@ interface UserMatch {
   status: string
 }
 
+interface AdminUser {
+  id: string
+  email: string
+  role: string
+  first_name: string
+  last_name: string
+}
+
 export default function AdminDashboard() {
-  const [users, setUsers] = useState<User[]>([])
+  const [users, setUsers] = useState<UserType[]>([])
   const [stats, setStats] = useState<AdminStats>({
     totalUsers: 0,
     activeUsers: 0,
@@ -129,15 +141,50 @@ export default function AdminDashboard() {
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [filterStatus, setFilterStatus] = useState("all")
-  const [selectedUser, setSelectedUser] = useState<User | null>(null)
+  const [selectedUser, setSelectedUser] = useState<UserType | null>(null)
   const [userMessages, setUserMessages] = useState<UserMessage[]>([])
   const [userMatches, setUserMatches] = useState<UserMatch[]>([])
-  const [editingUser, setEditingUser] = useState<User | null>(null)
+  const [editingUser, setEditingUser] = useState<UserType | null>(null)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
+  const [adminUser, setAdminUser] = useState<AdminUser | null>(null)
+  const router = useRouter()
 
   useEffect(() => {
+    fetchAdminUser()
     fetchAdminData()
   }, [])
+
+  const fetchAdminUser = async () => {
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+
+      if (session?.user) {
+        const { data: userData } = await supabase
+          .from("users")
+          .select("id, email, role, first_name, last_name")
+          .eq("id", session.user.id)
+          .single()
+
+        if (userData) {
+          setAdminUser(userData)
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching admin user:", error)
+    }
+  }
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut()
+      router.push("/admin/login")
+    } catch (error) {
+      console.error("Logout error:", error)
+      router.push("/admin/login")
+    }
+  }
 
   const fetchAdminData = async () => {
     setLoading(true)
@@ -158,7 +205,8 @@ export default function AdminDashboard() {
 
       if (!session) {
         console.error("No session found")
-        throw new Error("Please log in to access admin dashboard")
+        router.push("/admin/login")
+        return
       }
 
       console.log("User authenticated:", session.user.email)
@@ -263,7 +311,7 @@ export default function AdminDashboard() {
     }
   }
 
-  const fetchUserDetails = async (user: User) => {
+  const fetchUserDetails = async (user: UserType) => {
     setSelectedUser(user)
 
     try {
@@ -319,7 +367,7 @@ export default function AdminDashboard() {
     }
   }
 
-  const handleEditUser = async (updatedData: Partial<User>) => {
+  const handleEditUser = async (updatedData: Partial<UserType>) => {
     if (!editingUser) return
 
     setActionLoading("edit")
@@ -492,6 +540,36 @@ export default function AdminDashboard() {
                 <Download className="w-4 h-4 mr-2" />
                 Export
               </Button>
+
+              {/* Admin User Menu */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="flex items-center gap-2">
+                    <User className="w-4 h-4" />
+                    <span className="hidden sm:inline">
+                      {adminUser ? `${adminUser.first_name} ${adminUser.last_name}` : "Admin"}
+                    </span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuLabel>
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium">
+                        {adminUser ? `${adminUser.first_name} ${adminUser.last_name}` : "Admin User"}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{adminUser?.email}</p>
+                      <Badge variant="outline" className="text-xs w-fit">
+                        {adminUser?.role === "super_admin" ? "Super Admin" : "Admin"}
+                      </Badge>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </div>
@@ -732,6 +810,10 @@ export default function AdminDashboard() {
                             </h3>
                             {user.is_active === false && <Badge variant="destructive">Inactive</Badge>}
                             {!user.onboarding_completed && <Badge variant="outline">Incomplete</Badge>}
+                            {user.role === "admin" && <Badge className="bg-red-100 text-red-800">Admin</Badge>}
+                            {user.role === "super_admin" && (
+                              <Badge className="bg-red-200 text-red-900">Super Admin</Badge>
+                            )}
                           </div>
                           <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-sm text-gray-500">
                             <span className="flex items-center gap-1">
@@ -1098,6 +1180,10 @@ export default function AdminDashboard() {
                     </Badge>
                     {selectedUser.onboarding_completed && (
                       <Badge className="bg-green-100 text-green-800">Complete Profile</Badge>
+                    )}
+                    {selectedUser.role === "admin" && <Badge className="bg-red-100 text-red-800">Admin</Badge>}
+                    {selectedUser.role === "super_admin" && (
+                      <Badge className="bg-red-200 text-red-900">Super Admin</Badge>
                     )}
                   </div>
                 </div>
