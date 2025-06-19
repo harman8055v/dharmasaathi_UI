@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { supabase } from "@/lib/supabase"
-import { Loader2, Heart, Eye, EyeOff, ArrowLeft, Mail, CheckCircle, Phone } from "lucide-react"
+import { Loader2, Eye, EyeOff, ArrowLeft, Mail, CheckCircle, Phone } from "lucide-react"
 
 interface AuthDialogProps {
   isOpen: boolean
@@ -62,7 +62,6 @@ export default function AuthDialog({ isOpen, onClose, defaultMode }: AuthDialogP
   })
   const [errors, setErrors] = useState<FormErrors>({})
   const [isLoading, setIsLoading] = useState(false)
-  const [isSuccess, setIsSuccess] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [activeTab, setActiveTab] = useState(defaultMode)
   const [viewMode, setViewMode] = useState<ViewMode>("auth")
@@ -327,11 +326,11 @@ export default function AuthDialog({ isOpen, onClose, defaultMode }: AuthDialogP
               first_name: mobileAuthData.firstName,
               last_name: mobileAuthData.lastName,
               full_name: `${mobileAuthData.firstName} ${mobileAuthData.lastName}`,
-            mobile_number: mobileAuthData.mobileNumber,
-            email_verified: false,
-            mobile_verified: true,
-            verification_status: 'pending',
-            onboarding_completed: false,
+              mobile_number: mobileAuthData.mobileNumber,
+              email_verified: false,
+              mobile_verified: true,
+              verification_status: "pending",
+              onboarding_completed: false,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
             }
@@ -368,15 +367,10 @@ export default function AuthDialog({ isOpen, onClose, defaultMode }: AuthDialogP
         .eq("id", data.user.id)
         .single()
 
-      setIsSuccess(true)
-      setTimeout(() => {
-        onClose()
-        if (profile?.onboarding_completed) {
-          router.push("/dashboard")
-        } else {
-          router.push("/onboarding")
-        }
-      }, 2000)
+      // Close dialog and redirect to loading screen
+      onClose()
+      // Use router.push to navigate to loading screen with user data
+      router.push(`/auth-loading?userId=${data.user.id}&isNew=${activeTab === "signup"}`)
     } catch (error: any) {
       console.error("Verify OTP error:", error)
       if (error.message?.includes("Invalid token")) {
@@ -468,7 +462,7 @@ export default function AuthDialog({ isOpen, onClose, defaultMode }: AuthDialogP
             full_name: `${signupData.firstName} ${signupData.lastName}`,
             mobile_number: signupData.mobileNumber,
             email_verified: !!authData.user.email_confirmed_at, // Set based on auth status
-            verification_status: 'pending',
+            verification_status: "pending",
             onboarding_completed: false,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
@@ -483,11 +477,9 @@ export default function AuthDialog({ isOpen, onClose, defaultMode }: AuthDialogP
           console.error("Profile creation failed:", profileError)
         }
 
-        setIsSuccess(true)
-        setTimeout(() => {
-          onClose()
-          router.push("/onboarding")
-        }, 2000)
+        // Close dialog and redirect to loading screen
+        onClose()
+        router.push(`/auth-loading?userId=${authData.user.id}&isNew=true`)
       }
     } catch (error: any) {
       console.error("Sign up error:", error)
@@ -519,18 +511,9 @@ export default function AuthDialog({ isOpen, onClose, defaultMode }: AuthDialogP
       if (error) throw error
 
       if (data.user) {
-        const { data: profile } = await supabase
-          .from("users")
-          .select("onboarding_completed")
-          .eq("id", data.user.id)
-          .single()
-
+        // Close dialog and redirect to loading screen
         onClose()
-        if (profile?.onboarding_completed) {
-          router.push("/dashboard")
-        } else {
-          router.push("/onboarding")
-        }
+        router.push(`/auth-loading?userId=${data.user.id}&isNew=false`)
       }
     } catch (error: any) {
       console.error("Login error:", error)
@@ -577,7 +560,6 @@ export default function AuthDialog({ isOpen, onClose, defaultMode }: AuthDialogP
     setResetData({ email: "" })
     resetMobileAuth() // Add this line
     setErrors({})
-    setIsSuccess(false)
     setShowPassword(false)
     setViewMode("auth")
     setAuthMethod("email") // Add this line
@@ -601,29 +583,6 @@ export default function AuthDialog({ isOpen, onClose, defaultMode }: AuthDialogP
     if (loginData.email) {
       setResetData({ email: loginData.email })
     }
-  }
-
-  if (isSuccess) {
-    return (
-      <Dialog open={isOpen} onOpenChange={handleClose}>
-        <DialogContent className="sm:max-w-md sm:top-[20%] sm:translate-y-0 max-h-[90vh] overflow-y-auto">
-          <div className="text-center py-8">
-            <div className="animate-bounce mb-6">
-              <Heart className="w-16 h-16 text-orange-500 mx-auto" />
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Welcome to DharmaSaathi! 🌸</h2>
-            <p className="text-gray-600 mb-6">
-              Your account has been created successfully.
-              <br />
-              Redirecting you to complete your profile...
-            </p>
-            <div className="flex justify-center">
-              <Loader2 className="w-6 h-6 animate-spin text-orange-500" />
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-    )
   }
 
   if (viewMode === "reset-sent") {
