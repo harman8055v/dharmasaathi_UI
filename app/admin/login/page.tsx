@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2, Eye, EyeOff, Shield, AlertTriangle, ArrowLeft } from "lucide-react"
+import { Loader2, Eye, EyeOff, Shield, AlertTriangle, ArrowLeft, Info } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 
@@ -34,6 +34,7 @@ export default function AdminLogin() {
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
+  const [debugInfo, setDebugInfo] = useState<any>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -57,12 +58,25 @@ export default function AdminLogin() {
         // Check if user has admin role
         const { data: userData, error: userError } = await supabase
           .from("users")
-          .select("role, first_name, last_name")
+          .select("role, first_name, last_name, is_active")
           .eq("id", session.user.id)
           .single()
 
         if (userError) {
           console.error("User data fetch error:", userError)
+          setDebugInfo({
+            error: "User data fetch failed",
+            details: userError,
+            userId: session.user.id,
+            email: session.user.email,
+          })
+          setIsCheckingAuth(false)
+          return
+        }
+
+        if (userData?.is_active === false) {
+          await supabase.auth.signOut()
+          setErrors({ general: "Your account has been deactivated. Please contact support." })
           setIsCheckingAuth(false)
           return
         }
@@ -74,10 +88,17 @@ export default function AdminLogin() {
         } else {
           // User is authenticated but not admin, sign them out
           await supabase.auth.signOut()
+          setDebugInfo({
+            info: "User found but no admin role",
+            userData,
+            userId: session.user.id,
+            email: session.user.email,
+          })
         }
       }
     } catch (error) {
       console.error("Auth check error:", error)
+      setDebugInfo({ error: "Auth check failed", details: error })
     } finally {
       setIsCheckingAuth(false)
     }
@@ -113,8 +134,11 @@ export default function AdminLogin() {
 
     setIsLoading(true)
     setErrors({})
+    setDebugInfo(null)
 
     try {
+      console.log("Attempting login for:", loginData.email)
+
       // Attempt to sign in
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: loginData.email,
@@ -122,27 +146,46 @@ export default function AdminLogin() {
       })
 
       if (authError) {
+        console.error("Auth error:", authError)
         throw authError
       }
 
       if (!authData.user) {
-        throw new Error("Authentication failed")
+        throw new Error("Authentication failed - no user returned")
       }
 
-      // Check if user has admin role
+      console.log("Authentication successful, checking user role...")
+
+      // Check if user exists in users table and has admin role
       const { data: userData, error: userError } = await supabase
         .from("users")
-        .select("role, first_name, last_name, is_active")
+        .select("id, email, role, first_name, last_name, is_active, created_at")
         .eq("id", authData.user.id)
         .single()
 
+      console.log("User data query result:", { userData, userError })
+
       if (userError) {
         console.error("User data fetch error:", userError)
-        throw new Error("Failed to verify admin access")
+        setDebugInfo({
+          error: "Failed to fetch user profile",
+          details: userError,
+          userId: authData.user.id,
+          email: authData.user.email,
+          suggestion:
+            "The user might not exist in the users table. Please check if the user profile was created during registration.",
+        })
+        throw new Error("Failed to verify user profile. Please contact support.")
       }
 
       if (!userData) {
-        throw new Error("User profile not found")
+        setDebugInfo({
+          error: "User profile not found",
+          userId: authData.user.id,
+          email: authData.user.email,
+          suggestion: "User exists in auth but not in users table. Profile may need to be created.",
+        })
+        throw new Error("User profile not found. Please complete your registration first.")
       }
 
       // Check if user is active
@@ -152,8 +195,14 @@ export default function AdminLogin() {
       }
 
       // Check if user has admin role
-      if (userData.role !== "admin" && userData.role !== "super_admin") {
+      if (!userData.role || (userData.role !== "admin" && userData.role !== "super_admin")) {
         await supabase.auth.signOut()
+        setDebugInfo({
+          error: "Insufficient privileges",
+          userData,
+          suggestion:
+            "User role is not set to admin or super_admin. Please contact a super admin to grant admin privileges.",
+        })
         throw new Error("Access denied. Admin privileges required.")
       }
 
@@ -248,6 +297,26 @@ export default function AdminLogin() {
           <p className="text-gray-600">Sign in to access the admin dashboard</p>
         </div>
 
+        {/* Debug Info */}
+        {debugInfo && (
+          <Alert className="mb-6">
+            <Info className="h-4 w-4" />
+            <AlertDescription>
+              <div className="space-y-2">
+                <p className="font-medium">Debug Information:</p>
+                <pre className="text-xs bg-gray-100 p-2 rounded overflow-auto">
+                  {JSON.stringify(debugInfo, null, 2)}
+                </pre>
+                {debugInfo.suggestion && (
+                  <p className="text-sm text-blue-600">
+                    <strong>Suggestion:</strong> {debugInfo.suggestion}
+                  </p>
+                )}
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Login Card */}
         <Card className="shadow-lg border-0">
           <CardHeader className="space-y-1 pb-4">
@@ -328,8 +397,22 @@ export default function AdminLogin() {
               </Button>
             </form>
 
+            {/* Setup Instructions */}
+            <div className="mt-6 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-start gap-2">
+                <Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                <div className="text-xs text-blue-800">
+                  <p className="font-medium mb-1">First Time Setup?</p>
+                  <p>
+                    If you're setting up admin access for the first time, you'll need to run the SQL scripts to add the
+                    role column and promote your user to admin.
+                  </p>
+                </div>
+              </div>
+            </div>
+
             {/* Security Notice */}
-            <div className="mt-6 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+            <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
               <div className="flex items-start gap-2">
                 <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
                 <div className="text-xs text-amber-800">
