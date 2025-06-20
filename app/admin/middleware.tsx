@@ -21,6 +21,13 @@ interface AdminUser {
   is_active: boolean
 }
 
+// Helper function to check if role is admin (case-insensitive)
+const isAdminRole = (role: string | null): boolean => {
+  if (!role) return false
+  const normalizedRole = role.toLowerCase()
+  return normalizedRole === "admin" || normalizedRole === "super_admin" || normalizedRole === "superadmin"
+}
+
 export default function AdminMiddleware({ children }: AdminMiddlewareProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [isAuthorized, setIsAuthorized] = useState(false)
@@ -84,10 +91,10 @@ export default function AdminMiddleware({ children }: AdminMiddlewareProps) {
         throw new Error("Your account has been deactivated. Please contact support.")
       }
 
-      // Check if user has admin role
-      if (userData.role !== "admin" && userData.role !== "super_admin") {
+      // Check if user has admin role (case-insensitive)
+      if (!isAdminRole(userData.role)) {
         await supabase.auth.signOut()
-        console.log("User does not have admin role, redirecting to login")
+        console.log("User does not have admin role, redirecting to login. Current role:", userData.role)
         router.push("/admin/login")
         return
       }

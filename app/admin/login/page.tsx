@@ -25,6 +25,13 @@ interface FormErrors {
   general?: string
 }
 
+// Helper function to check if role is admin
+const isAdminRole = (role: string | null): boolean => {
+  if (!role) return false
+  const normalizedRole = role.toLowerCase()
+  return normalizedRole === "admin" || normalizedRole === "super_admin" || normalizedRole === "superadmin"
+}
+
 export default function AdminLogin() {
   const [loginData, setLoginData] = useState<LoginData>({
     email: "",
@@ -81,7 +88,7 @@ export default function AdminLogin() {
           return
         }
 
-        if (userData?.role === "admin" || userData?.role === "super_admin") {
+        if (isAdminRole(userData?.role)) {
           // User is already authenticated as admin, redirect to dashboard
           router.push("/admin")
           return
@@ -194,16 +201,20 @@ export default function AdminLogin() {
         throw new Error("Your account has been deactivated. Please contact support.")
       }
 
-      // Check if user has admin role
-      if (!userData.role || (userData.role !== "admin" && userData.role !== "super_admin")) {
+      // Check if user has admin role (case-insensitive)
+      if (!isAdminRole(userData.role)) {
         await supabase.auth.signOut()
         setDebugInfo({
           error: "Insufficient privileges",
           userData,
+          currentRole: userData.role,
+          expectedRoles: ["admin", "super_admin", "Admin", "Super_Admin"],
           suggestion:
-            "User role is not set to admin or super_admin. Please contact a super admin to grant admin privileges.",
+            "User role is not set to admin or super_admin. Current role: " +
+            (userData.role || "null") +
+            ". Please contact a super admin to grant admin privileges.",
         })
-        throw new Error("Access denied. Admin privileges required.")
+        throw new Error(`Access denied. Admin privileges required. Current role: ${userData.role || "none"}`)
       }
 
       // Log admin login
@@ -402,11 +413,8 @@ export default function AdminLogin() {
               <div className="flex items-start gap-2">
                 <Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
                 <div className="text-xs text-blue-800">
-                  <p className="font-medium mb-1">First Time Setup?</p>
-                  <p>
-                    If you're setting up admin access for the first time, you'll need to run the SQL scripts to add the
-                    role column and promote your user to admin.
-                  </p>
+                  <p className="font-medium mb-1">Role Detection</p>
+                  <p>The system now accepts: "admin", "Admin", "super_admin", "Super_Admin", or "superadmin" roles.</p>
                 </div>
               </div>
             </div>
