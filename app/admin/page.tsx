@@ -148,83 +148,39 @@ export default function AdminDashboard() {
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null)
 
   useEffect(() => {
-    initializeAdminDashboard()
+    // Since middleware handles auth, just fetch data directly
+    fetchAdminData()
+    fetchCurrentAdminUser()
   }, [])
 
-  const initializeAdminDashboard = async () => {
+  const fetchCurrentAdminUser = async () => {
     try {
-      setLoading(true)
-      setError(null)
-
-      console.log("Initializing admin dashboard...")
-
-      // Get current session
       const {
         data: { session },
-        error: sessionError,
       } = await supabase.auth.getSession()
 
-      if (sessionError) {
-        console.error("Session error:", sessionError)
-        setError("Authentication failed")
-        return
+      if (session?.user) {
+        const { data: userData } = await supabase
+          .from("users")
+          .select("id, email, role, first_name, last_name")
+          .eq("id", session.user.id)
+          .single()
+
+        if (userData) {
+          setAdminUser(userData)
+        }
       }
-
-      if (!session?.user) {
-        console.error("No session found")
-        setError("Please log in to access admin dashboard")
-        return
-      }
-
-      console.log("Session found for user:", session.user.email)
-
-      // Get admin user info
-      const { data: userData, error: userError } = await supabase
-        .from("users")
-        .select("id, email, role, first_name, last_name, is_active")
-        .eq("id", session.user.id)
-        .single()
-
-      if (userError) {
-        console.error("User fetch error:", userError)
-        setError("Failed to verify admin access")
-        return
-      }
-
-      if (!userData) {
-        setError("User profile not found")
-        return
-      }
-
-      // Check admin role
-      const isAdmin = userData.role?.toLowerCase() === "admin" || userData.role?.toLowerCase() === "super_admin"
-      if (!isAdmin) {
-        setError("Access denied: Admin privileges required")
-        return
-      }
-
-      // Check if user is active
-      if (userData.is_active === false) {
-        setError("Account deactivated. Contact support.")
-        return
-      }
-
-      console.log("Admin access verified:", userData.email)
-      setAdminUser(userData)
-
-      // Fetch dashboard data
-      await fetchDashboardData()
     } catch (error) {
-      console.error("Admin initialization error:", error)
-      setError(error instanceof Error ? error.message : "Failed to initialize admin dashboard")
-    } finally {
-      setLoading(false)
+      console.error("Error fetching admin user:", error)
     }
   }
 
-  const fetchDashboardData = async () => {
+  const fetchAdminData = async () => {
+    setLoading(true)
+    setError(null)
+
     try {
-      console.log("Fetching dashboard data...")
+      console.log("Fetching admin dashboard data...")
 
       const response = await fetch("/api/admin/dashboard", {
         method: "GET",
@@ -234,8 +190,11 @@ export default function AdminDashboard() {
         },
       })
 
+      console.log("API response status:", response.status)
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
+        console.error("API error:", errorData)
         throw new Error(errorData.error || `HTTP ${response.status}`)
       }
 
@@ -246,17 +205,6 @@ export default function AdminDashboard() {
       setStats(data.stats || {})
     } catch (error) {
       console.error("Dashboard data fetch error:", error)
-      throw error
-    }
-  }
-
-  // Update fetchAdminData to use the new function
-  const fetchAdminData = async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      await fetchDashboardData()
-    } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Failed to fetch admin data"
       setError(errorMessage)
       toast({
