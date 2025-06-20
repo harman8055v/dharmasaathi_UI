@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -147,75 +146,103 @@ export default function AdminDashboard() {
   const [editingUser, setEditingUser] = useState<UserType | null>(null)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null)
-  const router = useRouter()
+  const [sessionReady, setSessionReady] = useState(false)
 
   useEffect(() => {
-    fetchAdminUser()
-    fetchAdminData()
-  }, [])
+    // Wait for session to be ready before fetching data
+    const initializeAdmin = async () => {
+      try {
+        // First, ensure we have a valid session
+        const {
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession()
 
-  const fetchAdminUser = async () => {
-    try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
+        if (sessionError) {
+          console.error("Session error:", sessionError)
+          setError("Authentication failed")
+          setLoading(false)
+          return
+        }
 
-      if (session?.user) {
-        const { data: userData } = await supabase
+        if (!session?.user) {
+          console.error("No session found")
+          setError("No active session")
+          setLoading(false)
+          return
+        }
+
+        // Fetch admin user info
+        const { data: userData, error: userError } = await supabase
           .from("users")
           .select("id, email, role, first_name, last_name")
           .eq("id", session.user.id)
           .single()
 
+        if (userError) {
+          console.error("User data fetch error:", userError)
+          setError("Failed to fetch admin user data")
+          setLoading(false)
+          return
+        }
+
         if (userData) {
           setAdminUser(userData)
         }
+
+        setSessionReady(true)
+        // Now fetch admin data
+        await fetchAdminData()
+      } catch (error) {
+        console.error("Admin initialization error:", error)
+        setError("Failed to initialize admin dashboard")
+        setLoading(false)
       }
-    } catch (error) {
-      console.error("Error fetching admin user:", error)
     }
-  }
+
+    initializeAdmin()
+  }, [])
 
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut()
-      router.push("/admin/login")
+      window.location.href = "/admin/login"
     } catch (error) {
       console.error("Logout error:", error)
-      router.push("/admin/login")
+      window.location.href = "/admin/login"
     }
   }
 
   const fetchAdminData = async () => {
+    if (!sessionReady) {
+      console.log("Session not ready, skipping data fetch")
+      return
+    }
+
     setLoading(true)
     setError(null)
+
     try {
       console.log("Fetching admin data...")
 
-      // Check if user is authenticated first
+      // Double-check session before API call
       const {
         data: { session },
         error: sessionError,
       } = await supabase.auth.getSession()
 
-      if (sessionError) {
-        console.error("Session error:", sessionError)
-        throw new Error("Authentication failed")
+      if (sessionError || !session?.user) {
+        throw new Error("Session expired or invalid")
       }
 
-      if (!session) {
-        console.error("No session found")
-        router.push("/admin/login")
-        return
-      }
-
-      console.log("User authenticated:", session.user.email)
+      console.log("Making API request with session:", session.user.email)
 
       const response = await fetch("/api/admin/dashboard", {
         method: "GET",
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
         },
       })
 
@@ -495,6 +522,7 @@ export default function AdminDashboard() {
         <div className="text-center">
           <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-4 text-orange-500" />
           <p className="text-gray-600">Loading admin dashboard...</p>
+          {!sessionReady && <p className="text-sm text-gray-500 mt-2">Initializing session...</p>}
         </div>
       </div>
     )
@@ -507,13 +535,15 @@ export default function AdminDashboard() {
           <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-red-500" />
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Admin Dashboard Error</h2>
           <p className="text-gray-600 mb-4">{error}</p>
-          <Button onClick={fetchAdminData} className="mr-2">
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Retry
-          </Button>
-          <Button variant="outline" onClick={() => (window.location.href = "/")}>
-            Go Home
-          </Button>
+          <div className="flex gap-2 justify-center">
+            <Button onClick={fetchAdminData} className="mr-2">
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Retry
+            </Button>
+            <Button variant="outline" onClick={handleLogout}>
+              Go to Login
+            </Button>
+          </div>
         </div>
       </div>
     )
@@ -810,8 +840,10 @@ export default function AdminDashboard() {
                             </h3>
                             {user.is_active === false && <Badge variant="destructive">Inactive</Badge>}
                             {!user.onboarding_completed && <Badge variant="outline">Incomplete</Badge>}
-                            {user.role === "admin" && <Badge className="bg-red-100 text-red-800">Admin</Badge>}
-                            {user.role === "super_admin" && (
+                            {user.role?.toLowerCase() === "admin" && (
+                              <Badge className="bg-red-100 text-red-800">Admin</Badge>
+                            )}
+                            {user.role?.toLowerCase() === "super_admin" && (
                               <Badge className="bg-red-200 text-red-900">Super Admin</Badge>
                             )}
                           </div>
@@ -1181,8 +1213,10 @@ export default function AdminDashboard() {
                     {selectedUser.onboarding_completed && (
                       <Badge className="bg-green-100 text-green-800">Complete Profile</Badge>
                     )}
-                    {selectedUser.role === "admin" && <Badge className="bg-red-100 text-red-800">Admin</Badge>}
-                    {selectedUser.role === "super_admin" && (
+                    {selectedUser.role?.toLowerCase() === "admin" && (
+                      <Badge className="bg-red-100 text-red-800">Admin</Badge>
+                    )}
+                    {selectedUser.role?.toLowerCase() === "super_admin" && (
                       <Badge className="bg-red-200 text-red-900">Super Admin</Badge>
                     )}
                   </div>
