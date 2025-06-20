@@ -33,6 +33,11 @@ import {
   AlertTriangle,
   LogOut,
   User,
+  ChevronLeft,
+  ChevronRight,
+  MessageSquare,
+  Send,
+  ImageIcon,
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -94,23 +99,13 @@ interface AdminStats {
   completedProfiles: number
 }
 
-interface UserMessage {
-  id: string
-  sender_id: string
-  receiver_id: string
-  message: string
-  created_at: string
-  sender_name: string
-  receiver_name: string
-}
-
-interface UserMatch {
-  id: string
-  user1_id: string
-  user2_id: string
-  created_at: string
-  match_name: string
-  status: string
+interface PaginationInfo {
+  page: number
+  limit: number
+  total: number
+  totalPages: number
+  hasNext: boolean
+  hasPrev: boolean
 }
 
 interface AdminUser {
@@ -136,22 +131,43 @@ export default function AdminDashboard() {
     femaleUsers: 0,
     completedProfiles: 0,
   })
+  const [pagination, setPagination] = useState<PaginationInfo>({
+    page: 1,
+    limit: 20,
+    total: 0,
+    totalPages: 0,
+    hasNext: false,
+    hasPrev: false,
+  })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [filterStatus, setFilterStatus] = useState("all")
   const [selectedUser, setSelectedUser] = useState<UserType | null>(null)
-  const [userMessages, setUserMessages] = useState<UserMessage[]>([])
-  const [userMatches, setUserMatches] = useState<UserMatch[]>([])
   const [editingUser, setEditingUser] = useState<UserType | null>(null)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null)
+  const [activeTab, setActiveTab] = useState("overview")
+  const [notificationModal, setNotificationModal] = useState<{
+    open: boolean
+    user: UserType | null
+    message: string
+    type: string
+  }>({
+    open: false,
+    user: null,
+    message: "",
+    type: "profile_update",
+  })
 
   useEffect(() => {
-    // Since middleware handles auth, just fetch data directly
-    fetchAdminData()
     fetchCurrentAdminUser()
-  }, [])
+    if (activeTab === "overview") {
+      fetchAdminData(1, true) // Include stats for overview
+    } else {
+      fetchAdminData(1, false)
+    }
+  }, [activeTab, filterStatus, searchTerm])
 
   const fetchCurrentAdminUser = async () => {
     try {
@@ -175,14 +191,20 @@ export default function AdminDashboard() {
     }
   }
 
-  const fetchAdminData = async () => {
+  const fetchAdminData = async (page = 1, includeStats = false) => {
     setLoading(true)
     setError(null)
 
     try {
-      console.log("Fetching admin dashboard data...")
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: pagination.limit.toString(),
+        filter: filterStatus,
+        search: searchTerm,
+        include_stats: includeStats.toString(),
+      })
 
-      const response = await fetch("/api/admin/dashboard", {
+      const response = await fetch(`/api/admin/dashboard?${params}`, {
         method: "GET",
         credentials: "include",
         headers: {
@@ -190,19 +212,23 @@ export default function AdminDashboard() {
         },
       })
 
-      console.log("API response status:", response.status)
-
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
-        console.error("API error:", errorData)
         throw new Error(errorData.error || `HTTP ${response.status}`)
       }
 
       const data = await response.json()
-      console.log("Dashboard data received:", { usersCount: data.users?.length, stats: data.stats })
+      console.log("Dashboard data received:", {
+        usersCount: data.users?.length,
+        pagination: data.pagination,
+        stats: data.stats,
+      })
 
       setUsers(data.users || [])
-      setStats(data.stats || {})
+      setPagination(data.pagination)
+      if (data.stats) {
+        setStats(data.stats)
+      }
     } catch (error) {
       console.error("Dashboard data fetch error:", error)
       const errorMessage = error instanceof Error ? error.message : "Failed to fetch admin data"
@@ -214,6 +240,12 @@ export default function AdminDashboard() {
       })
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= pagination.totalPages) {
+      fetchAdminData(newPage, activeTab === "overview")
     }
   }
 
@@ -245,9 +277,6 @@ export default function AdminDashboard() {
         case "reject":
           updateData = { verification_status: "rejected" }
           break
-        case "changePlan":
-          updateData = { account_status: value }
-          break
         case "makeBasic":
           updateData = { account_status: "basic" }
           break
@@ -270,8 +299,8 @@ export default function AdminDashboard() {
         description: `User ${action} completed successfully`,
       })
 
-      // Refresh data
-      await fetchAdminData()
+      // Refresh current page
+      await fetchAdminData(pagination.page, activeTab === "overview")
 
       // Update selected user if it's the same one
       if (selectedUser?.id === userId) {
@@ -292,60 +321,69 @@ export default function AdminDashboard() {
     }
   }
 
-  const fetchUserDetails = async (user: UserType) => {
-    setSelectedUser(user)
+  const handleSendNotification = async () => {
+    if (!notificationModal.user || !notificationModal.message.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a message",
+        variant: "destructive",
+      })
+      return
+    }
 
     try {
-      // Fetch user's recent messages - using try-catch for optional tables
-      let messagesData: any[] = []
-      try {
-        const { data } = await supabase
-          .from("messages")
-          .select(`
-            id,
-            sender_id,
-            receiver_id,
-            message,
-            created_at
-          `)
-          .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
-          .order("created_at", { ascending: false })
-          .limit(10)
+      const response = await fetch("/api/admin/notify-user", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: notificationModal.user.id,
+          message: notificationModal.message,
+          type: notificationModal.type,
+        }),
+      })
 
-        messagesData = data || []
-      } catch (error) {
-        console.log("Messages table not accessible")
-        messagesData = []
+      if (!response.ok) {
+        throw new Error("Failed to send notification")
       }
 
-      // Fetch user's matches/swipes - using try-catch for optional tables
-      let swipesData: any[] = []
-      try {
-        const { data } = await supabase
-          .from("swipe_actions")
-          .select(`
-            id,
-            swiper_id,
-            swiped_id,
-            action,
-            created_at
-          `)
-          .eq("swiper_id", user.id)
-          .eq("action", "like")
-          .order("created_at", { ascending: false })
-          .limit(10)
+      toast({
+        title: "Success",
+        description: "Notification sent successfully",
+      })
 
-        swipesData = data || []
-      } catch (error) {
-        console.log("Swipe actions table not accessible")
-        swipesData = []
-      }
-
-      setUserMessages(messagesData)
-      setUserMatches(swipesData)
+      setNotificationModal({ open: false, user: null, message: "", type: "profile_update" })
     } catch (error) {
-      console.error("Error fetching user details:", error)
+      console.error("Error sending notification:", error)
+      toast({
+        title: "Error",
+        description: "Failed to send notification",
+        variant: "destructive",
+      })
     }
+  }
+
+  const openNotificationModal = (user: UserType, type = "profile_update") => {
+    const defaultMessages = {
+      profile_update:
+        "Hi! To complete your profile verification, please update your profile with complete information including photos, about section, and partner preferences.",
+      verification_pending:
+        "Your profile is currently under review. We'll notify you once the verification is complete.",
+      verification_rejected:
+        "Your profile verification needs some updates. Please review and update your profile information.",
+    }
+
+    setNotificationModal({
+      open: true,
+      user,
+      message: defaultMessages[type as keyof typeof defaultMessages] || "",
+      type,
+    })
+  }
+
+  const fetchUserDetails = async (user: UserType) => {
+    setSelectedUser(user)
   }
 
   const handleEditUser = async (updatedData: Partial<UserType>) => {
@@ -363,7 +401,7 @@ export default function AdminDashboard() {
       })
 
       setEditingUser(null)
-      await fetchAdminData()
+      await fetchAdminData(pagination.page, activeTab === "overview")
     } catch (error) {
       console.error("Error updating user:", error)
       toast({
@@ -378,9 +416,20 @@ export default function AdminDashboard() {
 
   const exportData = async () => {
     try {
+      // Fetch all users for export (without pagination)
+      const response = await fetch(`/api/admin/dashboard?limit=10000&filter=${filterStatus}&search=${searchTerm}`, {
+        method: "GET",
+        credentials: "include",
+      })
+
+      if (!response.ok) throw new Error("Failed to fetch data for export")
+
+      const data = await response.json()
+      const allUsers = data.users || []
+
       const csvContent = [
         ["Name", "Email", "Phone", "Gender", "Location", "Status", "Verification", "Joined", "Last Login"].join(","),
-        ...users.map((user) =>
+        ...allUsers.map((user: UserType) =>
           [
             `${user.first_name || ""} ${user.last_name || ""}`,
             user.email || "",
@@ -416,27 +465,6 @@ export default function AdminDashboard() {
     }
   }
 
-  const filteredUsers = users.filter((user) => {
-    const matchesSearch =
-      user.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.mobile_number?.includes(searchTerm)
-
-    const matchesFilter =
-      filterStatus === "all" ||
-      (filterStatus === "active" && user.is_active !== false) ||
-      (filterStatus === "inactive" && user.is_active === false) ||
-      (filterStatus === "verified" && user.verification_status === "verified") ||
-      (filterStatus === "pending" && user.verification_status === "pending") ||
-      (filterStatus === "rejected" && user.verification_status === "rejected") ||
-      (filterStatus === "premium" &&
-        ["premium", "elite", "sparsh", "sangam", "samarpan"].includes(user.account_status)) ||
-      (filterStatus === "incomplete" && !user.onboarding_completed)
-
-    return matchesSearch && matchesFilter
-  })
-
   const getStatusColor = (status: string) => {
     switch (status) {
       case "verified":
@@ -470,7 +498,7 @@ export default function AdminDashboard() {
     return age
   }
 
-  if (loading) {
+  if (loading && users.length === 0) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-50 to-pink-50 flex items-center justify-center">
         <div className="text-center">
@@ -489,7 +517,7 @@ export default function AdminDashboard() {
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Admin Dashboard Error</h2>
           <p className="text-gray-600 mb-4">{error}</p>
           <div className="flex gap-2 justify-center">
-            <Button onClick={fetchAdminData} className="mr-2">
+            <Button onClick={() => fetchAdminData(pagination.page, activeTab === "overview")} className="mr-2">
               <RefreshCw className="w-4 h-4 mr-2" />
               Retry
             </Button>
@@ -515,7 +543,12 @@ export default function AdminDashboard() {
               </Badge>
             </div>
             <div className="flex items-center gap-3">
-              <Button variant="outline" size="sm" onClick={fetchAdminData} disabled={loading}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fetchAdminData(pagination.page, activeTab === "overview")}
+                disabled={loading}
+              >
                 <RefreshCw className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`} />
                 Refresh
               </Button>
@@ -559,7 +592,7 @@ export default function AdminDashboard() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Tabs defaultValue="overview" className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:grid-cols-4">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <BarChart3 className="w-4 h-4" />
@@ -767,148 +800,50 @@ export default function AdminDashboard() {
 
             {/* Users List */}
             <Card>
-              <CardHeader>
-                <CardTitle>Users ({filteredUsers.length})</CardTitle>
-                <CardDescription>Manage all user accounts and their status</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {filteredUsers.map((user) => (
-                    <div
-                      key={user.id}
-                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
-                    >
-                      <div className="flex items-center gap-4">
-                        <Avatar className="h-12 w-12">
-                          <AvatarImage src={user.user_photos?.[0] || "/placeholder.svg"} />
-                          <AvatarFallback>
-                            {user.first_name?.[0] || "U"}
-                            {user.last_name?.[0] || "U"}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-medium">
-                              {user.first_name || "Unknown"} {user.last_name || "User"}
-                            </h3>
-                            {user.is_active === false && <Badge variant="destructive">Inactive</Badge>}
-                            {!user.onboarding_completed && <Badge variant="outline">Incomplete</Badge>}
-                            {user.role?.toLowerCase() === "admin" && (
-                              <Badge className="bg-red-100 text-red-800">Admin</Badge>
-                            )}
-                            {user.role?.toLowerCase() === "super_admin" && (
-                              <Badge className="bg-red-200 text-red-900">Super Admin</Badge>
-                            )}
-                          </div>
-                          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-sm text-gray-500">
-                            <span className="flex items-center gap-1">
-                              <Mail className="w-3 h-3" />
-                              {user.email || "No email"}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Phone className="w-3 h-3" />
-                              {user.mobile_number || "No phone"}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <MapPin className="w-3 h-3" />
-                              {user.city && user.state ? `${user.city}, ${user.state}` : "Location not set"}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2 mt-2">
-                            <Badge className={getStatusColor(user.verification_status)}>
-                              {user.verification_status || "pending"}
-                            </Badge>
-                            <Badge className={getStatusColor(user.account_status)}>
-                              {user.account_status || "basic"}
-                            </Badge>
-                            {user.gender && <Badge variant="outline">{user.gender}</Badge>}
-                            {user.birthdate && <Badge variant="outline">{calculateAge(user.birthdate)} years</Badge>}
-                            {user.last_login_at && (
-                              <Badge variant="outline" className="text-xs">
-                                Last: {new Date(user.last_login_at).toLocaleDateString()}
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" disabled={actionLoading?.startsWith(user.id)}>
-                            <MoreVertical className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => fetchUserDetails(user)}>
-                            <Eye className="w-4 h-4 mr-2" />
-                            View Details
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => setEditingUser(user)}>
-                            <Edit className="w-4 h-4 mr-2" />
-                            Edit Profile
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          {user.verification_status === "pending" && (
-                            <>
-                              <DropdownMenuItem onClick={() => handleUserAction(user.id, "verify")}>
-                                <CheckCircle className="w-4 h-4 mr-2" />
-                                Approve
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleUserAction(user.id, "reject")}>
-                                <XCircle className="w-4 h-4 mr-2" />
-                                Reject
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                            </>
-                          )}
-                          <DropdownMenuItem onClick={() => handleUserAction(user.id, "makeBasic")}>
-                            <Crown className="w-4 h-4 mr-2" />
-                            Make Basic
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleUserAction(user.id, "makePremium")}>
-                            <Crown className="w-4 h-4 mr-2" />
-                            Make Premium
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleUserAction(user.id, "makeElite")}>
-                            <Crown className="w-4 h-4 mr-2" />
-                            Make Elite
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          {user.is_active !== false ? (
-                            <DropdownMenuItem onClick={() => handleUserAction(user.id, "deactivate")}>
-                              <Ban className="w-4 h-4 mr-2" />
-                              Deactivate
-                            </DropdownMenuItem>
-                          ) : (
-                            <DropdownMenuItem onClick={() => handleUserAction(user.id, "activate")}>
-                              <CheckCircle className="w-4 h-4 mr-2" />
-                              Activate
-                            </DropdownMenuItem>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  ))}
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Users ({pagination.total.toLocaleString()})</CardTitle>
+                  <CardDescription>
+                    Showing {users.length} of {pagination.total} users (Page {pagination.page} of{" "}
+                    {pagination.totalPages})
+                  </CardDescription>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Verification Tab */}
-          <TabsContent value="verification" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Pending Verifications ({stats.pendingVerifications})</CardTitle>
-                <CardDescription>Review and approve user verification requests</CardDescription>
+                {/* Pagination Controls */}
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(pagination.page - 1)}
+                    disabled={!pagination.hasPrev || loading}
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+                  <span className="text-sm text-gray-600">
+                    {pagination.page} / {pagination.totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(pagination.page + 1)}
+                    disabled={!pagination.hasNext || loading}
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {users
-                    .filter((u) => u.verification_status === "pending")
-                    .map((user) => (
-                      <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
+                {loading && users.length === 0 ? (
+                  <div className="text-center py-8">
+                    <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-4 text-orange-500" />
+                    <p className="text-gray-600">Loading users...</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {users.map((user) => (
+                      <div
+                        key={user.id}
+                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
+                      >
                         <div className="flex items-center gap-4">
                           <Avatar className="h-12 w-12">
                             <AvatarImage src={user.user_photos?.[0] || "/placeholder.svg"} />
@@ -917,41 +852,243 @@ export default function AdminDashboard() {
                               {user.last_name?.[0] || "U"}
                             </AvatarFallback>
                           </Avatar>
-                          <div>
-                            <h3 className="font-medium">
-                              {user.first_name || "Unknown"} {user.last_name || "User"}
-                            </h3>
-                            <p className="text-sm text-gray-500">{user.email}</p>
-                            <div className="flex items-center gap-2 mt-1">
-                              <Badge variant="outline">{user.gender || "Not specified"}</Badge>
-                              {user.birthdate && <Badge variant="outline">{calculateAge(user.birthdate)} years</Badge>}
-                              <Badge variant="outline">
-                                {user.city && user.state ? `${user.city}, ${user.state}` : "Location not set"}
-                              </Badge>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-medium">
+                                {user.first_name || "Unknown"} {user.last_name || "User"}
+                              </h3>
+                              {user.is_active === false && <Badge variant="destructive">Inactive</Badge>}
+                              {!user.onboarding_completed && <Badge variant="outline">Incomplete</Badge>}
+                              {user.role?.toLowerCase() === "admin" && (
+                                <Badge className="bg-red-100 text-red-800">Admin</Badge>
+                              )}
+                              {user.role?.toLowerCase() === "super_admin" && (
+                                <Badge className="bg-red-200 text-red-900">Super Admin</Badge>
+                              )}
                             </div>
-                            <p className="text-xs text-gray-400 mt-1">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-sm text-gray-500">
+                              <span className="flex items-center gap-1">
+                                <Mail className="w-3 h-3" />
+                                {user.email || "No email"}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Phone className="w-3 h-3" />
+                                {user.mobile_number || "No phone"}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <MapPin className="w-3 h-3" />
+                                {user.city && user.state ? `${user.city}, ${user.state}` : "Location not set"}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2 mt-2">
+                              <Badge className={getStatusColor(user.verification_status)}>
+                                {user.verification_status || "pending"}
+                              </Badge>
+                              <Badge className={getStatusColor(user.account_status)}>
+                                {user.account_status || "basic"}
+                              </Badge>
+                              {user.gender && <Badge variant="outline">{user.gender}</Badge>}
+                              {user.birthdate && <Badge variant="outline">{calculateAge(user.birthdate)} years</Badge>}
+                              {user.last_login_at && (
+                                <Badge variant="outline" className="text-xs">
+                                  Last: {new Date(user.last_login_at).toLocaleDateString()}
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" disabled={actionLoading?.startsWith(user.id)}>
+                              <MoreVertical className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => fetchUserDetails(user)}>
+                              <Eye className="w-4 h-4 mr-2" />
+                              View Details
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setEditingUser(user)}>
+                              <Edit className="w-4 h-4 mr-2" />
+                              Edit Profile
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => openNotificationModal(user, "profile_update")}>
+                              <MessageSquare className="w-4 h-4 mr-2" />
+                              Send Notification
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            {user.verification_status === "pending" && (
+                              <>
+                                <DropdownMenuItem onClick={() => handleUserAction(user.id, "verify")}>
+                                  <CheckCircle className="w-4 h-4 mr-2" />
+                                  Approve
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleUserAction(user.id, "reject")}>
+                                  <XCircle className="w-4 h-4 mr-2" />
+                                  Reject
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                              </>
+                            )}
+                            <DropdownMenuItem onClick={() => handleUserAction(user.id, "makeBasic")}>
+                              <Crown className="w-4 h-4 mr-2" />
+                              Make Basic
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleUserAction(user.id, "makePremium")}>
+                              <Crown className="w-4 h-4 mr-2" />
+                              Make Premium
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleUserAction(user.id, "makeElite")}>
+                              <Crown className="w-4 h-4 mr-2" />
+                              Make Elite
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            {user.is_active !== false ? (
+                              <DropdownMenuItem onClick={() => handleUserAction(user.id, "deactivate")}>
+                                <Ban className="w-4 h-4 mr-2" />
+                                Deactivate
+                              </DropdownMenuItem>
+                            ) : (
+                              <DropdownMenuItem onClick={() => handleUserAction(user.id, "activate")}>
+                                <CheckCircle className="w-4 h-4 mr-2" />
+                                Activate
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Verification Tab */}
+          <TabsContent value="verification" className="space-y-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Pending Verifications ({stats.pendingVerifications})</CardTitle>
+                  <CardDescription>Review and approve user verification requests</CardDescription>
+                </div>
+                {/* Pagination Controls for Verification */}
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(pagination.page - 1)}
+                    disabled={!pagination.hasPrev || loading}
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+                  <span className="text-sm text-gray-600">
+                    {pagination.page} / {pagination.totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(pagination.page + 1)}
+                    disabled={!pagination.hasNext || loading}
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {users
+                    .filter((u) => u.verification_status === "pending")
+                    .map((user) => (
+                      <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex items-center gap-4">
+                          <Avatar className="h-16 w-16">
+                            <AvatarImage src={user.user_photos?.[0] || "/placeholder.svg"} />
+                            <AvatarFallback className="text-lg">
+                              {user.first_name?.[0] || "U"}
+                              {user.last_name?.[0] || "U"}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <h3 className="font-medium text-lg">
+                                {user.first_name || "Unknown"} {user.last_name || "User"}
+                              </h3>
+                              {!user.onboarding_completed && <Badge variant="outline">Incomplete Profile</Badge>}
+                            </div>
+                            <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
+                              <div>
+                                <p>
+                                  <Mail className="w-3 h-3 inline mr-1" />
+                                  {user.email}
+                                </p>
+                                <p>
+                                  <Phone className="w-3 h-3 inline mr-1" />
+                                  {user.mobile_number || "No phone"}
+                                </p>
+                              </div>
+                              <div>
+                                <p>
+                                  <MapPin className="w-3 h-3 inline mr-1" />
+                                  {user.city && user.state ? `${user.city}, ${user.state}` : "Location not set"}
+                                </p>
+                                <p>
+                                  <Calendar className="w-3 h-3 inline mr-1" />
+                                  {user.birthdate ? `${calculateAge(user.birthdate)} years` : "Age not set"}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 mt-2">
+                              <Badge variant="outline">{user.gender || "Not specified"}</Badge>
+                              <Badge variant="outline">{user.education || "Education not set"}</Badge>
+                              <Badge variant="outline">{user.profession || "Profession not set"}</Badge>
+                              {user.user_photos && user.user_photos.length > 0 && (
+                                <Badge variant="outline" className="text-green-600">
+                                  <ImageIcon className="w-3 h-3 mr-1" />
+                                  {user.user_photos.length} photos
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-xs text-gray-400 mt-2">
                               Submitted {new Date(user.created_at).toLocaleDateString()}
                             </p>
                           </div>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex flex-col gap-2">
+                          <Button size="sm" variant="outline" onClick={() => fetchUserDetails(user)}>
+                            <Eye className="w-4 h-4 mr-2" />
+                            Preview Profile
+                          </Button>
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => handleUserAction(user.id, "reject")}
-                            disabled={actionLoading === user.id + "reject"}
+                            onClick={() => openNotificationModal(user, "profile_update")}
                           >
-                            <XCircle className="w-4 h-4 mr-2" />
-                            Reject
+                            <MessageSquare className="w-4 h-4 mr-2" />
+                            Request Update
                           </Button>
-                          <Button
-                            size="sm"
-                            onClick={() => handleUserAction(user.id, "verify")}
-                            disabled={actionLoading === user.id + "verify"}
-                          >
-                            <CheckCircle className="w-4 h-4 mr-2" />
-                            Approve
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleUserAction(user.id, "reject")}
+                              disabled={actionLoading === user.id + "reject"}
+                            >
+                              <XCircle className="w-4 h-4 mr-2" />
+                              Reject
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={() => handleUserAction(user.id, "verify")}
+                              disabled={actionLoading === user.id + "verify"}
+                            >
+                              <CheckCircle className="w-4 h-4 mr-2" />
+                              Approve
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -959,7 +1096,8 @@ export default function AdminDashboard() {
                   {users.filter((u) => u.verification_status === "pending").length === 0 && (
                     <div className="text-center py-8 text-gray-500">
                       <Shield className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                      <p>No pending verifications</p>
+                      <p>No pending verifications on this page</p>
+                      {pagination.totalPages > 1 && <p className="text-sm mt-2">Check other pages or adjust filters</p>}
                     </div>
                   )}
                 </div>
@@ -1070,54 +1208,6 @@ export default function AdminDashboard() {
                 </CardContent>
               </Card>
             </div>
-
-            {/* Recent Signups Chart */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Activity</CardTitle>
-                <CardDescription>User registrations over the last 7 days</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {Array.from({ length: 7 }, (_, i) => {
-                    const date = new Date()
-                    date.setDate(date.getDate() - i)
-                    const dateStr = date.toISOString().split("T")[0]
-                    const count = users.filter((u) => u.created_at?.startsWith(dateStr)).length
-
-                    return (
-                      <div key={dateStr} className="flex items-center justify-between">
-                        <span className="text-sm">{date.toLocaleDateString()}</span>
-                        <div className="flex items-center gap-2">
-                          <div className="w-32 bg-gray-200 rounded-full h-2">
-                            <div
-                              className="bg-orange-500 h-2 rounded-full"
-                              style={{
-                                width: `${Math.min(
-                                  (count /
-                                    Math.max(
-                                      ...Array.from({ length: 7 }, (_, j) => {
-                                        const d = new Date()
-                                        d.setDate(d.getDate() - j)
-                                        return users.filter((u) =>
-                                          u.created_at?.startsWith(d.toISOString().split("T")[0]),
-                                        ).length
-                                      }),
-                                    )) *
-                                    100,
-                                  100,
-                                )}%`,
-                              }}
-                            ></div>
-                          </div>
-                          <Badge variant="outline">{count}</Badge>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </CardContent>
-            </Card>
           </TabsContent>
         </Tabs>
       </div>
@@ -1126,7 +1216,7 @@ export default function AdminDashboard() {
       <Dialog open={!!selectedUser} onOpenChange={() => setSelectedUser(null)}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>User Details</DialogTitle>
+            <DialogTitle>User Profile Preview</DialogTitle>
             <DialogDescription>
               Complete profile information and activity for {selectedUser?.first_name} {selectedUser?.last_name}
             </DialogDescription>
@@ -1251,26 +1341,19 @@ export default function AdminDashboard() {
                 </div>
               )}
 
-              {/* Recent Messages */}
-              {userMessages.length > 0 && (
-                <div>
-                  <h4 className="font-medium mb-2">Recent Messages</h4>
-                  <div className="space-y-2 max-h-32 overflow-y-auto">
-                    {userMessages.map((message) => (
-                      <div key={message.id} className="text-sm bg-gray-50 p-2 rounded">
-                        <p className="text-gray-600">{message.message}</p>
-                        <p className="text-xs text-gray-400">{new Date(message.created_at).toLocaleString()}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
               {/* Action Buttons */}
               <div className="flex flex-wrap gap-2 pt-4 border-t">
                 <Button variant="outline" size="sm" onClick={() => setEditingUser(selectedUser)}>
                   <Edit className="w-4 h-4 mr-2" />
                   Edit Profile
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => openNotificationModal(selectedUser, "profile_update")}
+                >
+                  <MessageSquare className="w-4 h-4 mr-2" />
+                  Send Notification
                 </Button>
                 {selectedUser.verification_status === "pending" && (
                   <>
@@ -1444,6 +1527,64 @@ export default function AdminDashboard() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Notification Modal */}
+      <Dialog
+        open={notificationModal.open}
+        onOpenChange={(open) => setNotificationModal({ ...notificationModal, open })}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Send Notification</DialogTitle>
+            <DialogDescription>
+              Send a notification to {notificationModal.user?.first_name} {notificationModal.user?.last_name}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="notification_type">Notification Type</Label>
+              <Select
+                value={notificationModal.type}
+                onValueChange={(value) => setNotificationModal({ ...notificationModal, type: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="profile_update">Profile Update Required</SelectItem>
+                  <SelectItem value="verification_pending">Verification Under Review</SelectItem>
+                  <SelectItem value="verification_rejected">Verification Update Needed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="notification_message">Message</Label>
+              <Textarea
+                id="notification_message"
+                value={notificationModal.message}
+                onChange={(e) => setNotificationModal({ ...notificationModal, message: e.target.value })}
+                rows={4}
+                placeholder="Enter your message here..."
+              />
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setNotificationModal({ open: false, user: null, message: "", type: "profile_update" })}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleSendNotification}>
+                <Send className="w-4 h-4 mr-2" />
+                Send Notification
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
