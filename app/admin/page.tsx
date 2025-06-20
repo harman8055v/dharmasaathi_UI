@@ -146,121 +146,117 @@ export default function AdminDashboard() {
   const [editingUser, setEditingUser] = useState<UserType | null>(null)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null)
-  const [sessionReady, setSessionReady] = useState(false)
 
   useEffect(() => {
-    // Wait for session to be ready before fetching data
-    const initializeAdmin = async () => {
-      try {
-        // First, ensure we have a valid session
-        const {
-          data: { session },
-          error: sessionError,
-        } = await supabase.auth.getSession()
-
-        if (sessionError) {
-          console.error("Session error:", sessionError)
-          setError("Authentication failed")
-          setLoading(false)
-          return
-        }
-
-        if (!session?.user) {
-          console.error("No session found")
-          setError("No active session")
-          setLoading(false)
-          return
-        }
-
-        // Fetch admin user info
-        const { data: userData, error: userError } = await supabase
-          .from("users")
-          .select("id, email, role, first_name, last_name")
-          .eq("id", session.user.id)
-          .single()
-
-        if (userError) {
-          console.error("User data fetch error:", userError)
-          setError("Failed to fetch admin user data")
-          setLoading(false)
-          return
-        }
-
-        if (userData) {
-          setAdminUser(userData)
-        }
-
-        setSessionReady(true)
-        // Now fetch admin data
-        await fetchAdminData()
-      } catch (error) {
-        console.error("Admin initialization error:", error)
-        setError("Failed to initialize admin dashboard")
-        setLoading(false)
-      }
-    }
-
-    initializeAdmin()
+    initializeAdminDashboard()
   }, [])
 
-  const handleLogout = async () => {
+  const initializeAdminDashboard = async () => {
     try {
-      await supabase.auth.signOut()
-      window.location.href = "/admin/login"
-    } catch (error) {
-      console.error("Logout error:", error)
-      window.location.href = "/admin/login"
-    }
-  }
+      setLoading(true)
+      setError(null)
 
-  const fetchAdminData = async () => {
-    if (!sessionReady) {
-      console.log("Session not ready, skipping data fetch")
-      return
-    }
+      console.log("Initializing admin dashboard...")
 
-    setLoading(true)
-    setError(null)
-
-    try {
-      console.log("Fetching admin data...")
-
-      // Double-check session before API call
+      // Get current session
       const {
         data: { session },
         error: sessionError,
       } = await supabase.auth.getSession()
 
-      if (sessionError || !session?.user) {
-        throw new Error("Session expired or invalid")
+      if (sessionError) {
+        console.error("Session error:", sessionError)
+        setError("Authentication failed")
+        return
       }
 
-      console.log("Making API request with session:", session.user.email)
+      if (!session?.user) {
+        console.error("No session found")
+        setError("Please log in to access admin dashboard")
+        return
+      }
+
+      console.log("Session found for user:", session.user.email)
+
+      // Get admin user info
+      const { data: userData, error: userError } = await supabase
+        .from("users")
+        .select("id, email, role, first_name, last_name, is_active")
+        .eq("id", session.user.id)
+        .single()
+
+      if (userError) {
+        console.error("User fetch error:", userError)
+        setError("Failed to verify admin access")
+        return
+      }
+
+      if (!userData) {
+        setError("User profile not found")
+        return
+      }
+
+      // Check admin role
+      const isAdmin = userData.role?.toLowerCase() === "admin" || userData.role?.toLowerCase() === "super_admin"
+      if (!isAdmin) {
+        setError("Access denied: Admin privileges required")
+        return
+      }
+
+      // Check if user is active
+      if (userData.is_active === false) {
+        setError("Account deactivated. Contact support.")
+        return
+      }
+
+      console.log("Admin access verified:", userData.email)
+      setAdminUser(userData)
+
+      // Fetch dashboard data
+      await fetchDashboardData()
+    } catch (error) {
+      console.error("Admin initialization error:", error)
+      setError(error instanceof Error ? error.message : "Failed to initialize admin dashboard")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const fetchDashboardData = async () => {
+    try {
+      console.log("Fetching dashboard data...")
 
       const response = await fetch("/api/admin/dashboard", {
         method: "GET",
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
         },
       })
 
-      console.log("API response status:", response.status)
-
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
-        console.error("API error:", errorData)
-        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`)
+        throw new Error(errorData.error || `HTTP ${response.status}`)
       }
 
       const data = await response.json()
-      console.log("Received data:", { usersCount: data.users?.length, stats: data.stats })
+      console.log("Dashboard data received:", { usersCount: data.users?.length, stats: data.stats })
 
       setUsers(data.users || [])
       setStats(data.stats || {})
     } catch (error) {
-      console.error("Error fetching admin data:", error)
+      console.error("Dashboard data fetch error:", error)
+      throw error
+    }
+  }
+
+  // Update fetchAdminData to use the new function
+  const fetchAdminData = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      await fetchDashboardData()
+    } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Failed to fetch admin data"
       setError(errorMessage)
       toast({
@@ -270,6 +266,16 @@ export default function AdminDashboard() {
       })
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut()
+      window.location.href = "/admin/login"
+    } catch (error) {
+      console.error("Logout error:", error)
+      window.location.href = "/admin/login"
     }
   }
 
@@ -522,7 +528,6 @@ export default function AdminDashboard() {
         <div className="text-center">
           <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-4 text-orange-500" />
           <p className="text-gray-600">Loading admin dashboard...</p>
-          {!sessionReady && <p className="text-sm text-gray-500 mt-2">Initializing session...</p>}
         </div>
       </div>
     )
