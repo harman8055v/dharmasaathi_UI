@@ -5,11 +5,13 @@ import { Button } from "@/components/ui/button"
 import { Menu, X } from "lucide-react"
 import Image from "next/image"
 import AuthDialog from "./auth-dialog"
+import { useRouter } from "next/navigation"
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isAuthOpen, setIsAuthOpen] = useState(false)
   const [authMode, setAuthMode] = useState<"signup" | "login">("login")
+  const router = useRouter()
 
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId)
@@ -54,10 +56,10 @@ export default function Header() {
                 How It Works
               </button>
               <button
-                onClick={() => scrollToSection("testimonials")}
+                onClick={() => router.push("/support")}
                 className="text-sm font-medium hover:text-primary transition-colors hover:scale-105 transform duration-200"
               >
-                Stories
+                Support
               </button>
               <button
                 onClick={() => scrollToSection("faq")}
@@ -111,10 +113,10 @@ export default function Header() {
                   How It Works
                 </button>
                 <button
-                  onClick={() => scrollToSection("testimonials")}
+                  onClick={() => router.push("/support")}
                   className="text-sm font-medium hover:text-primary transition-colors text-left px-2 py-1 rounded hover:bg-brand-50"
                 >
-                  Stories
+                  Support
                 </button>
                 <button
                   onClick={() => scrollToSection("faq")}
