@@ -13,6 +13,9 @@ import { Separator } from "@/components/ui/separator"
 import { toast } from "@/components/ui/use-toast"
 import { Phone, Mail, MessageCircle, Shield, Heart, Users, HelpCircle, Clock } from "lucide-react"
 
+import Header from "@/components/header" // Import Header
+import Footer from "@/components/footer" // Import Footer
+
 export default function SupportPage() {
   const [formData, setFormData] = useState({
     name: "",
@@ -146,205 +149,210 @@ export default function SupportPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-pink-50">
-      {/* Header Section */}
-      <div className="bg-gradient-to-r from-brand-600 to-primary text-white py-16">
-        <div className="container mx-auto px-4">
-          <div className="text-center max-w-3xl mx-auto">
-            <div className="flex justify-center mb-4">
-              <div className="bg-white/20 p-3 rounded-full">
-                <HelpCircle className="h-8 w-8" />
+    <div className="flex flex-col min-h-screen">
+      <Header />
+      <main className="flex-1 pt-16">
+        {" "}
+        {/* Added pt-16 to account for fixed header */}
+        {/* Header Section */}
+        <div className="bg-gradient-to-r from-brand-600 to-primary text-white py-16">
+          <div className="container mx-auto px-4">
+            <div className="text-center max-w-3xl mx-auto">
+              <div className="flex justify-center mb-4">
+                <div className="bg-white/20 p-3 rounded-full">
+                  <HelpCircle className="h-8 w-8" />
+                </div>
+              </div>
+              <h1 className="text-4xl md:text-5xl font-bold mb-4">We're Here to Help</h1>
+              <p className="text-xl text-white/90 mb-6">
+                Your spiritual journey to finding the perfect life partner should be smooth and supported. Our dedicated
+                team is committed to helping you every step of the way.
+              </p>
+              <div className="flex flex-wrap justify-center gap-4 text-sm">
+                <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
+                  <Clock className="h-3 w-3 mr-1" />
+                  24/7 Support
+                </Badge>
+                <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
+                  <Shield className="h-3 w-3 mr-1" />
+                  Secure & Private
+                </Badge>
+                <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
+                  <Heart className="h-3 w-3 mr-1" />
+                  Trusted by Thousands
+                </Badge>
               </div>
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">We're Here to Help</h1>
-            <p className="text-xl text-white/90 mb-6">
-              Your spiritual journey to finding the perfect life partner should be smooth and supported. Our dedicated
-              team is committed to helping you every step of the way.
-            </p>
-            <div className="flex flex-wrap justify-center gap-4 text-sm">
-              <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
-                <Clock className="h-3 w-3 mr-1" />
-                24/7 Support
-              </Badge>
-              <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
-                <Shield className="h-3 w-3 mr-1" />
-                Secure & Private
-              </Badge>
-              <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
-                <Heart className="h-3 w-3 mr-1" />
-                Trusted by Thousands
-              </Badge>
+          </div>
+        </div>
+        <div className="container mx-auto px-4 py-12">
+          <div className="grid lg:grid-cols-3 gap-8">
+            {/* Contact Information */}
+            <div className="lg:col-span-1">
+              <Card className="sticky top-8">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <MessageCircle className="h-5 w-5 text-primary" />
+                    Get in Touch
+                  </CardTitle>
+                  <CardDescription>Multiple ways to reach our support team</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Phone Support */}
+                  <div className="flex items-start gap-3">
+                    <div className="bg-green-100 p-2 rounded-lg">
+                      <Phone className="h-5 w-5 text-green-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900">Phone Support</h3>
+                      <p className="text-sm text-gray-600 mb-2">Call us directly for immediate assistance</p>
+                      <a
+                        href="tel:+919537376569"
+                        className="text-lg font-semibold text-primary hover:text-primary/80 transition-colors"
+                      >
+                        +91 95373 76569
+                      </a>
+                      <p className="text-xs text-gray-500 mt-1">Available 9 AM - 9 PM IST</p>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Email Support */}
+                  <div className="flex items-start gap-3">
+                    <div className="bg-blue-100 p-2 rounded-lg">
+                      <Mail className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900">Email Support</h3>
+                      <p className="text-sm text-gray-600 mb-2">Send us detailed queries</p>
+                      <a
+                        href="mailto:support@dharmasaathi.com"
+                        className="text-primary hover:text-primary/80 transition-colors"
+                      >
+                        support@dharmasaathi.com
+                      </a>
+                      <p className="text-xs text-gray-500 mt-1">Response within 24 hours</p>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Community */}
+                  <div className="flex items-start gap-3">
+                    <div className="bg-purple-100 p-2 rounded-lg">
+                      <Users className="h-5 w-5 text-purple-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900">Community Support</h3>
+                      <p className="text-sm text-gray-600 mb-2">Connect with other users</p>
+                      <p className="text-sm text-primary">Join our community forums</p>
+                      <p className="text-xs text-gray-500 mt-1">Coming soon</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Main Content */}
+            <div className="lg:col-span-2 space-y-8">
+              {/* Submit a Ticket */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Submit a Support Ticket</CardTitle>
+                  <CardDescription>
+                    Can't find what you're looking for? Send us a detailed message and we'll get back to you soon.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                          Full Name *
+                        </label>
+                        <Input
+                          id="name"
+                          type="text"
+                          value={formData.name}
+                          onChange={handleChange}
+                          required
+                          placeholder="Enter your full name"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                          Email Address *
+                        </label>
+                        <Input
+                          id="email"
+                          type="email"
+                          value={formData.email}
+                          onChange={handleChange}
+                          required
+                          placeholder="Enter your email"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-1">
+                        Subject *
+                      </label>
+                      <Input
+                        id="subject"
+                        type="text"
+                        value={formData.subject}
+                        onChange={handleChange}
+                        required
+                        placeholder="Brief description of your issue"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">
+                        Message *
+                      </label>
+                      <Textarea
+                        id="message"
+                        value={formData.message}
+                        onChange={handleChange}
+                        required
+                        rows={5}
+                        placeholder="Please provide detailed information about your issue or question..."
+                      />
+                    </div>
+                    <Button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="w-full bg-gradient-to-r from-brand-600 to-primary hover:from-brand-700 hover:to-primary/90"
+                    >
+                      {isSubmitting ? "Submitting..." : "Submit Ticket"}
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+
+              {/* FAQ Section */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Frequently Asked Questions</CardTitle>
+                  <CardDescription>Find quick answers to common questions about DharmaSaathi</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Accordion type="single" collapsible className="w-full">
+                    {faqs.map((faq, index) => (
+                      <AccordionItem key={index} value={`item-${index}`}>
+                        <AccordionTrigger className="text-left">{faq.question}</AccordionTrigger>
+                        <AccordionContent className="text-gray-600">{faq.answer}</AccordionContent>
+                      </AccordionItem>
+                    ))}
+                  </Accordion>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>
-      </div>
-
-      <div className="container mx-auto px-4 py-12">
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Contact Information */}
-          <div className="lg:col-span-1">
-            <Card className="sticky top-8">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MessageCircle className="h-5 w-5 text-primary" />
-                  Get in Touch
-                </CardTitle>
-                <CardDescription>Multiple ways to reach our support team</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Phone Support */}
-                <div className="flex items-start gap-3">
-                  <div className="bg-green-100 p-2 rounded-lg">
-                    <Phone className="h-5 w-5 text-green-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">Phone Support</h3>
-                    <p className="text-sm text-gray-600 mb-2">Call us directly for immediate assistance</p>
-                    <a
-                      href="tel:+919537376569"
-                      className="text-lg font-semibold text-primary hover:text-primary/80 transition-colors"
-                    >
-                      +91 95373 76569
-                    </a>
-                    <p className="text-xs text-gray-500 mt-1">Available 9 AM - 9 PM IST</p>
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Email Support */}
-                <div className="flex items-start gap-3">
-                  <div className="bg-blue-100 p-2 rounded-lg">
-                    <Mail className="h-5 w-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">Email Support</h3>
-                    <p className="text-sm text-gray-600 mb-2">Send us detailed queries</p>
-                    <a
-                      href="mailto:support@dharmasaathi.com"
-                      className="text-primary hover:text-primary/80 transition-colors"
-                    >
-                      support@dharmasaathi.com
-                    </a>
-                    <p className="text-xs text-gray-500 mt-1">Response within 24 hours</p>
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Community */}
-                <div className="flex items-start gap-3">
-                  <div className="bg-purple-100 p-2 rounded-lg">
-                    <Users className="h-5 w-5 text-purple-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">Community Support</h3>
-                    <p className="text-sm text-gray-600 mb-2">Connect with other users</p>
-                    <p className="text-sm text-primary">Join our community forums</p>
-                    <p className="text-xs text-gray-500 mt-1">Coming soon</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-8">
-            {/* Submit a Ticket */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Submit a Support Ticket</CardTitle>
-                <CardDescription>
-                  Can't find what you're looking for? Send us a detailed message and we'll get back to you soon.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                        Full Name *
-                      </label>
-                      <Input
-                        id="name"
-                        type="text"
-                        value={formData.name}
-                        onChange={handleChange}
-                        required
-                        placeholder="Enter your full name"
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                        Email Address *
-                      </label>
-                      <Input
-                        id="email"
-                        type="email"
-                        value={formData.email}
-                        onChange={handleChange}
-                        required
-                        placeholder="Enter your email"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-1">
-                      Subject *
-                    </label>
-                    <Input
-                      id="subject"
-                      type="text"
-                      value={formData.subject}
-                      onChange={handleChange}
-                      required
-                      placeholder="Brief description of your issue"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">
-                      Message *
-                    </label>
-                    <Textarea
-                      id="message"
-                      value={formData.message}
-                      onChange={handleChange}
-                      required
-                      rows={5}
-                      placeholder="Please provide detailed information about your issue or question..."
-                    />
-                  </div>
-                  <Button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="w-full bg-gradient-to-r from-brand-600 to-primary hover:from-brand-700 hover:to-primary/90"
-                  >
-                    {isSubmitting ? "Submitting..." : "Submit Ticket"}
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
-
-            {/* FAQ Section */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Frequently Asked Questions</CardTitle>
-                <CardDescription>Find quick answers to common questions about DharmaSaathi</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Accordion type="single" collapsible className="w-full">
-                  {faqs.map((faq, index) => (
-                    <AccordionItem key={index} value={`item-${index}`}>
-                      <AccordionTrigger className="text-left">{faq.question}</AccordionTrigger>
-                      <AccordionContent className="text-gray-600">{faq.answer}</AccordionContent>
-                    </AccordionItem>
-                  ))}
-                </Accordion>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </div>
+      </main>
+      <Footer />
     </div>
   )
 }
