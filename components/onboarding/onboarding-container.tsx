@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 import { debugLog } from "@/lib/logger"
@@ -123,9 +123,10 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
   }
 
   // Save and next handler
-  async function handleSaveAndNext(stagePayload: Partial<OnboardingData>) {
-    setIsLoading(true)
-    setError(null)
+  const handleSaveAndNext = useCallback(
+    async (stagePayload: Partial<OnboardingData>) => {
+      setIsLoading(true)
+      setError(null)
 
     try {
       const stageData = stagePayload // Use the payload passed directly from the stage
@@ -188,7 +189,7 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [stage, user, profile, setProfile, router])
 
   const validateStageData = (stageData: Partial<OnboardingData>, currentStage: number) => {
     switch (currentStage) {
