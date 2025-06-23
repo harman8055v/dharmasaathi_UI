@@ -1,174 +1,113 @@
 "use client"
 
-import { UserPlus, Search, MessageCircle, Heart } from "lucide-react"
+import { Heart, Users, MessageCircle, Sparkles } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { useState } from "react"
+
+const steps = [
+  {
+    icon: Heart,
+    title: "Create Your Sacred Profile",
+    description: "Share your spiritual journey, values, and what you seek in a dharma partner.",
+    details: "Build a meaningful profile that reflects your authentic spiritual self and attracts like-minded souls.",
+  },
+  {
+    icon: Users,
+    title: "Discover Aligned Souls",
+    description: "Our algorithm connects you with spiritually compatible partners on similar paths.",
+    details:
+      "Find matches based on spiritual practices, values, and life philosophy rather than just surface-level attraction.",
+  },
+  {
+    icon: MessageCircle,
+    title: "Connect Mindfully",
+    description: "Engage in meaningful conversations that go beyond the superficial.",
+    details: "Start conversations with intention, sharing your spiritual insights and building genuine connections.",
+  },
+  {
+    icon: Sparkles,
+    title: "Begin Your Journey Together",
+    description: "Transform from individual seekers into conscious partners walking the path together.",
+    details: "Create a relationship built on mutual growth, spiritual alignment, and shared purpose.",
+  },
+]
 
 export default function HowItWorks() {
   const [activeStep, setActiveStep] = useState(0)
 
-  const steps = [
-    {
-      icon: <UserPlus className="h-6 md:h-8 w-6 md:w-8" />,
-      title: "Create Profile",
-      description: "Share your spiritual journey, practices, and what you seek in a partner.",
-      detail:
-        "Begin by creating your authentic spiritual profile. Share your meditation practices, spiritual beliefs, and the qualities you seek in a dharma partner.",
-    },
-    {
-      icon: <Search className="h-6 md:h-8 w-6 md:w-8" />,
-      title: "Discover Matches",
-      description: "Our algorithm finds compatible spiritual seekers aligned with your path.",
-      detail:
-        "Our intelligent matching system analyzes your spiritual compatibility, values, and practices to connect you with like-minded souls on similar journeys.",
-    },
-    {
-      icon: <MessageCircle className="h-6 md:h-8 w-6 md:w-8" />,
-      title: "Mindful Connection",
-      description: "Engage in meaningful conversations about spirituality and life goals.",
-      detail:
-        "Connect through deep, meaningful conversations about your spiritual practices, life philosophy, and shared aspirations for growth and enlightenment.",
-    },
-    {
-      icon: <Heart className="h-6 md:h-8 w-6 md:w-8" />,
-      title: "Begin Together",
-      description: "Start your shared spiritual journey with your dharma partner.",
-      detail:
-        "Embark on a beautiful journey of spiritual growth together, supporting each other's path to enlightenment and building a conscious relationship.",
-    },
-  ]
-
   return (
-    <section id="how-it-works" className="py-12 md:py-16 lg:py-24 bg-gradient-to-b from-background to-muted/20">
+    <section id="how-it-works" className="py-12 md:py-16 lg:py-24 bg-gradient-to-b from-background to-background/90">
       <div className="container px-4 md:px-6">
-        {/* Header */}
-        <div className="flex flex-col items-center justify-center space-y-4 text-center mb-16 md:mb-20">
+        <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12 md:mb-16">
           <h2 className="text-2xl md:text-3xl font-bold tracking-tighter sm:text-4xl lg:text-5xl">
             Your Spiritual Journey
           </h2>
-          <p className="max-w-[700px] text-muted-foreground text-base md:text-lg lg:text-xl leading-relaxed px-4">
-            Four transformative steps to find your spiritual partner
+          <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+            Four transformative steps to finding your dharma partner and beginning a conscious relationship journey.
           </p>
         </div>
 
-        {/* Vertical Timeline */}
         <div className="relative max-w-4xl mx-auto">
-          {/* Central Timeline Line */}
-          <div className="absolute left-1/2 transform -translate-x-1/2 w-0.5 h-full bg-gradient-to-b from-primary/20 via-primary/40 to-primary/20" />
+          {/* Timeline Line */}
+          <div className="absolute left-1/2 transform -translate-x-1/2 w-0.5 bg-border" style={{ height: "85%" }} />
 
-          {/* Active Progress Line */}
+          {/* Progress Line */}
           <div
-            className="absolute left-1/2 transform -translate-x-1/2 w-0.5 bg-gradient-to-b from-primary to-primary/60 transition-all duration-1000 ease-out"
+            className="absolute left-1/2 transform -translate-x-1/2 w-0.5 bg-gradient-to-b from-primary to-primary/60 transition-all duration-700"
             style={{ height: `${((activeStep + 1) / steps.length) * 85}%` }}
           />
 
-          {/* Steps */}
           <div className="space-y-12 md:space-y-16">
-            {steps.map((step, index) => (
-              <div
-                key={index}
-                className={`relative flex items-center ${
-                  index % 2 === 0 ? "md:flex-row" : "md:flex-row-reverse"
-                } flex-col group cursor-pointer`}
-                onMouseEnter={() => setActiveStep(index)}
-                onClick={() => setActiveStep(index)}
-              >
-                {/* Content Card */}
-                <div className={`w-full md:w-5/12 ${index % 2 === 0 ? "md:pr-8" : "md:pl-8"}`}>
-                  <div
-                    className={`
-                      relative p-6 md:p-8 rounded-2xl border transition-all duration-500 transform
-                      ${
-                        activeStep === index
-                          ? "bg-white shadow-xl border-primary/30 scale-105 shadow-primary/10"
-                          : "bg-white/80 border-border hover:border-primary/20 hover:shadow-lg hover:scale-102"
-                      }
-                    `}
-                  >
-                    {/* Step Number Badge */}
+            {steps.map((step, index) => {
+              const Icon = step.icon
+              const isLeft = index % 2 === 0
+              const isActive = index === activeStep
+
+              return (
+                <div key={index} className="relative flex items-center justify-center">
+                  {/* Timeline Node */}
+                  <div className="absolute left-1/2 transform -translate-x-1/2 z-10">
                     <div
-                      className={`
-                        absolute -top-3 ${index % 2 === 0 ? "-right-3" : "-left-3"} 
-                        w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300
-                        ${
-                          activeStep === index
-                            ? "bg-primary text-white shadow-lg shadow-primary/30"
-                            : "bg-muted text-muted-foreground group-hover:bg-primary/10"
-                        }
-                      `}
+                      className={`w-12 h-12 rounded-full border-4 border-background flex items-center justify-center transition-all duration-300 ${
+                        isActive
+                          ? "bg-primary text-primary-foreground shadow-lg"
+                          : "bg-background text-muted-foreground border-border"
+                      }`}
                     >
-                      {index + 1}
+                      <Icon className="w-5 h-5" />
                     </div>
-
-                    <div className="space-y-4">
-                      <h3
-                        className={`
-                          text-xl md:text-2xl font-bold transition-colors duration-300
-                          ${activeStep === index ? "text-primary" : "text-foreground group-hover:text-primary"}
-                        `}
-                      >
-                        {step.title}
-                      </h3>
-
-                      <p
-                        className={`
-                          text-sm md:text-base leading-relaxed transition-all duration-300
-                          ${activeStep === index ? "text-foreground" : "text-muted-foreground"}
-                        `}
-                      >
-                        {activeStep === index ? step.detail : step.description}
-                      </p>
-                    </div>
-
-                    {/* Connecting Arrow */}
-                    <div
-                      className={`
-                        hidden md:block absolute top-1/2 transform -translate-y-1/2 
-                        ${index % 2 === 0 ? "-right-4" : "-left-4"}
-                        w-8 h-0.5 transition-all duration-300
-                        ${activeStep === index ? "bg-primary" : "bg-border group-hover:bg-primary/50"}
-                      `}
-                    />
                   </div>
-                </div>
 
-                {/* Central Icon */}
-                <div className="relative z-10 flex-shrink-0 my-4 md:my-0">
-                  <div
-                    className={`
-  relative flex h-16 w-16 md:h-20 md:w-20 items-center justify-center rounded-full 
-  transition-all duration-500 border-4 bg-white
-  ${
-    activeStep === index
-      ? "border-primary shadow-lg shadow-primary/10 scale-110"
-      : "border-muted group-hover:border-primary/50 group-hover:scale-105"
-  }
-`}
-                  >
-                    {/* Icon */}
+                  {/* Step Content */}
+                  <div className={`w-full max-w-md ${isLeft ? "pr-20 text-right" : "pl-20 text-left ml-auto"}`}>
                     <div
-                      className={`
-                        transition-all duration-300
-                        ${activeStep === index ? "text-primary" : "text-muted-foreground group-hover:text-primary"}
-                      `}
+                      className={`p-6 rounded-lg border bg-card transition-all duration-300 cursor-pointer ${
+                        isActive
+                          ? "shadow-lg border-primary/20 bg-primary/5"
+                          : "hover:shadow-md hover:border-primary/10"
+                      }`}
+                      onClick={() => setActiveStep(index)}
                     >
-                      {step.icon}
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm font-medium text-primary">Step {index + 1}</span>
+                        </div>
+                        <h3 className="text-xl font-semibold">{step.title}</h3>
+                        <p className="text-muted-foreground">{step.description}</p>
+                        {isActive && <p className="text-sm text-muted-foreground pt-2 border-t">{step.details}</p>}
+                      </div>
                     </div>
                   </div>
                 </div>
-
-                {/* Spacer for opposite side */}
-                <div className="hidden md:block w-5/12" />
-              </div>
-            ))}
+              )
+            })}
           </div>
+        </div>
 
-          {/* Call to Action */}
-          <div className="text-center mt-16 md:mt-20">
-            <div className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-primary/5 to-primary/10 rounded-full border border-primary/20 hover:border-primary/30 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10">
-              <Heart className="h-5 w-5 text-primary" />
-              <span className="text-base font-medium text-primary">Ready to begin your journey?</span>
-            </div>
-          </div>
+        <div className="text-center mt-12">
+          <Button size="lg" className="px-8">
+            Begin Your Journey
+          </Button>
         </div>
       </div>
     </section>
