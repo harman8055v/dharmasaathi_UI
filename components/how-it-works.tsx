@@ -58,7 +58,7 @@ export default function HowItWorks() {
           {/* Active Progress Line */}
           <div
             className="absolute left-1/2 transform -translate-x-1/2 w-0.5 bg-gradient-to-b from-primary to-primary/60 transition-all duration-1000 ease-out"
-            style={{ height: `${((activeStep + 1) / steps.length) * 100}%` }}
+            style={{ height: `${((activeStep + 1) / steps.length) * 85}%` }}
           />
 
           {/* Steps */}
@@ -135,20 +135,15 @@ export default function HowItWorks() {
                 <div className="relative z-10 flex-shrink-0 my-4 md:my-0">
                   <div
                     className={`
-                      relative flex h-16 w-16 md:h-20 md:w-20 items-center justify-center rounded-full 
-                      transition-all duration-500 border-4 bg-white
-                      ${
-                        activeStep === index
-                          ? "border-primary shadow-xl shadow-primary/20 scale-110"
-                          : "border-muted group-hover:border-primary/50 group-hover:scale-105"
-                      }
-                    `}
+  relative flex h-16 w-16 md:h-20 md:w-20 items-center justify-center rounded-full 
+  transition-all duration-500 border-4 bg-white
+  ${
+    activeStep === index
+      ? "border-primary shadow-lg shadow-primary/10 scale-110"
+      : "border-muted group-hover:border-primary/50 group-hover:scale-105"
+  }
+`}
                   >
-                    {/* Pulse Ring */}
-                    {activeStep === index && (
-                      <div className="absolute inset-0 rounded-full border-2 border-primary animate-ping opacity-20" />
-                    )}
-
                     {/* Icon */}
                     <div
                       className={`
