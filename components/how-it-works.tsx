@@ -8,191 +8,170 @@ export default function HowItWorks() {
 
   const steps = [
     {
-      icon: <UserPlus className="h-6 md:h-8 w-6 md:w-8 text-primary" />,
+      icon: <UserPlus className="h-6 md:h-8 w-6 md:w-8" />,
       title: "Create Profile",
       description: "Share your spiritual journey, practices, and what you seek in a partner.",
       detail:
         "Begin by creating your authentic spiritual profile. Share your meditation practices, spiritual beliefs, and the qualities you seek in a dharma partner.",
-      color: "from-rose-500/20 to-pink-500/20",
-      glow: "shadow-rose-500/25",
     },
     {
-      icon: <Search className="h-6 md:h-8 w-6 md:w-8 text-primary" />,
+      icon: <Search className="h-6 md:h-8 w-6 md:w-8" />,
       title: "Discover Matches",
       description: "Our algorithm finds compatible spiritual seekers aligned with your path.",
       detail:
         "Our intelligent matching system analyzes your spiritual compatibility, values, and practices to connect you with like-minded souls on similar journeys.",
-      color: "from-blue-500/20 to-indigo-500/20",
-      glow: "shadow-blue-500/25",
     },
     {
-      icon: <MessageCircle className="h-6 md:h-8 w-6 md:w-8 text-primary" />,
+      icon: <MessageCircle className="h-6 md:h-8 w-6 md:w-8" />,
       title: "Mindful Connection",
       description: "Engage in meaningful conversations about spirituality and life goals.",
       detail:
         "Connect through deep, meaningful conversations about your spiritual practices, life philosophy, and shared aspirations for growth and enlightenment.",
-      color: "from-green-500/20 to-emerald-500/20",
-      glow: "shadow-green-500/25",
     },
     {
-      icon: <Heart className="h-6 md:h-8 w-6 md:w-8 text-primary" />,
+      icon: <Heart className="h-6 md:h-8 w-6 md:w-8" />,
       title: "Begin Together",
       description: "Start your shared spiritual journey with your dharma partner.",
       detail:
         "Embark on a beautiful journey of spiritual growth together, supporting each other's path to enlightenment and building a conscious relationship.",
-      color: "from-purple-500/20 to-violet-500/20",
-      glow: "shadow-purple-500/25",
     },
   ]
 
   return (
-    <section
-      id="how-it-works"
-      className="py-12 md:py-16 lg:py-24 bg-gradient-to-b from-background to-background/90 overflow-hidden"
-    >
+    <section id="how-it-works" className="py-12 md:py-16 lg:py-24 bg-gradient-to-b from-background to-muted/20">
       <div className="container px-4 md:px-6">
-        <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12 md:mb-16">
-          <h2 className="text-2xl md:text-3xl font-bold tracking-tighter sm:text-4xl lg:text-5xl animate-fade-in-up">
+        {/* Header */}
+        <div className="flex flex-col items-center justify-center space-y-4 text-center mb-16 md:mb-20">
+          <h2 className="text-2xl md:text-3xl font-bold tracking-tighter sm:text-4xl lg:text-5xl">
             Your Spiritual Journey
           </h2>
-          <p className="max-w-[700px] text-muted-foreground text-base md:text-lg lg:text-xl leading-relaxed px-4 animate-fade-in-up delay-200">
+          <p className="max-w-[700px] text-muted-foreground text-base md:text-lg lg:text-xl leading-relaxed px-4">
             Four transformative steps to find your spiritual partner
           </p>
         </div>
 
-        {/* Interactive Journey Path */}
-        <div className="relative max-w-6xl mx-auto">
-          {/* Connection Lines */}
-          <div className="hidden lg:block absolute top-1/2 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-primary/30 to-transparent transform -translate-y-1/2 z-0" />
+        {/* Vertical Timeline */}
+        <div className="relative max-w-4xl mx-auto">
+          {/* Central Timeline Line */}
+          <div className="absolute left-1/2 transform -translate-x-1/2 w-0.5 h-full bg-gradient-to-b from-primary/20 via-primary/40 to-primary/20" />
 
-          {/* Progress Indicator */}
+          {/* Active Progress Line */}
           <div
-            className="hidden lg:block absolute top-1/2 left-0 h-0.5 bg-gradient-to-r from-primary to-primary/60 transform -translate-y-1/2 z-10 transition-all duration-1000 ease-out"
-            style={{ width: `${((activeStep + 1) / steps.length) * 100}%` }}
+            className="absolute left-1/2 transform -translate-x-1/2 w-0.5 bg-gradient-to-b from-primary to-primary/60 transition-all duration-1000 ease-out"
+            style={{ height: `${((activeStep + 1) / steps.length) * 100}%` }}
           />
 
-          {/* Steps Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-6 relative z-20">
+          {/* Steps */}
+          <div className="space-y-12 md:space-y-16">
             {steps.map((step, index) => (
               <div
                 key={index}
-                className={`group cursor-pointer transition-all duration-500 ${
-                  activeStep === index ? "scale-105" : "hover:scale-102"
-                }`}
+                className={`relative flex items-center ${
+                  index % 2 === 0 ? "md:flex-row" : "md:flex-row-reverse"
+                } flex-col group cursor-pointer`}
                 onMouseEnter={() => setActiveStep(index)}
                 onClick={() => setActiveStep(index)}
               >
-                {/* Step Card */}
-                <div
-                  className={`
-                  relative p-6 rounded-2xl border transition-all duration-500
-                  ${
-                    activeStep === index
-                      ? `bg-gradient-to-br ${step.color} border-primary/50 shadow-xl ${step.glow}`
-                      : "bg-white/80 border-border hover:border-primary/30 hover:shadow-lg"
-                  }
-                  backdrop-blur-sm
-                `}
-                >
-                  {/* Step Number */}
+                {/* Content Card */}
+                <div className={`w-full md:w-5/12 ${index % 2 === 0 ? "md:pr-8" : "md:pl-8"}`}>
                   <div
                     className={`
-                    absolute -top-3 -right-3 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300
-                    ${
-                      activeStep === index
-                        ? "bg-primary text-primary-foreground shadow-lg scale-110"
-                        : "bg-muted text-muted-foreground group-hover:bg-primary/20"
-                    }
-                  `}
-                  >
-                    {index + 1}
-                  </div>
-
-                  {/* Icon Container */}
-                  <div className="relative mb-6 flex justify-center">
-                    <div
-                      className={`
-                      relative flex h-16 w-16 items-center justify-center rounded-full transition-all duration-500
+                      relative p-6 md:p-8 rounded-2xl border transition-all duration-500 transform
                       ${
                         activeStep === index
-                          ? "bg-primary/10 shadow-lg scale-110"
-                          : "bg-primary/5 group-hover:bg-primary/10 group-hover:scale-105"
+                          ? "bg-white shadow-xl border-primary/30 scale-105 shadow-primary/10"
+                          : "bg-white/80 border-border hover:border-primary/20 hover:shadow-lg hover:scale-102"
                       }
                     `}
-                    >
-                      {/* Animated Ring */}
-                      <div
-                        className={`
-                        absolute inset-0 rounded-full border-2 transition-all duration-500
-                        ${
-                          activeStep === index
-                            ? "border-primary animate-pulse-glow"
-                            : "border-transparent group-hover:border-primary/30"
-                        }
-                      `}
-                      />
-
-                      {/* Icon */}
-                      <div
-                        className={`transition-all duration-300 ${
-                          activeStep === index ? "text-primary scale-110" : "text-primary/70 group-hover:text-primary"
-                        }`}
-                      >
-                        {step.icon}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Content */}
-                  <div className="text-center space-y-3">
-                    <h3
-                      className={`
-                      text-lg md:text-xl font-bold transition-all duration-300
-                      ${activeStep === index ? "text-primary" : "text-foreground group-hover:text-primary"}
-                    `}
-                    >
-                      {step.title}
-                    </h3>
-
-                    <p
-                      className={`
-                      text-sm md:text-base leading-relaxed transition-all duration-300
-                      ${activeStep === index ? "text-foreground" : "text-muted-foreground"}
-                    `}
-                    >
-                      {activeStep === index ? step.detail : step.description}
-                    </p>
-                  </div>
-
-                  {/* Active Step Indicator */}
-                  <div
-                    className={`
-                    absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 w-3 h-3 rounded-full transition-all duration-300
-                    ${activeStep === index ? "bg-primary shadow-lg" : "bg-transparent"}
-                  `}
-                  />
-                </div>
-
-                {/* Mobile Connection Line */}
-                {index < steps.length - 1 && (
-                  <div className="lg:hidden flex justify-center my-6">
+                  >
+                    {/* Step Number Badge */}
                     <div
                       className={`
-                      w-0.5 h-8 transition-all duration-500
-                      ${index < activeStep ? "bg-primary" : "bg-border"}
-                    `}
+                        absolute -top-3 ${index % 2 === 0 ? "-right-3" : "-left-3"} 
+                        w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300
+                        ${
+                          activeStep === index
+                            ? "bg-primary text-white shadow-lg shadow-primary/30"
+                            : "bg-muted text-muted-foreground group-hover:bg-primary/10"
+                        }
+                      `}
+                    >
+                      {index + 1}
+                    </div>
+
+                    <div className="space-y-4">
+                      <h3
+                        className={`
+                          text-xl md:text-2xl font-bold transition-colors duration-300
+                          ${activeStep === index ? "text-primary" : "text-foreground group-hover:text-primary"}
+                        `}
+                      >
+                        {step.title}
+                      </h3>
+
+                      <p
+                        className={`
+                          text-sm md:text-base leading-relaxed transition-all duration-300
+                          ${activeStep === index ? "text-foreground" : "text-muted-foreground"}
+                        `}
+                      >
+                        {activeStep === index ? step.detail : step.description}
+                      </p>
+                    </div>
+
+                    {/* Connecting Arrow */}
+                    <div
+                      className={`
+                        hidden md:block absolute top-1/2 transform -translate-y-1/2 
+                        ${index % 2 === 0 ? "-right-4" : "-left-4"}
+                        w-8 h-0.5 transition-all duration-300
+                        ${activeStep === index ? "bg-primary" : "bg-border group-hover:bg-primary/50"}
+                      `}
                     />
                   </div>
-                )}
+                </div>
+
+                {/* Central Icon */}
+                <div className="relative z-10 flex-shrink-0 my-4 md:my-0">
+                  <div
+                    className={`
+                      relative flex h-16 w-16 md:h-20 md:w-20 items-center justify-center rounded-full 
+                      transition-all duration-500 border-4 bg-white
+                      ${
+                        activeStep === index
+                          ? "border-primary shadow-xl shadow-primary/20 scale-110"
+                          : "border-muted group-hover:border-primary/50 group-hover:scale-105"
+                      }
+                    `}
+                  >
+                    {/* Pulse Ring */}
+                    {activeStep === index && (
+                      <div className="absolute inset-0 rounded-full border-2 border-primary animate-ping opacity-20" />
+                    )}
+
+                    {/* Icon */}
+                    <div
+                      className={`
+                        transition-all duration-300
+                        ${activeStep === index ? "text-primary" : "text-muted-foreground group-hover:text-primary"}
+                      `}
+                    >
+                      {step.icon}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Spacer for opposite side */}
+                <div className="hidden md:block w-5/12" />
               </div>
             ))}
           </div>
 
           {/* Call to Action */}
-          <div className="text-center mt-12 animate-fade-in-up delay-600">
-            <div className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary/10 to-primary/5 rounded-full border border-primary/20">
-              <Heart className="h-4 w-4 text-primary animate-pulse" />
-              <span className="text-sm font-medium text-primary">Ready to begin your journey?</span>
+          <div className="text-center mt-16 md:mt-20">
+            <div className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-primary/5 to-primary/10 rounded-full border border-primary/20 hover:border-primary/30 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10">
+              <Heart className="h-5 w-5 text-primary" />
+              <span className="text-base font-medium text-primary">Ready to begin your journey?</span>
             </div>
           </div>
         </div>
