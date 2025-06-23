@@ -5,13 +5,15 @@ import { Button } from "@/components/ui/button"
 import { Menu, X } from "lucide-react"
 import Image from "next/image"
 import AuthDialog from "./auth-dialog"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation" // Import usePathname
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isAuthOpen, setIsAuthOpen] = useState(false)
   const [authMode, setAuthMode] = useState<"signup" | "login">("login")
   const router = useRouter()
+  const pathname = usePathname() // Get current pathname
+  const isSupportPage = pathname === "/support" // Check if it's the support page
 
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId)
@@ -42,32 +44,34 @@ export default function Header() {
             </div>
 
             {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center space-x-8">
-              <button
-                onClick={() => scrollToSection("features")}
-                className="text-sm font-medium hover:text-primary transition-colors hover:scale-105 transform duration-200"
-              >
-                Features
-              </button>
-              <button
-                onClick={() => scrollToSection("how-it-works")}
-                className="text-sm font-medium hover:text-primary transition-colors hover:scale-105 transform duration-200"
-              >
-                How It Works
-              </button>
-              <button
-                onClick={() => router.push("/support")}
-                className="text-sm font-medium hover:text-primary transition-colors hover:scale-105 transform duration-200"
-              >
-                Support
-              </button>
-              <button
-                onClick={() => scrollToSection("faq")}
-                className="text-sm font-medium hover:text-primary transition-colors hover:scale-105 transform duration-200"
-              >
-                FAQ
-              </button>
-            </nav>
+            {!isSupportPage && ( // Conditionally render navigation links
+              <nav className="hidden md:flex items-center space-x-8">
+                <button
+                  onClick={() => scrollToSection("features")}
+                  className="text-sm font-medium hover:text-primary transition-colors hover:scale-105 transform duration-200"
+                >
+                  Features
+                </button>
+                <button
+                  onClick={() => scrollToSection("how-it-works")}
+                  className="text-sm font-medium hover:text-primary transition-colors hover:scale-105 transform duration-200"
+                >
+                  How It Works
+                </button>
+                <button
+                  onClick={() => router.push("/support")}
+                  className="text-sm font-medium hover:text-primary transition-colors hover:scale-105 transform duration-200"
+                >
+                  Support
+                </button>
+                <button
+                  onClick={() => scrollToSection("faq")}
+                  className="text-sm font-medium hover:text-primary transition-colors hover:scale-105 transform duration-200"
+                >
+                  FAQ
+                </button>
+              </nav>
+            )}
 
             <div className="hidden md:flex items-center space-x-4">
               <Button
@@ -100,31 +104,35 @@ export default function Header() {
           {isMenuOpen && (
             <div className="md:hidden py-4 border-t bg-white/95 backdrop-blur-sm rounded-b-lg">
               <nav className="flex flex-col space-y-4">
-                <button
-                  onClick={() => scrollToSection("features")}
-                  className="text-sm font-medium hover:text-primary transition-colors text-left px-2 py-1 rounded hover:bg-brand-50"
-                >
-                  Features
-                </button>
-                <button
-                  onClick={() => scrollToSection("how-it-works")}
-                  className="text-sm font-medium hover:text-primary transition-colors text-left px-2 py-1 rounded hover:bg-brand-50"
-                >
-                  How It Works
-                </button>
-                <button
-                  onClick={() => router.push("/support")}
-                  className="text-sm font-medium hover:text-primary transition-colors text-left px-2 py-1 rounded hover:bg-brand-50"
-                >
-                  Support
-                </button>
-                <button
-                  onClick={() => scrollToSection("faq")}
-                  className="text-sm font-medium hover:text-primary transition-colors text-left px-2 py-1 rounded hover:bg-brand-50"
-                >
-                  FAQ
-                </button>
-                <div className="flex flex-col space-y-2 pt-4 border-t">
+                {!isSupportPage && ( // Conditionally render navigation links for mobile
+                  <>
+                    <button
+                      onClick={() => scrollToSection("features")}
+                      className="text-sm font-medium hover:text-primary transition-colors text-left px-2 py-1 rounded hover:bg-brand-50"
+                    >
+                      Features
+                    </button>
+                    <button
+                      onClick={() => scrollToSection("how-it-works")}
+                      className="text-sm font-medium hover:text-primary transition-colors text-left px-2 py-1 rounded hover:bg-brand-50"
+                    >
+                      How It Works
+                    </button>
+                    <button
+                      onClick={() => router.push("/support")}
+                      className="text-sm font-medium hover:text-primary transition-colors text-left px-2 py-1 rounded hover:bg-brand-50"
+                    >
+                      Support
+                    </button>
+                    <button
+                      onClick={() => scrollToSection("faq")}
+                      className="text-sm font-medium hover:text-primary transition-colors text-left px-2 py-1 rounded hover:bg-brand-50"
+                    >
+                      FAQ
+                    </button>
+                  </>
+                )}
+                <div className={`flex flex-col space-y-2 pt-4 ${!isSupportPage ? "border-t" : ""}`}>
                   <Button
                     variant="ghost"
                     onClick={() => openAuth("login")}
