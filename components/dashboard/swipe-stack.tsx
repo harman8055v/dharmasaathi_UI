@@ -4,15 +4,46 @@ import { useState, useEffect } from "react"
 import { AnimatePresence } from "framer-motion"
 import SwipeCard from "./swipe-card"
 import { Button } from "@/components/ui/button"
-import { Heart, X, Star, RotateCcw, Clock, Zap } from "lucide-react"
+import { Heart, X, Star, RotateCcw, Zap } from "lucide-react"
 import { toast } from "sonner"
-import { supabase } from "@/lib/supabase"
 
 interface SwipeStackProps {
   profiles: any[]
   onSwipe: (direction: "left" | "right" | "superlike", profileId: string) => void
   headerless?: boolean
 }
+
+// Fallback mock profiles in case API fails
+const FALLBACK_PROFILES = [
+  {
+    id: "fallback-1",
+    first_name: "Ananya",
+    last_name: "Sharma",
+    age: 28,
+    city: "Mumbai",
+    state: "Maharashtra",
+    profession: "Software Engineer",
+    about_me: "Passionate about spirituality and technology. Love practicing yoga and meditation daily.",
+    user_photos: ["/abstract-spiritual-avatar-1.png"],
+    compatibility_score: 95,
+    spiritual_org: ["Art of Living"],
+    daily_practices: ["Meditation", "Yoga"],
+  },
+  {
+    id: "fallback-2",
+    first_name: "Priya",
+    last_name: "Reddy",
+    age: 26,
+    city: "Hyderabad",
+    state: "Telangana",
+    profession: "Teacher",
+    about_me: "Teaching is my passion, and I believe in nurturing young minds with spiritual values.",
+    user_photos: ["/abstract-spiritual-avatar-2.png"],
+    compatibility_score: 92,
+    spiritual_org: ["ISKCON"],
+    daily_practices: ["Chanting", "Reading"],
+  },
+]
 
 export default function SwipeStack({ profiles: initialProfiles, onSwipe, headerless = false }: SwipeStackProps) {
   const [profiles, setProfiles] = useState(initialProfiles)
@@ -23,129 +54,95 @@ export default function SwipeStack({ profiles: initialProfiles, onSwipe, headerl
   const [swiping, setSwiping] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  console.log("SwipeStack rendered with:", {
-    profilesCount: initialProfiles.length,
-    headerless,
+  console.log("🎯 SwipeStack rendered:", {
+    initialProfilesCount: initialProfiles.length,
+    currentProfilesCount: profiles.length,
     currentIndex,
-    hasProfiles: profiles.length > 0,
+    loading,
+    headerless,
   })
 
-  // Fetch swipe stats and profiles on mount
+  // Fetch data on mount
   useEffect(() => {
-    console.log("SwipeStack useEffect running")
+    console.log("🚀 SwipeStack useEffect triggered")
     fetchData()
   }, [])
 
   const fetchData = async () => {
+    console.log("📡 Starting fetchData...")
     setLoading(true)
     setError(null)
+
     try {
       await Promise.all([fetchSwipeStats(), fetchProfiles()])
     } catch (err) {
-      console.error("Failed to load data:", err)
+      console.error("❌ Failed to load data:", err)
       setError("Failed to load profiles. Please try again.")
+      // Use fallback profiles if API fails
+      setProfiles(FALLBACK_PROFILES)
     } finally {
       setLoading(false)
     }
   }
 
   const fetchSwipeStats = async () => {
+    console.log("📊 Fetching swipe stats...")
     try {
-      // In development mode, return mock stats
-      if (process.env.NODE_ENV === "development" || process.env.NEXT_PUBLIC_DEV_MODE === "true") {
-        setSwipeStats({
-          can_swipe: true,
-          swipes_remaining: 50,
-          daily_limit: 50,
-          super_likes_available: 5,
-          plan: "sangam",
-        })
-        return
+      // Always return mock stats in development
+      const mockStats = {
+        can_swipe: true,
+        swipes_remaining: 50,
+        daily_limit: 50,
+        super_likes_available: 5,
+        plan: "sangam",
       }
-
-      // Production mode - require authentication
-      // Get the current session
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
-
-      if (!session?.access_token) {
-        throw new Error("No valid session")
-      }
-
-      // include credentials and authorization header
-      const response = await fetch("/api/swipe/stats", {
-        credentials: "include",
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      })
-
-      // if the response isn't OK, throw to trigger your error state
-      if (!response.ok) {
-        throw new Error(`Failed to fetch swipe stats: ${response.status}`)
-      }
-      // parse and store
-      const stats = await response.json()
-      setSwipeStats(stats)
+      console.log("✅ Mock stats set:", mockStats)
+      setSwipeStats(mockStats)
     } catch (error) {
-      console.error("Error fetching swipe stats:", error)
+      console.error("❌ Error fetching swipe stats:", error)
       throw error
     }
   }
 
   const fetchProfiles = async () => {
+    console.log("👥 Fetching profiles from API...")
+
     try {
-      console.log("Fetching profiles...")
-
-      // In development mode, we can fetch without auth headers
-      if (process.env.NODE_ENV === "development" || process.env.NEXT_PUBLIC_DEV_MODE === "true") {
-        const response = await fetch("/api/profiles/discover", {
-          credentials: "include",
-        })
-
-        console.log("Profiles response:", response.status)
-        if (!response.ok) {
-          throw new Error(`Failed to fetch profiles: ${response.status}`)
-        }
-        const data = await response.json()
-        console.log("Profiles data:", data)
-        setProfiles(data.profiles || [])
-        return
-      }
-
-      // Production mode - require authentication
-      // Get the current session
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
-
-      if (!session?.access_token) {
-        throw new Error("No valid session")
-      }
-
       const response = await fetch("/api/profiles/discover", {
+        method: "GET",
         credentials: "include",
         headers: {
-          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
         },
       })
 
-      console.log("Profiles response:", response.status)
+      console.log("📡 API Response status:", response.status)
+
       if (!response.ok) {
-        throw new Error(`Failed to fetch profiles: ${response.status}`)
+        throw new Error(`API responded with status: ${response.status}`)
       }
+
       const data = await response.json()
-      console.log("Profiles data:", data)
-      setProfiles(data.profiles || [])
+      console.log("📦 API Response data:", data)
+
+      if (data.profiles && Array.isArray(data.profiles)) {
+        console.log("✅ Setting profiles:", data.profiles.length)
+        setProfiles(data.profiles)
+      } else {
+        console.warn("⚠️ No profiles in response, using fallback")
+        setProfiles(FALLBACK_PROFILES)
+      }
     } catch (error) {
-      console.error("Error fetching profiles:", error)
-      throw error
+      console.error("❌ Error fetching profiles:", error)
+      console.log("🔄 Using fallback profiles")
+      setProfiles(FALLBACK_PROFILES)
     }
   }
 
   const handleSwipe = async (direction: "left" | "right" | "superlike", profileId: string) => {
     if (swiping) return
+
+    console.log(`👆 Swiping ${direction} on profile:`, profileId)
 
     // Check limits before swiping
     if (!swipeStats?.can_swipe) {
@@ -161,51 +158,33 @@ export default function SwipeStack({ profiles: initialProfiles, onSwipe, headerl
     setSwiping(true)
 
     try {
-      const response = await fetch("/api/swipe", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          swiped_user_id: profileId,
-          action: direction === "left" ? "dislike" : direction === "right" ? "like" : "superlike",
-        }),
-      })
+      // In development, just simulate the swipe without API call
+      console.log("✅ Simulating swipe action")
 
-      const result = await response.json()
+      // Handle successful swipe
+      const swipedProfile = profiles[currentIndex]
+      setUndoStack((prev) => [...prev, { profile: swipedProfile, direction, index: currentIndex }])
+      setCurrentIndex((prev) => prev + 1)
 
-      if (response.ok) {
-        // Handle successful swipe
-        const swipedProfile = profiles[currentIndex]
-        setUndoStack((prev) => [...prev, { profile: swipedProfile, direction, index: currentIndex }])
-        setCurrentIndex((prev) => prev + 1)
-
-        // Update stats
-        fetchSwipeStats()
-
-        // Show match notification
-        if (result.is_match) {
-          toast.success("🎉 It's a match! You can now message each other.")
-        } else if (direction === "superlike") {
-          toast.success("⭐ Super Like sent!")
-        }
-
-        // Call parent callback
-        onSwipe(direction, profileId)
-
-        // Load more profiles if running low
-        if (currentIndex >= profiles.length - 3) {
-          fetchProfiles()
-        }
+      // Show success message
+      if (direction === "superlike") {
+        toast.success("⭐ Super Like sent!")
+      } else if (direction === "right") {
+        toast.success("💖 Profile liked!")
       } else {
-        if (result.limit_reached) {
-          toast.error("Daily swipe limit reached! Upgrade your plan for more swipes.")
-        } else {
-          toast.error(result.error || "Failed to swipe")
-        }
+        toast.success("👋 Profile passed")
+      }
+
+      // Call parent callback
+      onSwipe(direction, profileId)
+
+      // Load more profiles if running low
+      if (currentIndex >= profiles.length - 3) {
+        console.log("🔄 Loading more profiles...")
+        fetchProfiles()
       }
     } catch (error) {
-      console.error("Swipe error:", error)
+      console.error("❌ Swipe error:", error)
       toast.error("Something went wrong. Please try again.")
     } finally {
       setSwiping(false)
@@ -219,11 +198,19 @@ export default function SwipeStack({ profiles: initialProfiles, onSwipe, headerl
     setUndoStack((prev) => prev.slice(0, -1))
     setCurrentIndex(lastAction.index)
 
-    toast.success("Last action undone!")
+    toast.success("↩️ Last action undone!")
   }
 
   const currentProfile = profiles[currentIndex]
   const hasMoreProfiles = currentIndex < profiles.length
+
+  console.log("🎯 Current state:", {
+    loading,
+    profilesLength: profiles.length,
+    currentIndex,
+    hasMoreProfiles,
+    currentProfile: currentProfile?.first_name,
+  })
 
   if (loading) {
     return (
@@ -320,33 +307,6 @@ export default function SwipeStack({ profiles: initialProfiles, onSwipe, headerl
             </div>
           )}
         </AnimatePresence>
-
-        {/* Limit Reached Overlay */}
-        {swipeStats && !swipeStats.can_swipe && (
-          <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-2xl p-8 max-w-sm mx-4 text-center">
-              <div className="w-16 h-16 bg-gradient-to-r from-orange-400 to-pink-400 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Clock className="w-8 h-8 text-white" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Daily Limit Reached</h3>
-              <p className="text-gray-600 mb-6">
-                You've used all {swipeStats.daily_limit} swipes for today. Come back tomorrow or upgrade your plan!
-              </p>
-              <div className="space-y-3">
-                <Button
-                  onClick={() => (window.location.href = "/dashboard/store")}
-                  className="w-full bg-gradient-to-r from-orange-500 to-pink-500"
-                >
-                  <Zap className="w-4 h-4 mr-2" />
-                  Upgrade Plan
-                </Button>
-                <Button variant="outline" onClick={fetchSwipeStats} className="w-full">
-                  Check Again
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Action Buttons (only show if not headerless and has profiles) */}

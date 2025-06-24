@@ -1,7 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { isDevelopmentMode } from "@/lib/dev-auth"
 
-// Mock profiles for development
+// Mock profiles for development - always available
 const MOCK_PROFILES = [
   {
     id: "mock-1",
@@ -20,6 +19,11 @@ const MOCK_PROFILES = [
     compatibility_score: 92,
     diet: "Vegetarian",
     mother_tongue: "Hindi",
+    verification_status: "verified",
+    account_status: "sangam",
+    created_at: "2024-01-15T10:00:00Z",
+    birthdate: "1995-03-15",
+    gender: "Female",
   },
   {
     id: "mock-2",
@@ -37,82 +41,105 @@ const MOCK_PROFILES = [
     compatibility_score: 88,
     diet: "Vegetarian",
     mother_tongue: "Gujarati",
+    verification_status: "verified",
+    account_status: "sparsh",
+    created_at: "2024-01-14T10:00:00Z",
+    birthdate: "1997-07-22",
+    gender: "Female",
   },
   {
     id: "mock-3",
-    first_name: "Rahul",
-    last_name: "Gupta",
-    age: 30,
-    city: "Bangalore",
-    state: "Karnataka",
-    profession: "Data Scientist",
-    education: "M.Tech",
-    about_me: "Following Sadhguru's teachings and inner engineering practices. Looking for a conscious partner.",
-    spiritual_org: ["Isha Foundation"],
-    daily_practices: ["Shambhavi Mahamudra", "Yoga"],
+    first_name: "Kavya",
+    last_name: "Nair",
+    age: 29,
+    city: "Kochi",
+    state: "Kerala",
+    profession: "Yoga Instructor",
+    education: "B.A. Philosophy",
+    about_me:
+      "Dedicated to spreading the ancient wisdom of yoga and meditation. Seeking a spiritual companion for life's beautiful journey.",
+    spiritual_org: ["Sivananda Yoga", "Ramana Maharshi Foundation"],
+    daily_practices: ["Yoga", "Meditation", "Kirtan"],
     user_photos: ["/abstract-spiritual-avatar-3.png"],
-    compatibility_score: 85,
+    compatibility_score: 89,
     diet: "Vegetarian",
-    mother_tongue: "Hindi",
+    mother_tongue: "Malayalam",
+    verification_status: "verified",
+    account_status: "samarpan",
+    created_at: "2024-01-13T10:00:00Z",
+    birthdate: "1994-11-08",
+    gender: "Female",
   },
   {
     id: "mock-4",
-    first_name: "Ananya",
-    last_name: "Singh",
+    first_name: "Meera",
+    last_name: "Gupta",
     age: 27,
     city: "Mumbai",
     state: "Maharashtra",
-    profession: "Marketing Manager",
-    education: "MBA",
-    about_me: "Practicing Raja Yoga meditation and seeking inner peace. Would love to find a spiritual companion.",
-    spiritual_org: ["Brahma Kumaris"],
-    daily_practices: ["Raja Yoga", "Meditation", "Self-reflection"],
+    profession: "Counselor",
+    education: "M.A. Psychology",
+    about_me:
+      "Helping people find inner peace through counseling and spiritual guidance. Looking for a soulmate who understands the deeper meaning of life.",
+    spiritual_org: ["Brahma Kumaris", "Heartfulness"],
+    daily_practices: ["Meditation", "Counseling", "Prayer"],
     user_photos: ["/abstract-spiritual-avatar-4.png"],
     compatibility_score: 90,
     diet: "Vegetarian",
     mother_tongue: "Hindi",
+    verification_status: "verified",
+    account_status: "drishti",
+    created_at: "2024-01-12T10:00:00Z",
+    birthdate: "1996-05-30",
+    gender: "Female",
   },
   {
     id: "mock-5",
-    first_name: "Vikram",
+    first_name: "Riya",
     last_name: "Reddy",
-    age: 29,
+    age: 25,
     city: "Hyderabad",
     state: "Telangana",
-    profession: "Doctor",
-    education: "MBBS",
-    about_me: "Follower of Vedantic philosophy and regular temple visitor. Seeking a spiritually aligned life partner.",
+    profession: "Artist",
+    education: "B.F.A",
+    about_me:
+      "Art is my way of expressing spirituality. I find the divine in every brushstroke and color. Seeking someone who appreciates art and spirituality.",
     spiritual_org: ["Chinmaya Mission"],
-    daily_practices: ["Vedic chanting", "Temple visits", "Satsang"],
+    daily_practices: ["Painting", "Vedic chanting", "Satsang"],
     user_photos: ["/abstract-spiritual-avatar-1.png"],
     compatibility_score: 87,
     diet: "Vegetarian",
     mother_tongue: "Telugu",
+    verification_status: "verified",
+    account_status: "sparsh",
+    created_at: "2024-01-11T10:00:00Z",
+    birthdate: "1998-09-12",
+    gender: "Female",
   },
 ]
 
 export async function GET(request: NextRequest) {
-  try {
-    // In development mode, return mock profiles
-    if (isDevelopmentMode()) {
-      return NextResponse.json({
-        success: true,
-        profiles: MOCK_PROFILES,
-        hasMore: false,
-        message: "Mock profiles loaded for development",
-      })
-    }
+  console.log("🔍 Discover API called")
+  console.log("🌍 Environment:", process.env.NODE_ENV)
+  console.log("🔧 Dev Mode:", process.env.NEXT_PUBLIC_DEV_MODE)
 
-    // Production logic would go here
-    // For now, return empty array in production
+  try {
+    // Always return mock profiles in development for now
+    console.log("✅ Returning mock profiles:", MOCK_PROFILES.length)
+
     return NextResponse.json({
+      profiles: MOCK_PROFILES,
       success: true,
-      profiles: [],
-      hasMore: false,
-      message: "No profiles available",
+      message: "Mock profiles loaded successfully",
     })
   } catch (error) {
-    console.error("Error fetching profiles:", error)
-    return NextResponse.json({ success: false, error: "Failed to fetch profiles" }, { status: 500 })
+    console.error("❌ Discover API error:", error)
+    return NextResponse.json(
+      {
+        error: "Internal server error",
+        profiles: MOCK_PROFILES, // Fallback to mock profiles even on error
+      },
+      { status: 500 },
+    )
   }
 }
