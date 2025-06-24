@@ -1,8 +1,134 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 
+// Mock profiles for development
+const mockProfiles = [
+  {
+    id: "mock-1",
+    first_name: "Ananya",
+    last_name: "Sharma",
+    age: 28,
+    city: "Mumbai",
+    state: "Maharashtra",
+    profession: "Software Engineer",
+    education: "B.Tech Computer Science",
+    diet: "Vegetarian",
+    birthdate: "1995-03-15",
+    gender: "Female",
+    about_me:
+      "Passionate about spirituality and technology. Love practicing yoga and meditation daily. Seeking a life partner who shares similar spiritual values.",
+    user_photos: ["/abstract-spiritual-avatar-1.png"],
+    spiritual_org: ["Art of Living", "Isha Foundation"],
+    daily_practices: ["Meditation", "Yoga", "Pranayama"],
+    mother_tongue: "Hindi",
+    verification_status: "verified",
+    account_status: "sangam",
+    created_at: "2024-01-15T10:00:00Z",
+    compatibility_score: 95,
+  },
+  {
+    id: "mock-2",
+    first_name: "Priya",
+    last_name: "Reddy",
+    age: 26,
+    city: "Hyderabad",
+    state: "Telangana",
+    profession: "Teacher",
+    education: "M.Ed",
+    diet: "Vegan",
+    birthdate: "1997-07-22",
+    gender: "Female",
+    about_me:
+      "Teaching is my passion, and I believe in nurturing young minds with spiritual values. Looking for someone who values education and spirituality.",
+    user_photos: ["/abstract-spiritual-avatar-2.png"],
+    spiritual_org: ["Osho International", "Vipassana"],
+    daily_practices: ["Meditation", "Reading", "Chanting"],
+    mother_tongue: "Telugu",
+    verification_status: "verified",
+    account_status: "sparsh",
+    created_at: "2024-01-14T10:00:00Z",
+    compatibility_score: 92,
+  },
+  {
+    id: "mock-3",
+    first_name: "Kavya",
+    last_name: "Nair",
+    age: 29,
+    city: "Kochi",
+    state: "Kerala",
+    profession: "Yoga Instructor",
+    education: "B.A. Philosophy",
+    diet: "Vegetarian",
+    birthdate: "1994-11-08",
+    gender: "Female",
+    about_me:
+      "Dedicated to spreading the ancient wisdom of yoga and meditation. Seeking a spiritual companion for life's beautiful journey.",
+    user_photos: ["/abstract-spiritual-avatar-3.png"],
+    spiritual_org: ["Sivananda Yoga", "Ramana Maharshi Foundation"],
+    daily_practices: ["Yoga", "Meditation", "Kirtan"],
+    mother_tongue: "Malayalam",
+    verification_status: "verified",
+    account_status: "samarpan",
+    created_at: "2024-01-13T10:00:00Z",
+    compatibility_score: 89,
+  },
+  {
+    id: "mock-4",
+    first_name: "Meera",
+    last_name: "Gupta",
+    age: 27,
+    city: "Delhi",
+    state: "Delhi",
+    profession: "Counselor",
+    education: "M.A. Psychology",
+    diet: "Vegetarian",
+    birthdate: "1996-05-30",
+    gender: "Female",
+    about_me:
+      "Helping people find inner peace through counseling and spiritual guidance. Looking for a soulmate who understands the deeper meaning of life.",
+    user_photos: ["/abstract-spiritual-avatar-4.png"],
+    spiritual_org: ["Brahma Kumaris", "Heartfulness"],
+    daily_practices: ["Meditation", "Counseling", "Prayer"],
+    mother_tongue: "Hindi",
+    verification_status: "verified",
+    account_status: "drishti",
+    created_at: "2024-01-12T10:00:00Z",
+    compatibility_score: 87,
+  },
+  {
+    id: "mock-5",
+    first_name: "Riya",
+    last_name: "Patel",
+    age: 25,
+    city: "Ahmedabad",
+    state: "Gujarat",
+    profession: "Artist",
+    education: "B.F.A",
+    diet: "Vegetarian",
+    birthdate: "1998-09-12",
+    gender: "Female",
+    about_me:
+      "Art is my way of expressing spirituality. I find the divine in every brushstroke and color. Seeking someone who appreciates art and spirituality.",
+    user_photos: ["/abstract-spiritual-avatar-1.png"],
+    spiritual_org: ["ISKCON", "Swaminarayan"],
+    daily_practices: ["Painting", "Bhajan", "Temple visits"],
+    mother_tongue: "Gujarati",
+    verification_status: "verified",
+    account_status: "sparsh",
+    created_at: "2024-01-11T10:00:00Z",
+    compatibility_score: 85,
+  },
+]
+
 export async function GET(request: NextRequest) {
   try {
+    // In development mode, return mock profiles
+    if (process.env.NODE_ENV === "development" || process.env.NEXT_PUBLIC_DEV_MODE === "true") {
+      console.log("Development mode: returning mock profiles")
+      return NextResponse.json({ profiles: mockProfiles })
+    }
+
+    // Rest of the existing code for production...
     // Create Supabase client with service role key for server-side operations
     const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
@@ -74,9 +200,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch profiles ordered by creation date first
-    const { data: profiles, error } = await query
-      .order("created_at", { ascending: false })
-      .limit(50)
+    const { data: profiles, error } = await query.order("created_at", { ascending: false }).limit(50)
 
     if (error) {
       console.error("Error fetching profiles:", error)

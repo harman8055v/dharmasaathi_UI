@@ -51,6 +51,19 @@ export default function SwipeStack({ profiles: initialProfiles, onSwipe, headerl
 
   const fetchSwipeStats = async () => {
     try {
+      // In development mode, return mock stats
+      if (process.env.NODE_ENV === "development" || process.env.NEXT_PUBLIC_DEV_MODE === "true") {
+        setSwipeStats({
+          can_swipe: true,
+          swipes_remaining: 50,
+          daily_limit: 50,
+          super_likes_available: 5,
+          plan: "sangam",
+        })
+        return
+      }
+
+      // Production mode - require authentication
       // Get the current session
       const {
         data: { session },
@@ -68,7 +81,7 @@ export default function SwipeStack({ profiles: initialProfiles, onSwipe, headerl
         },
       })
 
-      // if the response isn’t OK, throw to trigger your error state
+      // if the response isn't OK, throw to trigger your error state
       if (!response.ok) {
         throw new Error(`Failed to fetch swipe stats: ${response.status}`)
       }
@@ -85,6 +98,23 @@ export default function SwipeStack({ profiles: initialProfiles, onSwipe, headerl
     try {
       console.log("Fetching profiles...")
 
+      // In development mode, we can fetch without auth headers
+      if (process.env.NODE_ENV === "development" || process.env.NEXT_PUBLIC_DEV_MODE === "true") {
+        const response = await fetch("/api/profiles/discover", {
+          credentials: "include",
+        })
+
+        console.log("Profiles response:", response.status)
+        if (!response.ok) {
+          throw new Error(`Failed to fetch profiles: ${response.status}`)
+        }
+        const data = await response.json()
+        console.log("Profiles data:", data)
+        setProfiles(data.profiles || [])
+        return
+      }
+
+      // Production mode - require authentication
       // Get the current session
       const {
         data: { session },
