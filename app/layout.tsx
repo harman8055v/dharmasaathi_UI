@@ -1,20 +1,17 @@
 import type React from "react"
-import "@/app/globals.css"
-import { ThemeProvider } from "@/components/theme-provider"
 import type { Metadata } from "next"
-import { Mona_Sans as FontSans } from "next/font/google"
-import { cn } from "@/lib/utils"
+import { Inter } from "next/font/google"
+import "./globals.css"
+import { ThemeProvider } from "@/components/theme-provider"
+import { Toaster } from "@/components/ui/toaster"
+import DevAuthBanner from "@/components/dev-auth-banner"
 
-const fontSans = FontSans({
-  subsets: ["latin"],
-  variable: "--font-sans",
-})
+const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "DharmaSaathi - Where Spiritual Seekers Find Love",
-  description:
-    "A global spiritual matrimony platform connecting like-minded souls on their journey from drama to dharma.",
-  generator: "v0.dev",
+  title: "DharmaSaathi - Find Your Spiritual Life Partner",
+  description: "Connect with like-minded souls on a journey of spiritual growth and conscious relationships.",
+    generator: 'v0.dev'
 }
 
 export default function RootLayout({
@@ -23,11 +20,12 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <head />
-      <body className={cn("min-h-screen bg-background font-sans antialiased", fontSans.variable)}>
+    <html lang="en">
+      <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-          {children}
+          <DevAuthBanner />
+          <div className="pt-0 md:pt-0">{children}</div>
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>
