@@ -25,6 +25,7 @@ import {
   Palette,
 } from "lucide-react"
 import Image from "next/image"
+import { getOptimizedImageUrl } from "@/lib/supabase-storage"
 
 interface SwipeCardProps {
   profile: any
@@ -153,14 +154,14 @@ export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, 
 
   const getCurrentImage = () => {
     if (profile.user_photos && profile.user_photos.length > 0) {
-      return profile.user_photos[currentImageIndex]
+      return getOptimizedImageUrl(profile.user_photos[currentImageIndex], 400, 600)
     }
     return "/placeholder.svg"
   }
 
   const getCurrentDetailImage = () => {
     if (profile.user_photos && profile.user_photos.length > 0) {
-      return profile.user_photos[currentDetailImageIndex]
+      return getOptimizedImageUrl(profile.user_photos[currentDetailImageIndex], 800, 1200)
     }
     return "/placeholder.svg"
   }
@@ -188,6 +189,12 @@ export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, 
             alt={`${profile.first_name} ${profile.last_name}`}
             fill
             className="object-cover"
+            sizes="(max-width: 768px) 100vw, 400px"
+            priority={isTop}
+            onError={(e) => {
+              const target = e.target as HTMLImageElement
+              target.src = "/placeholder.svg"
+            }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
         </div>
@@ -221,7 +228,12 @@ export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, 
               alt={`${profile.first_name} ${profile.last_name}`}
               fill
               className="object-cover"
-              priority
+              sizes="(max-width: 768px) 100vw, 400px"
+              priority={isTop}
+              onError={(e) => {
+                const target = e.target as HTMLImageElement
+                target.src = "/placeholder.svg"
+              }}
             />
 
             {/* Info Button - Top Right */}
@@ -538,6 +550,11 @@ export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, 
                           fill
                           className="object-cover"
                           priority={idx === 0}
+                          sizes="(max-width: 768px) 100vw, 800px"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement
+                            target.src = "/placeholder.svg"
+                          }}
                         />
                       </div>
                     ))}
@@ -608,6 +625,11 @@ export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, 
                       width={80}
                       height={80}
                       className="w-full h-full object-cover"
+                      sizes="80px"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement
+                        target.src = "/placeholder.svg"
+                      }}
                     />
                   </div>
                   <div className="flex-1">
