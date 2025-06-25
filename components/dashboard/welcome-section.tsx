@@ -25,8 +25,8 @@ export default function WelcomeSection({ profile }: WelcomeSectionProps) {
   }
 
   const getMainProfileImage = () => {
-    if (profile?.user_photos && profile.user_photos.length > 0) {
-      return profile.user_photos[0]
+    if (profile?.signedUrls && profile.signedUrls.length > 0) {
+      return profile.signedUrls[0]
     }
     return null
   }

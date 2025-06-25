@@ -79,7 +79,7 @@ interface UserType {
   verification_status: string
   created_at: string
   updated_at: string
-  user_photos: string[]
+  signedUrls: string[]
   is_active: boolean
   email_verified: boolean
   mobile_verified: boolean
@@ -837,7 +837,7 @@ export default function AdminDashboard() {
                       <div key={user.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <div className="flex items-center gap-3">
                           <Avatar className="h-10 w-10">
-                            <AvatarImage src={user.user_photos?.[0] || "/placeholder.svg"} />
+                            <AvatarImage src={user.signedUrls?.[0] || "/placeholder.svg"} />
                             <AvatarFallback>
                               {user.first_name?.[0] || "U"}
                               {user.last_name?.[0] || "U"}
@@ -968,7 +968,7 @@ export default function AdminDashboard() {
                       >
                         <div className="flex items-center gap-4">
                           <Avatar className="h-12 w-12">
-                            <AvatarImage src={user.user_photos?.[0] || "/placeholder.svg"} />
+                            <AvatarImage src={user.signedUrls?.[0] || "/placeholder.svg"} />
                             <AvatarFallback>
                               {user.first_name?.[0] || "U"}
                               {user.last_name?.[0] || "U"}
@@ -1142,7 +1142,7 @@ export default function AdminDashboard() {
                         <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
                           <div className="flex items-center gap-4">
                             <Avatar className="h-16 w-16">
-                              <AvatarImage src={user.user_photos?.[0] || "/placeholder.svg"} />
+                              <AvatarImage src={user.signedUrls?.[0] || "/placeholder.svg"} />
                               <AvatarFallback className="text-lg">
                                 {user.first_name?.[0] || "U"}
                                 {user.last_name?.[0] || "U"}
@@ -1181,10 +1181,10 @@ export default function AdminDashboard() {
                                 <Badge variant="outline">{user.gender || "Not specified"}</Badge>
                                 <Badge variant="outline">{user.education || "Education not set"}</Badge>
                                 <Badge variant="outline">{user.profession || "Profession not set"}</Badge>
-                                {user.user_photos && user.user_photos.length > 0 && (
+                                {user.signedUrls && user.signedUrls.length > 0 && (
                                   <Badge variant="outline" className="text-green-600">
                                     <ImageIcon className="w-3 h-3 mr-1" />
-                                    {user.user_photos.length} photos
+                                    {user.signedUrls.length} photos
                                   </Badge>
                                 )}
                               </div>
@@ -1404,7 +1404,7 @@ export default function AdminDashboard() {
               <div className="flex items-start gap-6 p-6 bg-gradient-to-r from-orange-50 to-pink-50 rounded-lg">
                 <div className="flex flex-col items-center gap-4">
                   <Avatar className="h-32 w-32 border-4 border-white shadow-lg">
-                    <AvatarImage src={selectedUser.user_photos?.[0] || "/placeholder.svg"} />
+                    <AvatarImage src={selectedUser.signedUrls?.[0] || "/placeholder.svg"} />
                     <AvatarFallback className="text-2xl bg-gradient-to-br from-orange-200 to-pink-200">
                       {selectedUser.first_name?.[0] || "U"}
                       {selectedUser.last_name?.[0] || "U"}
@@ -1729,17 +1729,17 @@ export default function AdminDashboard() {
               )}
 
               {/* Photos Gallery */}
-              {selectedUser.user_photos && selectedUser.user_photos.length > 0 && (
+              {selectedUser.signedUrls && selectedUser.signedUrls.length > 0 && (
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <ImageIcon className="h-5 w-5" />
-                      Photo Gallery ({selectedUser.user_photos.length} photos)
+                      Photo Gallery ({selectedUser.signedUrls.length} photos)
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                      {selectedUser.user_photos.map((photo, index) => (
+                      {selectedUser.signedUrls.map((photo, index) => (
                         <div
                           key={index}
                           className="aspect-square rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow"
