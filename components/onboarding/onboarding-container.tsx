@@ -369,6 +369,7 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
                 onChange={handleFormChange}
                 onNext={handleSaveAndNext}
                 isLoading={isLoading}
+                userId={user?.id || ""}
                 error={error}
               />
             )}

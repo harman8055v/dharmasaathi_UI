@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
 import { createClient } from "@supabase/supabase-js"
+import { getSignedUrlsForPhotos } from "@/lib/supabase-storage"
 
 export async function GET(request: NextRequest) {
   try {
@@ -32,6 +33,17 @@ export async function GET(request: NextRequest) {
     if (!session?.user) {
       console.error("No user session found")
       return NextResponse.json({ error: "No active session" }, { status: 401 })
+    }
+
+    // Verify admin role
+    const { data: adminUser, error: adminError } = await supabaseAdmin
+      .from("users")
+      .select("role")
+      .eq("id", session.user.id)
+      .single()
+
+    if (adminError || !adminUser || !["admin", "super_admin"].includes(adminUser.role?.toLowerCase())) {
+      return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 })
     }
 
     console.log("Admin dashboard access by user:", session.user.email)
@@ -116,6 +128,16 @@ export async function GET(request: NextRequest) {
     }
 
     console.log(`Fetched ${users?.length || 0} users (page ${page}, total: ${count})`)
+
+    if (users) {
+      for (const u of users) {
+        if (u.verification_status === "verified" || ["admin", "super_admin"].includes(adminUser.role?.toLowerCase())) {
+          u.user_photos = await getSignedUrlsForPhotos(u.user_photos || [])
+        } else {
+          u.user_photos = []
+        }
+      }
+    }
 
     // Calculate stats (only when needed - for overview)
     let stats = null

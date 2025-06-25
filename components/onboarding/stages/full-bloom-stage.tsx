@@ -1,20 +1,22 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Loader2, Upload, X, Quote } from "lucide-react"
 import Image from "next/image"
 import type { OnboardingData } from "@/lib/types/onboarding"
+import { uploadUserPhoto, getSignedUrlsForPhotosClient } from "@/lib/supabase-storage"
 
 interface FullBloomStageProps {
   formData: OnboardingData
   onChange: (updates: Partial<OnboardingData>) => void
-  onNext: (updates: Partial<OnboardingData>) => void // Changed
+  onNext: (updates: Partial<OnboardingData>) => void
   isLoading: boolean
+  userId: string
   error?: string | null
 }
 
-export default function FullBloomStage({ formData, onChange, onNext, isLoading, error }: FullBloomStageProps) {
+export default function FullBloomStage({ formData, onChange, onNext, isLoading, userId, error }: FullBloomStageProps) {
   // Destructure with null defaults
   const { about_me = null, partner_expectations = null, user_photos = [], favorite_spiritual_quote = null } = formData
 
@@ -24,7 +26,16 @@ export default function FullBloomStage({ formData, onChange, onNext, isLoading, 
     favorite_spiritual_quote: favorite_spiritual_quote || "",
   })
   const [photos, setPhotos] = useState<File[]>([])
-  const [photoUrls, setPhotoUrls] = useState<string[]>(user_photos)
+  const [photoPaths, setPhotoPaths] = useState<string[]>(user_photos)
+  const [photoUrls, setPhotoUrls] = useState<string[]>([])
+
+  useEffect(() => {
+    async function loadUrls() {
+      const urls = await getSignedUrlsForPhotosClient(photoPaths)
+      setPhotoUrls(urls)
+    }
+    loadUrls()
+  }, [photoPaths])
   const [uploading, setUploading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
 
@@ -54,29 +65,27 @@ export default function FullBloomStage({ formData, onChange, onNext, isLoading, 
   }
 
   const handleRemoveUploadedPhoto = (url: string) => {
+    setPhotoPaths((prev) => prev.filter((p) => p !== url))
     setPhotoUrls((prev) => prev.filter((photoUrl) => photoUrl !== url))
   }
 
   const uploadPhotos = async () => {
-    if (photos.length === 0) return photoUrls
+    if (photos.length === 0) return photoPaths
 
     setUploading(true)
-    const uploadedUrls = [...photoUrls]
+    const uploadedPaths = [...photoPaths]
 
     try {
       for (const photo of photos) {
-        // Simulate upload delay
-        await new Promise((resolve) => setTimeout(resolve, 500))
-
-        // Simulate URL generation
-        const url = URL.createObjectURL(photo)
-        uploadedUrls.push(url)
+        const path = await uploadUserPhoto(photo, userId)
+        if (path) {
+          uploadedPaths.push(path)
+        }
       }
-
-      return uploadedUrls
+      return uploadedPaths
     } catch (error) {
       console.error("Error uploading photos:", error)
-      return photoUrls
+      return photoPaths
     } finally {
       setUploading(false)
     }
@@ -101,13 +110,16 @@ export default function FullBloomStage({ formData, onChange, onNext, isLoading, 
     }
 
     try {
-      const uploadedPhotoUrls = await uploadPhotos()
+      const uploadedPhotoPaths = await uploadPhotos()
+      setPhotoPaths(uploadedPhotoPaths)
+      const signed = await getSignedUrlsForPhotosClient(uploadedPhotoPaths)
+      setPhotoUrls(signed)
 
       const dataToSave: Partial<OnboardingData> = {
         about_me: localFormData.about_me.trim() || null,
         partner_expectations: localFormData.partner_expectations.trim() || null,
         favorite_spiritual_quote: localFormData.favorite_spiritual_quote.trim() || null,
-        user_photos: uploadedPhotoUrls,
+        user_photos: uploadedPhotoPaths,
       }
 
       // Pass the data directly to onNext, which will handle saving and moving to the next stage
