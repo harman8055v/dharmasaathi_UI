@@ -26,9 +26,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 })
     }
 
-    const { data: users, error } = await supabaseAdmin
-      .from("users")
-      .select("id, user_photos, verification_status")
+    const { data: users, error } = await supabaseAdmin.from("users").select("id, user_photos, verification_status")
 
     if (error) {
       console.error("Users fetch error:", error)
@@ -40,7 +38,7 @@ export async function GET(request: NextRequest) {
         id: u.id,
         verification_status: u.verification_status,
         signedUrls: await getSignedUrlsForPhotos(u.user_photos || []),
-      }))
+      })),
     )
 
     return NextResponse.json({ users: mapped })

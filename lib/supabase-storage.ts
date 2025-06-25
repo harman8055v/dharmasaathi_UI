@@ -73,9 +73,7 @@ export function getOptimizedImageUrl(url: string, width?: number, height?: numbe
 export async function getSignedUrlsForPhotos(photoPaths: string[]): Promise<string[]> {
   if (!photoPaths || photoPaths.length === 0) return []
 
-  const { data, error } = await supabaseAdmin.storage
-    .from("user-photos")
-    .createSignedUrls(photoPaths, 60)
+  const { data, error } = await supabaseAdmin.storage.from("user-photos").createSignedUrls(photoPaths, 60)
 
   if (error) {
     console.error("Error generating signed URLs:", error)
@@ -89,9 +87,7 @@ export async function getSignedUrlsForPhotos(photoPaths: string[]): Promise<stri
 export async function getSignedUrlsForPhotosClient(photoPaths: string[]): Promise<string[]> {
   if (!photoPaths || photoPaths.length === 0) return []
 
-  const { data, error } = await supabase.storage
-    .from("user-photos")
-    .createSignedUrls(photoPaths, 60)
+  const { data, error } = await supabase.storage.from("user-photos").createSignedUrls(photoPaths, 60)
 
   if (error) {
     console.error("Error generating client signed URLs:", error)
