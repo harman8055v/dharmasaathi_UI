@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { isDevelopmentMode } from "@/lib/dev-auth"
+import { getSignedUrlsForPhotos, supabaseAdmin } from "@/lib/supabase-storage"
 
 // Mock profiles for development
 const MOCK_PROFILES = [
@@ -103,14 +104,24 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Production logic would go here
-    // For now, return empty array in production
-    return NextResponse.json({
-      success: true,
-      profiles: [],
-      hasMore: false,
-      message: "No profiles available",
-    })
+    const { data: profiles, error } = await supabaseAdmin
+      .from("users")
+      .select(
+        "id, first_name, last_name, birthdate, city, state, profession, education, about_me, spiritual_org, daily_practices, user_photos, diet, mother_tongue"
+      )
+      .eq("verification_status", "verified")
+      .limit(20)
+
+    if (error) throw error
+
+    const mapped = await Promise.all(
+      (profiles || []).map(async (p) => ({
+        ...p,
+        user_photos: await getSignedUrlsForPhotos(p.user_photos || []),
+      }))
+    )
+
+    return NextResponse.json({ success: true, profiles: mapped, hasMore: false })
   } catch (error) {
     console.error("Error fetching profiles:", error)
     return NextResponse.json({ success: false, error: "Failed to fetch profiles" }, { status: 500 })

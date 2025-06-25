@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
+import { getSignedUrlsForPhotosClient } from "@/lib/supabase-storage"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -29,6 +30,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true)
   const router = useRouter()
   const [userImages, setUserImages] = useState<string[]>([])
+  const [signedUrls, setSignedUrls] = useState<string[]>([])
   const [showPreview, setShowPreview] = useState(false)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
 
@@ -63,6 +65,14 @@ export default function ProfilePage() {
 
     getUser()
   }, [router])
+
+  useEffect(() => {
+    async function loadUrls() {
+      const urls = await getSignedUrlsForPhotosClient(userImages)
+      setSignedUrls(urls)
+    }
+    loadUrls()
+  }, [userImages])
 
   useEffect(() => {
     if (showPreview) {
@@ -136,9 +146,9 @@ export default function ProfilePage() {
               <CardContent className="p-6">
                 <div className="flex flex-col items-center text-center">
                   <div className="relative mb-4">
-                    {userImages.length > 0 ? (
+                    {signedUrls.length > 0 ? (
                       <img
-                        src={userImages[0] || "/placeholder.svg"}
+                        src={signedUrls[0] || "/placeholder.svg"}
                         alt="Profile"
                         className="w-24 h-24 rounded-full object-cover border-4 border-orange-200"
                       />
@@ -476,22 +486,22 @@ export default function ProfilePage() {
 
                 <div className="pb-32">
                   {/* Photo Gallery */}
-                  {userImages && userImages.length > 0 && (
+                  {signedUrls && signedUrls.length > 0 && (
                     <div className="relative h-[50vh] bg-gray-100 overflow-hidden">
                       <div className="flex h-full">
                         <div className="w-full h-full relative">
                           <img
-                            src={userImages[currentImageIndex] || "/placeholder.svg"}
+                            src={signedUrls[currentImageIndex] || "/placeholder.svg"}
                             alt={`${profile?.first_name} ${profile?.last_name}`}
                             className="w-full h-full object-cover"
                           />
 
                           {/* Navigation Arrows */}
-                          {userImages.length > 1 && (
+                          {signedUrls.length > 1 && (
                             <>
                               <button
                                 onClick={() =>
-                                  setCurrentImageIndex((prev) => (prev === 0 ? userImages.length - 1 : prev - 1))
+                                  setCurrentImageIndex((prev) => (prev === 0 ? signedUrls.length - 1 : prev - 1))
                                 }
                                 className="absolute left-4 top-1/2 transform -translate-y-1/2 w-10 h-10 bg-black/50 rounded-full flex items-center justify-center text-white hover:bg-black/70 transition-colors z-20"
                               >
@@ -499,7 +509,7 @@ export default function ProfilePage() {
                               </button>
                               <button
                                 onClick={() =>
-                                  setCurrentImageIndex((prev) => (prev === userImages.length - 1 ? 0 : prev + 1))
+                                  setCurrentImageIndex((prev) => (prev === signedUrls.length - 1 ? 0 : prev + 1))
                                 }
                                 className="absolute right-4 top-1/2 transform -translate-y-1/2 w-10 h-10 bg-black/50 rounded-full flex items-center justify-center text-white hover:bg-black/70 transition-colors z-20"
                               >
@@ -511,9 +521,9 @@ export default function ProfilePage() {
                       </div>
 
                       {/* Photo Navigation Dots */}
-                      {userImages.length > 1 && (
+                      {signedUrls.length > 1 && (
                         <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-3 z-20">
-                          {userImages.map((_, idx) => (
+                          {signedUrls.map((_, idx) => (
                             <button
                               key={idx}
                               onClick={() => setCurrentImageIndex(idx)}
@@ -532,7 +542,7 @@ export default function ProfilePage() {
                     <div className="flex items-center gap-4 mb-6">
                       <div className="w-20 h-20 rounded-full overflow-hidden">
                         <img
-                          src={userImages[0] || "/placeholder.svg"}
+                          src={signedUrls[0] || "/placeholder.svg"}
                           alt={`${profile?.first_name} ${profile?.last_name}`}
                           className="w-full h-full object-cover"
                         />

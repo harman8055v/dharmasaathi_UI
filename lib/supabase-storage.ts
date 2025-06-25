@@ -1,49 +1,39 @@
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { createClient } from "@supabase/supabase-js"
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
-// Create admin client for storage operations
-const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
+// Client-side supabase instance
+export const supabase = createClientComponentClient()
 
-export async function uploadUserPhoto(file: File, userId: string, photoIndex: number): Promise<string | null> {
+// Service role client for server operations
+export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
+
+// Upload a user photo to the private bucket and return the storage path
+export async function uploadUserPhoto(file: File, userId: string): Promise<string | null> {
   try {
-    // Generate unique filename
     const fileExt = file.name.split(".").pop()
-    const fileName = `${userId}/photo-${photoIndex}-${Date.now()}.${fileExt}`
+    const fileName = `${crypto.randomUUID()}.${fileExt}`
+    const filePath = `users/${userId}/${fileName}`
 
-    // Upload to Supabase Storage
-    const { data, error } = await supabaseAdmin.storage.from("user-photos").upload(fileName, file, {
-      cacheControl: "3600",
-      upsert: false,
-    })
-
+    const { data, error } = await supabase.storage.from("user-photos").upload(filePath, file)
     if (error) {
       console.error("Upload error:", error)
       return null
     }
 
-    // Get public URL
-    const {
-      data: { publicUrl },
-    } = supabaseAdmin.storage.from("user-photos").getPublicUrl(fileName)
-
-    return publicUrl
+    return data?.path || filePath
   } catch (error) {
     console.error("Error uploading photo:", error)
     return null
   }
 }
 
-export async function deleteUserPhoto(photoUrl: string): Promise<boolean> {
+// Remove a photo from storage given its path
+export async function deleteUserPhoto(photoPath: string): Promise<boolean> {
   try {
-    // Extract file path from URL
-    const urlParts = photoUrl.split("/user-photos/")
-    if (urlParts.length < 2) return false
-
-    const filePath = urlParts[1]
-
-    const { error } = await supabaseAdmin.storage.from("user-photos").remove([filePath])
+    const { error } = await supabase.storage.from("user-photos").remove([photoPath])
 
     if (error) {
       console.error("Delete error:", error)
@@ -77,4 +67,36 @@ export function getOptimizedImageUrl(url: string, width?: number, height?: numbe
   }
 
   return url
+}
+
+// Generate signed URLs for an array of photo paths using the service role key
+export async function getSignedUrlsForPhotos(photoPaths: string[]): Promise<string[]> {
+  if (!photoPaths || photoPaths.length === 0) return []
+
+  const { data, error } = await supabaseAdmin.storage
+    .from("user-photos")
+    .createSignedUrls(photoPaths, 60)
+
+  if (error) {
+    console.error("Error generating signed URLs:", error)
+    return []
+  }
+
+  return data.map((d) => d.signedUrl)
+}
+
+// Client-side helper for signed URLs using the logged in user's credentials
+export async function getSignedUrlsForPhotosClient(photoPaths: string[]): Promise<string[]> {
+  if (!photoPaths || photoPaths.length === 0) return []
+
+  const { data, error } = await supabase.storage
+    .from("user-photos")
+    .createSignedUrls(photoPaths, 60)
+
+  if (error) {
+    console.error("Error generating client signed URLs:", error)
+    return []
+  }
+
+  return data.map((d) => d.signedUrl)
 }

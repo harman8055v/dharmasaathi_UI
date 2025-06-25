@@ -1,12 +1,17 @@
 "use client"
 
 import type React from "react"
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Camera, X, Loader2 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { toast } from "sonner"
-import { uploadUserPhoto, deleteUserPhoto, getOptimizedImageUrl } from "@/lib/supabase-storage"
+import {
+  uploadUserPhoto,
+  deleteUserPhoto,
+  getOptimizedImageUrl,
+  getSignedUrlsForPhotosClient,
+} from "@/lib/supabase-storage"
 import Image from "next/image"
 
 interface ProfileImageUploaderProps {
@@ -19,6 +24,15 @@ export default function ProfileImageUploader({ userId, currentImages, onImagesUp
   const [uploading, setUploading] = useState(false)
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [signedUrls, setSignedUrls] = useState<string[]>([])
+
+  useEffect(() => {
+    async function loadUrls() {
+      const urls = await getSignedUrlsForPhotosClient(currentImages)
+      setSignedUrls(urls)
+    }
+    loadUrls()
+  }, [currentImages])
 
   const uploadImage = async (file: File) => {
     try {
@@ -38,14 +52,14 @@ export default function ProfileImageUploader({ userId, currentImages, onImagesUp
       }
 
       // Upload to Supabase Storage
-      const photoUrl = await uploadUserPhoto(file, userId, photoIndex)
+      const photoPath = await uploadUserPhoto(file, userId)
 
-      if (!photoUrl) {
+      if (!photoPath) {
         toast.error("Failed to upload image. Please try again.")
         return
       }
 
-      const newImages = [...currentImages, photoUrl]
+      const newImages = [...currentImages, photoPath]
 
       // Update user profile with new images
       const { error: updateError } = await supabase.from("users").update({ user_photos: newImages }).eq("id", userId)
@@ -53,6 +67,8 @@ export default function ProfileImageUploader({ userId, currentImages, onImagesUp
       if (updateError) throw updateError
 
       onImagesUpdate(newImages)
+      const urls = await getSignedUrlsForPhotosClient(newImages)
+      setSignedUrls(urls)
       toast.success("Image uploaded successfully!")
     } catch (error) {
       console.error("Error uploading image:", error)
@@ -63,20 +79,19 @@ export default function ProfileImageUploader({ userId, currentImages, onImagesUp
     }
   }
 
-  const removeImage = async (imageUrl: string, index: number) => {
+  const removeImage = async (imagePath: string, index: number) => {
     try {
-      // Delete from storage if it's a Supabase URL
-      if (imageUrl.includes("supabase")) {
-        await deleteUserPhoto(imageUrl)
-      }
+      await deleteUserPhoto(imagePath)
 
-      const newImages = currentImages.filter((img) => img !== imageUrl)
+      const newImages = currentImages.filter((img) => img !== imagePath)
 
       const { error } = await supabase.from("users").update({ user_photos: newImages }).eq("id", userId)
 
       if (error) throw error
 
       onImagesUpdate(newImages)
+      const urls = await getSignedUrlsForPhotosClient(newImages)
+      setSignedUrls(urls)
       toast.success("Image removed successfully!")
     } catch (error) {
       console.error("Error removing image:", error)
@@ -96,11 +111,11 @@ export default function ProfileImageUploader({ userId, currentImages, onImagesUp
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-3 gap-4">
-        {currentImages.map((imageUrl, index) => (
+        {signedUrls.map((url, index) => (
           <div key={index} className="relative group">
             <div className="relative w-full h-24 rounded-lg border-2 border-gray-200 overflow-hidden">
               <Image
-                src={getOptimizedImageUrl(imageUrl, 200, 200) || "/placeholder.svg"}
+                src={getOptimizedImageUrl(url, 200, 200) || "/placeholder.svg"}
                 alt={`Profile ${index + 1}`}
                 fill
                 className="object-cover"
@@ -111,14 +126,14 @@ export default function ProfileImageUploader({ userId, currentImages, onImagesUp
                 }}
               />
             </div>
-            <Button
-              size="sm"
-              variant="destructive"
-              className="absolute -top-2 -right-2 w-6 h-6 p-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-              onClick={() => removeImage(imageUrl, index)}
-            >
-              <X className="w-3 h-3" />
-            </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                className="absolute -top-2 -right-2 w-6 h-6 p-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+              onClick={() => removeImage(currentImages[index], index)}
+              >
+                <X className="w-3 h-3" />
+              </Button>
           </div>
         ))}
 
