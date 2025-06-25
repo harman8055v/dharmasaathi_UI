@@ -8,14 +8,17 @@ export async function GET(request: NextRequest) {
     const limit = Number.parseInt(searchParams.get("limit") || "20")
     const search = searchParams.get("search") || ""
     const filter = searchParams.get("filter") || "all"
+    const debug = searchParams.get("debug") === "true"
 
     const offset = (page - 1) * limit
+
+    console.log(`📊 Fetching users - Page: ${page}, Limit: ${limit}, Filter: ${filter}`)
 
     // Build query
     let query = supabaseAdmin
       .from("users")
       .select(
-        "id, email, first_name, last_name, profile_photo_url, user_photos, verification_status, account_status, created_at, is_active, city, state, gender, birthdate",
+        "id, email, first_name, last_name, profile_photo_url, user_photos, verification_status, account_status, created_at, is_active, city, state, gender, birthdate, onboarding_completed, last_login_at, role, mobile_number, email_verified, mobile_verified, about_me, partner_expectations, education, profession, annual_income, diet, temple_visit_freq",
       )
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1)
@@ -47,20 +50,43 @@ export async function GET(request: NextRequest) {
         break
     }
 
-    const { data: users, error, count } = await query
+    const { data: users, error } = await query
 
     if (error) {
-      console.error("Database error:", error)
+      console.error("❌ Database error:", error)
       return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 })
     }
 
-    // Generate signed URLs for all users
-    const enrichedUsers = await Promise.all(
-      (users || []).map(async (user) => {
-        const profileSignedUrl = user.profile_photo_url ? await getSignedUrl(user.profile_photo_url, 300) : null
+    console.log(`👥 Retrieved ${users?.length || 0} users from database`)
 
-        const gallerySignedUrls =
-          user.user_photos && Array.isArray(user.user_photos) ? await getMultipleSignedUrls(user.user_photos, 300) : []
+    // Process users and generate signed URLs
+    const enrichedUsers = await Promise.all(
+      (users || []).map(async (user, index) => {
+        if (debug) {
+          console.log(`🔍 Processing user ${index + 1}/${users?.length}: ${user.first_name} ${user.last_name}`)
+          console.log(`  Profile photo: "${user.profile_photo_url}"`)
+          console.log(`  Gallery photos: ${JSON.stringify(user.user_photos)}`)
+        }
+
+        // Generate signed URL for profile photo
+        let profileSignedUrl = null
+        if (user.profile_photo_url) {
+          profileSignedUrl = await getSignedUrl(user.profile_photo_url, 300)
+          if (debug) {
+            console.log(`  Profile signed URL: ${profileSignedUrl ? "✅ Success" : "❌ Failed"}`)
+          }
+        }
+
+        // Generate signed URLs for gallery photos
+        let gallerySignedUrls: string[] = []
+        if (user.user_photos && Array.isArray(user.user_photos) && user.user_photos.length > 0) {
+          gallerySignedUrls = await getMultipleSignedUrls(user.user_photos, 300)
+          if (debug) {
+            console.log(
+              `  Gallery URLs: ${gallerySignedUrls.filter((url) => url).length}/${user.user_photos.length} successful`,
+            )
+          }
+        }
 
         return {
           ...user,
@@ -75,6 +101,8 @@ export async function GET(request: NextRequest) {
 
     const totalPages = Math.ceil((totalCount || 0) / limit)
 
+    console.log(`✅ Successfully processed ${enrichedUsers.length} users with signed URLs`)
+
     return NextResponse.json({
       users: enrichedUsers,
       pagination: {
@@ -87,7 +115,7 @@ export async function GET(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error("API error:", error)
+    console.error("💥 API error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
