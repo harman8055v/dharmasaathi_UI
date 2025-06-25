@@ -39,6 +39,8 @@ import {
   Send,
   ImageIcon,
   Loader2,
+  Clock,
+  RefreshCwIcon,
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -91,6 +93,13 @@ interface UserType {
   onboarding_completed: boolean
   last_login_at: string
   role: string
+  height: string
+  mother_tongue: string
+  vanaprastha_interest: string
+  artha_vs_moksha: string
+  spiritual_org: string[]
+  daily_practices: string[]
+  favorite_spiritual_quote: string
 }
 
 interface AdminStats {
@@ -1381,135 +1390,416 @@ export default function AdminDashboard() {
 
       {/* User Details Modal */}
       <Dialog open={!!selectedUser} onOpenChange={() => setSelectedUser(null)}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>User Profile Preview</DialogTitle>
+            <DialogTitle className="text-2xl">Complete User Profile</DialogTitle>
             <DialogDescription>
-              Complete profile information and activity for {selectedUser?.first_name} {selectedUser?.last_name}
+              Comprehensive profile information and activity for {selectedUser?.first_name} {selectedUser?.last_name}
             </DialogDescription>
           </DialogHeader>
 
           {selectedUser && (
-            <div className="space-y-6">
-              {/* Profile Info */}
-              <div className="flex items-start gap-4">
-                <Avatar className="h-20 w-20">
-                  <AvatarImage src={selectedUser.user_photos?.[0] || "/placeholder.svg"} />
-                  <AvatarFallback className="text-lg">
-                    {selectedUser.first_name?.[0] || "U"}
-                    {selectedUser.last_name?.[0] || "U"}
-                  </AvatarFallback>
-                </Avatar>
+            <div className="space-y-8">
+              {/* Header Section with Photo and Basic Info */}
+              <div className="flex items-start gap-6 p-6 bg-gradient-to-r from-orange-50 to-pink-50 rounded-lg">
+                <div className="flex flex-col items-center gap-4">
+                  <Avatar className="h-32 w-32 border-4 border-white shadow-lg">
+                    <AvatarImage src={selectedUser.user_photos?.[0] || "/placeholder.svg"} />
+                    <AvatarFallback className="text-2xl bg-gradient-to-br from-orange-200 to-pink-200">
+                      {selectedUser.first_name?.[0] || "U"}
+                      {selectedUser.last_name?.[0] || "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="text-center">
+                    <p className="text-sm text-gray-600">Profile ID</p>
+                    <p className="text-xs font-mono bg-white px-2 py-1 rounded">{selectedUser.id.slice(0, 8)}...</p>
+                  </div>
+                </div>
+
                 <div className="flex-1">
-                  <h3 className="text-xl font-semibold">
-                    {selectedUser.first_name || "Unknown"} {selectedUser.last_name || "User"}
-                  </h3>
-                  <p className="text-gray-600">
-                    {selectedUser.birthdate ? `${calculateAge(selectedUser.birthdate)} years old` : "Age not specified"}
-                    , {selectedUser.gender || "Gender not specified"}
-                  </p>
-                  <p className="text-gray-600">
-                    {selectedUser.city && selectedUser.state
-                      ? `${selectedUser.city}, ${selectedUser.state}`
-                      : "Location not set"}
-                  </p>
-                  <div className="flex gap-2 mt-2">
-                    <Badge className={getStatusColor(selectedUser.verification_status)}>
-                      {selectedUser.verification_status || "pending"}
-                    </Badge>
-                    <Badge className={getStatusColor(selectedUser.account_status)}>
-                      {selectedUser.account_status || "basic"}
-                    </Badge>
-                    {selectedUser.onboarding_completed && (
-                      <Badge className="bg-green-100 text-green-800">Complete Profile</Badge>
-                    )}
+                  <div className="flex items-center gap-3 mb-3">
+                    <h3 className="text-3xl font-bold text-gray-900">
+                      {selectedUser.first_name || "Unknown"} {selectedUser.last_name || "User"}
+                    </h3>
                     {selectedUser.role?.toLowerCase() === "admin" && (
-                      <Badge className="bg-red-100 text-red-800">Admin</Badge>
+                      <Badge className="bg-red-100 text-red-800 text-sm">Admin</Badge>
                     )}
                     {selectedUser.role?.toLowerCase() === "super_admin" && (
-                      <Badge className="bg-red-200 text-red-900">Super Admin</Badge>
+                      <Badge className="bg-red-200 text-red-900 text-sm">Super Admin</Badge>
                     )}
                   </div>
-                </div>
-              </div>
 
-              {/* Contact Info */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <h4 className="font-medium mb-2">Contact Information</h4>
-                  <div className="space-y-2 text-sm">
-                    <p>
-                      <Mail className="w-4 h-4 inline mr-2" />
-                      {selectedUser.email || "No email"}
-                      {selectedUser.email_verified && <CheckCircle className="w-3 h-3 inline ml-1 text-green-500" />}
-                    </p>
-                    <p>
-                      <Phone className="w-4 h-4 inline mr-2" />
-                      {selectedUser.mobile_number || "No phone"}
-                      {selectedUser.mobile_verified && <CheckCircle className="w-3 h-3 inline ml-1 text-green-500" />}
-                    </p>
-                    <p>
-                      <Calendar className="w-4 h-4 inline mr-2" />
-                      Joined {new Date(selectedUser.created_at).toLocaleDateString()}
-                    </p>
-                    {selectedUser.last_login_at && (
-                      <p>
-                        <Calendar className="w-4 h-4 inline mr-2" />
-                        Last login {new Date(selectedUser.last_login_at).toLocaleDateString()}
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <p className="text-lg text-gray-700">
+                        {selectedUser.birthdate
+                          ? `${calculateAge(selectedUser.birthdate)} years old`
+                          : "Age not specified"}
+                        {selectedUser.gender && ` • ${selectedUser.gender}`}
                       </p>
-                    )}
-                  </div>
-                </div>
-                <div>
-                  <h4 className="font-medium mb-2">Profile Details</h4>
-                  <div className="space-y-2 text-sm">
-                    <p>Education: {selectedUser.education || "Not specified"}</p>
-                    <p>Profession: {selectedUser.profession || "Not specified"}</p>
-                    <p>Income: {selectedUser.annual_income || "Not specified"}</p>
-                    <p>Diet: {selectedUser.diet || "Not specified"}</p>
-                    <p>Temple Visits: {selectedUser.temple_visit_freq || "Not specified"}</p>
+                      <p className="text-gray-600 flex items-center gap-1">
+                        <MapPin className="w-4 h-4" />
+                        {selectedUser.city && selectedUser.state
+                          ? `${selectedUser.city}, ${selectedUser.state}, ${selectedUser.country || "India"}`
+                          : "Location not set"}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <div className="flex flex-wrap gap-2 justify-end mb-2">
+                        <Badge className={getStatusColor(selectedUser.verification_status)}>
+                          {selectedUser.verification_status || "pending"}
+                        </Badge>
+                        <Badge className={getStatusColor(selectedUser.account_status)}>
+                          {selectedUser.account_status || "basic"}
+                        </Badge>
+                        {selectedUser.onboarding_completed ? (
+                          <Badge className="bg-green-100 text-green-800">Complete Profile</Badge>
+                        ) : (
+                          <Badge variant="outline">Incomplete Profile</Badge>
+                        )}
+                        {!selectedUser.is_active && <Badge variant="destructive">Inactive</Badge>}
+                      </div>
+                      <p className="text-sm text-gray-500">
+                        Joined {new Date(selectedUser.created_at).toLocaleDateString()}
+                      </p>
+                      {selectedUser.last_login_at && (
+                        <p className="text-sm text-gray-500">
+                          Last login: {new Date(selectedUser.last_login_at).toLocaleDateString()}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* About Me */}
+              {/* Detailed Information Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Contact & Verification */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Phone className="h-5 w-5" />
+                      Contact & Verification
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <Mail className="w-4 h-4 text-gray-500" />
+                          <span className="font-medium">Email</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm">{selectedUser.email || "Not provided"}</span>
+                          {selectedUser.email_verified ? (
+                            <CheckCircle className="w-4 h-4 text-green-500" />
+                          ) : (
+                            <XCircle className="w-4 h-4 text-red-500" />
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <Phone className="w-4 h-4 text-gray-500" />
+                          <span className="font-medium">Mobile</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm">{selectedUser.mobile_number || "Not provided"}</span>
+                          {selectedUser.mobile_verified ? (
+                            <CheckCircle className="w-4 h-4 text-green-500" />
+                          ) : (
+                            <XCircle className="w-4 h-4 text-red-500" />
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-4 h-4 text-gray-500" />
+                          <span className="font-medium">Birth Date</span>
+                        </div>
+                        <span className="text-sm">
+                          {selectedUser.birthdate
+                            ? new Date(selectedUser.birthdate).toLocaleDateString()
+                            : "Not provided"}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <User className="w-4 h-4 text-gray-500" />
+                          <span className="font-medium">Height</span>
+                        </div>
+                        <span className="text-sm">{selectedUser.height || "Not specified"}</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Professional Information */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Crown className="h-5 w-5" />
+                      Professional Details
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <span className="font-medium">Education</span>
+                        <span className="text-sm">{selectedUser.education || "Not specified"}</span>
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <span className="font-medium">Profession</span>
+                        <span className="text-sm">{selectedUser.profession || "Not specified"}</span>
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <span className="font-medium">Annual Income</span>
+                        <span className="text-sm">{selectedUser.annual_income || "Not specified"}</span>
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <span className="font-medium">Mother Tongue</span>
+                        <span className="text-sm">{selectedUser.mother_tongue || "Not specified"}</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Spiritual Preferences */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Heart className="h-5 w-5" />
+                      Spiritual Preferences
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <span className="font-medium">Diet Preference</span>
+                        <Badge variant="outline">{selectedUser.diet || "Not specified"}</Badge>
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <span className="font-medium">Temple Visit Frequency</span>
+                        <Badge variant="outline">{selectedUser.temple_visit_freq || "Not specified"}</Badge>
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <span className="font-medium">Vanaprastha Interest</span>
+                        <Badge variant="outline">{selectedUser.vanaprastha_interest || "Not specified"}</Badge>
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <span className="font-medium">Life Focus</span>
+                        <Badge variant="outline">{selectedUser.artha_vs_moksha || "Not specified"}</Badge>
+                      </div>
+                    </div>
+
+                    {/* Spiritual Organizations */}
+                    {selectedUser.spiritual_org && selectedUser.spiritual_org.length > 0 && (
+                      <div className="p-3 bg-gray-50 rounded-lg">
+                        <span className="font-medium block mb-2">Spiritual Organizations</span>
+                        <div className="flex flex-wrap gap-1">
+                          {selectedUser.spiritual_org.map((org, index) => (
+                            <Badge key={index} variant="secondary" className="text-xs">
+                              {org}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Daily Practices */}
+                    {selectedUser.daily_practices && selectedUser.daily_practices.length > 0 && (
+                      <div className="p-3 bg-gray-50 rounded-lg">
+                        <span className="font-medium block mb-2">Daily Practices</span>
+                        <div className="flex flex-wrap gap-1">
+                          {selectedUser.daily_practices.map((practice, index) => (
+                            <Badge key={index} variant="secondary" className="text-xs">
+                              {practice}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Account Information */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Shield className="h-5 w-5" />
+                      Account Information
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <span className="font-medium">Account Status</span>
+                        <Badge className={getStatusColor(selectedUser.account_status)}>
+                          {selectedUser.account_status || "basic"}
+                        </Badge>
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <span className="font-medium">Verification Status</span>
+                        <Badge className={getStatusColor(selectedUser.verification_status)}>
+                          {selectedUser.verification_status || "pending"}
+                        </Badge>
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <span className="font-medium">Profile Status</span>
+                        <Badge variant={selectedUser.is_active ? "default" : "destructive"}>
+                          {selectedUser.is_active ? "Active" : "Inactive"}
+                        </Badge>
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <span className="font-medium">Onboarding</span>
+                        <Badge variant={selectedUser.onboarding_completed ? "default" : "outline"}>
+                          {selectedUser.onboarding_completed ? "Completed" : "Incomplete"}
+                        </Badge>
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <span className="font-medium">User Role</span>
+                        <Badge variant="outline">
+                          {selectedUser.role === "super_admin"
+                            ? "Super Admin"
+                            : selectedUser.role === "admin"
+                              ? "Admin"
+                              : "User"}
+                        </Badge>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* About Me Section */}
               {selectedUser.about_me && (
-                <div>
-                  <h4 className="font-medium mb-2">About Me</h4>
-                  <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">{selectedUser.about_me}</p>
-                </div>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>About Me</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
+                      <p className="text-gray-700 leading-relaxed">{selectedUser.about_me}</p>
+                    </div>
+                  </CardContent>
+                </Card>
               )}
 
               {/* Partner Expectations */}
               {selectedUser.partner_expectations && (
-                <div>
-                  <h4 className="font-medium mb-2">Partner Expectations</h4>
-                  <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">{selectedUser.partner_expectations}</p>
-                </div>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Partner Expectations</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="p-4 bg-gradient-to-r from-pink-50 to-rose-50 rounded-lg">
+                      <p className="text-gray-700 leading-relaxed">{selectedUser.partner_expectations}</p>
+                    </div>
+                  </CardContent>
+                </Card>
               )}
 
-              {/* Photos */}
-              {selectedUser.user_photos && selectedUser.user_photos.length > 0 && (
-                <div>
-                  <h4 className="font-medium mb-2">Photos ({selectedUser.user_photos.length})</h4>
-                  <div className="grid grid-cols-3 gap-2">
-                    {selectedUser.user_photos.map((photo, index) => (
-                      <div key={index} className="aspect-square rounded-lg overflow-hidden">
-                        <Image
-                          src={photo || "/placeholder.svg"}
-                          alt={`Photo ${index + 1}`}
-                          width={200}
-                          height={200}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
+              {/* Favorite Spiritual Quote */}
+              {selectedUser.favorite_spiritual_quote && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Favorite Spiritual Quote</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg border-l-4 border-orange-300">
+                      <blockquote className="text-gray-700 italic text-lg leading-relaxed">
+                        "{selectedUser.favorite_spiritual_quote}"
+                      </blockquote>
+                    </div>
+                  </CardContent>
+                </Card>
               )}
+
+              {/* Photos Gallery */}
+              {selectedUser.user_photos && selectedUser.user_photos.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <ImageIcon className="h-5 w-5" />
+                      Photo Gallery ({selectedUser.user_photos.length} photos)
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                      {selectedUser.user_photos.map((photo, index) => (
+                        <div
+                          key={index}
+                          className="aspect-square rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow"
+                        >
+                          <Image
+                            src={photo || "/placeholder.svg"}
+                            alt={`Photo ${index + 1}`}
+                            width={200}
+                            height={200}
+                            className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Timestamps */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Clock className="h-5 w-5" />
+                    Activity Timeline
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="text-center p-4 bg-gray-50 rounded-lg">
+                      <Calendar className="w-6 h-6 mx-auto mb-2 text-gray-500" />
+                      <p className="text-sm font-medium">Account Created</p>
+                      <p className="text-xs text-gray-600">{new Date(selectedUser.created_at).toLocaleDateString()}</p>
+                      <p className="text-xs text-gray-500">{new Date(selectedUser.created_at).toLocaleTimeString()}</p>
+                    </div>
+
+                    <div className="text-center p-4 bg-gray-50 rounded-lg">
+                      <RefreshCwIcon className="w-6 h-6 mx-auto mb-2 text-gray-500" />
+                      <p className="text-sm font-medium">Last Updated</p>
+                      <p className="text-xs text-gray-600">{new Date(selectedUser.updated_at).toLocaleDateString()}</p>
+                      <p className="text-xs text-gray-500">{new Date(selectedUser.updated_at).toLocaleTimeString()}</p>
+                    </div>
+
+                    {selectedUser.last_login_at && (
+                      <div className="text-center p-4 bg-gray-50 rounded-lg">
+                        <User className="w-6 h-6 mx-auto mb-2 text-gray-500" />
+                        <p className="text-sm font-medium">Last Login</p>
+                        <p className="text-xs text-gray-600">
+                          {new Date(selectedUser.last_login_at).toLocaleDateString()}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {new Date(selectedUser.last_login_at).toLocaleTimeString()}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
 
               {/* Action Buttons */}
-              <div className="flex flex-wrap gap-2 pt-4 border-t">
+              <div className="flex flex-wrap gap-3 pt-6 border-t bg-gray-50 p-4 rounded-lg">
                 <Button variant="outline" size="sm" onClick={() => setEditingUser(selectedUser)}>
                   <Edit className="w-4 h-4 mr-2" />
                   Edit Profile
@@ -1528,13 +1818,14 @@ export default function AdminDashboard() {
                       size="sm"
                       onClick={() => handleUserAction(selectedUser.id, "verify")}
                       disabled={actionLoading === selectedUser.id + "verify"}
+                      className="bg-green-600 hover:bg-green-700"
                     >
                       {actionLoading === selectedUser.id + "verify" ? (
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                       ) : (
                         <CheckCircle className="w-4 h-4 mr-2" />
                       )}
-                      Approve
+                      Approve Verification
                     </Button>
                     <Button
                       variant="destructive"
@@ -1547,10 +1838,32 @@ export default function AdminDashboard() {
                       ) : (
                         <XCircle className="w-4 h-4 mr-2" />
                       )}
-                      Reject
+                      Reject Verification
                     </Button>
                   </>
                 )}
+
+                {/* Account Status Actions */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Crown className="w-4 h-4 mr-2" />
+                      Change Status
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem onClick={() => handleUserAction(selectedUser.id, "makeBasic")}>
+                      Make Basic
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleUserAction(selectedUser.id, "makePremium")}>
+                      Make Premium
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleUserAction(selectedUser.id, "makeElite")}>
+                      Make Elite
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
                 {selectedUser.is_active !== false ? (
                   <Button
                     variant="destructive"
@@ -1563,20 +1876,21 @@ export default function AdminDashboard() {
                     ) : (
                       <Ban className="w-4 h-4 mr-2" />
                     )}
-                    Deactivate
+                    Deactivate Account
                   </Button>
                 ) : (
                   <Button
                     size="sm"
                     onClick={() => handleUserAction(selectedUser.id, "activate")}
                     disabled={actionLoading === selectedUser.id + "activate"}
+                    className="bg-green-600 hover:bg-green-700"
                   >
                     {actionLoading === selectedUser.id + "activate" ? (
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                     ) : (
                       <CheckCircle className="w-4 h-4 mr-2" />
                     )}
-                    Activate
+                    Activate Account
                   </Button>
                 )}
               </div>
