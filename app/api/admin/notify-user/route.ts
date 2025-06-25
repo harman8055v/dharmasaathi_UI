@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
-import { createClient } from "@supabase/supabase-js"
+import supabaseAdmin from "@/utils/supabaseAdmin"
 import twilio from "twilio"
 
 // Initialize Twilio client
@@ -10,9 +10,6 @@ const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_A
 export async function POST(request: NextRequest) {
   try {
     const { userId, message, type } = await request.json()
-
-    // Create admin client with service role key
-    const supabaseAdmin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
     // Create auth client to verify user session
     const supabaseAuth = createRouteHandlerClient({ cookies })
