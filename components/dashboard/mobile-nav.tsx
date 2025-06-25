@@ -93,8 +93,8 @@ export default function MobileNav({ userProfile }: MobileNavProps) {
   ]
 
   const getUserPhoto = () => {
-    if (userProfile?.user_photos && userProfile.user_photos.length > 0) {
-      return userProfile.user_photos[0]
+    if (userProfile?.signedUrls && userProfile.signedUrls.length > 0) {
+      return userProfile.signedUrls[0]
     }
     return "/placeholder-user.jpg"
   }

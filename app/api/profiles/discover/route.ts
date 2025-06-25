@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { isDevelopmentMode } from "@/lib/dev-auth"
-import { getSignedUrlsForPhotos, supabaseAdmin } from "@/lib/supabase-storage"
+import supabaseAdmin from "@/utils/supabaseAdmin"
+import { getSignedUrlsForPhotos } from "@/utils/getSignedUrls"
 
 // Mock profiles for development
 const MOCK_PROFILES = [
@@ -117,7 +118,7 @@ export async function GET(request: NextRequest) {
     const mapped = await Promise.all(
       (profiles || []).map(async (p) => ({
         ...p,
-        user_photos: await getSignedUrlsForPhotos(p.user_photos || []),
+        signedUrls: await getSignedUrlsForPhotos(p.user_photos || []),
       }))
     )
 

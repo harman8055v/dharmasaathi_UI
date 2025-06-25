@@ -112,26 +112,26 @@ export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, 
   }
 
   const nextImage = () => {
-    if (profile.user_photos && profile.user_photos.length > 1) {
-      setCurrentImageIndex((prev) => (prev + 1) % profile.user_photos.length)
+    if (profile.signedUrls && profile.signedUrls.length > 1) {
+      setCurrentImageIndex((prev) => (prev + 1) % profile.signedUrls.length)
     }
   }
 
   const prevImage = () => {
-    if (profile.user_photos && profile.user_photos.length > 1) {
-      setCurrentImageIndex((prev) => (prev - 1 + profile.user_photos.length) % profile.user_photos.length)
+    if (profile.signedUrls && profile.signedUrls.length > 1) {
+      setCurrentImageIndex((prev) => (prev - 1 + profile.signedUrls.length) % profile.signedUrls.length)
     }
   }
 
   const nextDetailImage = () => {
-    if (profile.user_photos && profile.user_photos.length > 1) {
-      setCurrentDetailImageIndex((prev) => (prev + 1) % profile.user_photos.length)
+    if (profile.signedUrls && profile.signedUrls.length > 1) {
+      setCurrentDetailImageIndex((prev) => (prev + 1) % profile.signedUrls.length)
     }
   }
 
   const prevDetailImage = () => {
-    if (profile.user_photos && profile.user_photos.length > 1) {
-      setCurrentDetailImageIndex((prev) => (prev - 1 + profile.user_photos.length) % profile.user_photos.length)
+    if (profile.signedUrls && profile.signedUrls.length > 1) {
+      setCurrentDetailImageIndex((prev) => (prev - 1 + profile.signedUrls.length) % profile.signedUrls.length)
     }
   }
 
@@ -153,15 +153,15 @@ export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, 
   }
 
   const getCurrentImage = () => {
-    if (profile.user_photos && profile.user_photos.length > 0) {
-      return getOptimizedImageUrl(profile.user_photos[currentImageIndex], 400, 600)
+    if (profile.signedUrls && profile.signedUrls.length > 0) {
+      return getOptimizedImageUrl(profile.signedUrls[currentImageIndex], 400, 600)
     }
     return "/placeholder.svg"
   }
 
   const getCurrentDetailImage = () => {
-    if (profile.user_photos && profile.user_photos.length > 0) {
-      return getOptimizedImageUrl(profile.user_photos[currentDetailImageIndex], 800, 1200)
+    if (profile.signedUrls && profile.signedUrls.length > 0) {
+      return getOptimizedImageUrl(profile.signedUrls[currentDetailImageIndex], 800, 1200)
     }
     return "/placeholder.svg"
   }
@@ -250,7 +250,7 @@ export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, 
             </motion.button>
 
             {/* Image Navigation */}
-            {profile.user_photos && profile.user_photos.length > 1 && (
+            {profile.signedUrls && profile.signedUrls.length > 1 && (
               <>
                 <button
                   onClick={(e) => {
@@ -273,7 +273,7 @@ export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, 
 
                 {/* Image Indicators */}
                 <div className="absolute top-4 left-1/2 transform -translate-x-1/2 flex gap-2 z-10">
-                  {profile.user_photos.map((_: any, idx: number) => (
+                  {profile.signedUrls.map((_: any, idx: number) => (
                     <div
                       key={idx}
                       className={`w-2 h-2 rounded-full transition-colors ${
@@ -530,7 +530,7 @@ export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, 
 
             <div className="pb-32">
               {/* Optimized Swipeable Photo Gallery */}
-              {profile.user_photos && profile.user_photos.length > 0 && (
+              {profile.signedUrls && profile.signedUrls.length > 0 && (
                 <div
                   className="relative h-[50vh] bg-gray-100 overflow-hidden"
                   onTouchStart={handleTouchStart}
@@ -542,7 +542,7 @@ export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, 
                       transform: `translateX(-${currentDetailImageIndex * 100}%)`,
                     }}
                   >
-                    {profile.user_photos.map((photo: string, idx: number) => (
+                    {profile.signedUrls.map((photo: string, idx: number) => (
                       <div key={idx} className="w-full h-full relative flex-shrink-0">
                         <Image
                           src={photo || "/placeholder.svg"}
@@ -569,13 +569,13 @@ export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, 
                     />
                     <button
                       onClick={nextDetailImage}
-                      disabled={currentDetailImageIndex === profile.user_photos.length - 1}
+                      disabled={currentDetailImageIndex === profile.signedUrls.length - 1}
                       className="flex-1 opacity-0 disabled:cursor-not-allowed"
                     />
                   </div>
 
                   {/* Better Photo Navigation Arrows */}
-                  {profile.user_photos.length > 1 && (
+                  {profile.signedUrls.length > 1 && (
                     <>
                       <motion.button
                         onClick={prevDetailImage}
@@ -588,7 +588,7 @@ export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, 
                       </motion.button>
                       <motion.button
                         onClick={nextDetailImage}
-                        disabled={currentDetailImageIndex === profile.user_photos.length - 1}
+                        disabled={currentDetailImageIndex === profile.signedUrls.length - 1}
                         className="absolute right-4 top-1/2 transform -translate-y-1/2 w-14 h-14 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center text-gray-700 hover:bg-white shadow-lg transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed z-20"
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
@@ -600,7 +600,7 @@ export default function SwipeCard({ profile, onSwipe, onUndo, showUndo = false, 
 
                   {/* Photo Navigation Dots */}
                   <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-3 z-20">
-                    {profile.user_photos.map((_: any, idx: number) => (
+                    {profile.signedUrls.map((_: any, idx: number) => (
                       <motion.button
                         key={idx}
                         onClick={() => setCurrentDetailImageIndex(idx)}

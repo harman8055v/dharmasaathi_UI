@@ -1,8 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
-import { createClient } from "@supabase/supabase-js"
-import { getSignedUrlsForPhotos } from "@/lib/supabase-storage"
+import supabaseAdmin from "@/utils/supabaseAdmin"
+import { getSignedUrlsForPhotos } from "@/utils/getSignedUrls"
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,8 +13,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get("search") || ""
     const offset = (page - 1) * limit
 
-    // Create admin client with service role key for data access
-    const supabaseAdmin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+    // Server-side supabase client
 
     // Create auth client to verify user session
     const supabaseAuth = createRouteHandlerClient({ cookies })
@@ -131,11 +130,15 @@ export async function GET(request: NextRequest) {
 
     if (users) {
       for (const u of users) {
-        if (u.verification_status === "verified" || ["admin", "super_admin"].includes(adminUser.role?.toLowerCase())) {
-          u.user_photos = await getSignedUrlsForPhotos(u.user_photos || [])
+        if (
+          u.verification_status === "verified" ||
+          ["admin", "super_admin"].includes(adminUser.role?.toLowerCase())
+        ) {
+          u.signedUrls = await getSignedUrlsForPhotos(u.user_photos || [])
         } else {
-          u.user_photos = []
+          u.signedUrls = []
         }
+        delete u.user_photos
       }
     }
 
