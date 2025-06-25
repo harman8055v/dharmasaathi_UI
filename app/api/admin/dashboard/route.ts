@@ -5,6 +5,8 @@ import supabaseAdmin from "@/utils/supabaseAdmin"
 import { getSignedUrlsForPhotos } from "@/utils/getSignedUrls"
 
 export async function GET(request: NextRequest) {
+  console.log("=== ADMIN DASHBOARD API CALLED ===")
+
   try {
     const { searchParams } = new URL(request.url)
     const page = Number.parseInt(searchParams.get("page") || "1")
@@ -26,14 +28,21 @@ export async function GET(request: NextRequest) {
     const supabaseAuth = createRouteHandlerClient({ cookies })
 
     // Check if user is authenticated
+    console.log("Checking user session...")
     const {
       data: { session },
       error: sessionError,
     } = await supabaseAuth.auth.getSession()
 
+    console.log("Session check result:", {
+      hasSession: !!session,
+      userId: session?.user?.id,
+      error: sessionError,
+    })
+
     if (sessionError) {
       console.error("Session error:", sessionError)
-      return NextResponse.json({ error: "Authentication failed" }, { status: 401 })
+      return NextResponse.json({ error: "Authentication failed", details: sessionError.message }, { status: 401 })
     }
 
     if (!session?.user) {
@@ -42,18 +51,26 @@ export async function GET(request: NextRequest) {
     }
 
     // Verify admin role
+    console.log("Verifying admin role for user:", session.user.id)
     const { data: adminUser, error: adminError } = await supabaseAdmin
       .from("users")
-      .select("role")
+      .select("role, email, first_name, last_name")
       .eq("id", session.user.id)
       .single()
 
-    if (adminError || !adminUser || !["admin", "super_admin"].includes(adminUser.role?.toLowerCase())) {
-      console.error("Admin verification failed:", { adminError, adminUser })
+    console.log("Admin verification result:", { adminUser, adminError })
+
+    if (adminError) {
+      console.error("Admin verification error:", adminError)
+      return NextResponse.json({ error: "Failed to verify admin status", details: adminError.message }, { status: 403 })
+    }
+
+    if (!adminUser || !["admin", "super_admin"].includes(adminUser.role?.toLowerCase())) {
+      console.error("Insufficient permissions. User role:", adminUser?.role)
       return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 })
     }
 
-    console.log("Admin access verified for user:", session.user.email)
+    console.log("Admin access verified for user:", adminUser.email)
 
     // Build query based on filters
     let query = supabaseAdmin.from("users").select(

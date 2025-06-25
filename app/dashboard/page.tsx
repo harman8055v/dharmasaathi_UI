@@ -5,7 +5,21 @@ import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 import { debugLog } from "@/lib/logger"
 import { Button } from "@/components/ui/button"
-import { Heart, Settings, User, Shield, Users, Clock, CheckCircle, AlertCircle, Edit, Star, Zap } from "lucide-react"
+import {
+  Heart,
+  Settings,
+  User,
+  Shield,
+  Users,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  Edit,
+  Star,
+  Zap,
+  AlertTriangle,
+  RefreshCw,
+} from "lucide-react"
 import { ReferralProgram } from "@/components/dashboard/referral-program"
 import MobileNav from "@/components/dashboard/mobile-nav"
 import SettingsCard from "@/components/dashboard/settings-card"
@@ -20,15 +34,29 @@ export default function DashboardPage() {
   const [profiles, setProfiles] = useState<any[]>([])
   const [swipeStats, setSwipeStats] = useState<any>(null)
   const router = useRouter()
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     async function getUser() {
       try {
+        console.log("Dashboard: Starting user fetch...")
+        setLoading(true)
+
         const {
           data: { user },
+          error: sessionError,
         } = await supabase.auth.getUser()
 
+        console.log("Dashboard: User from auth:", user, "Error:", sessionError)
+
+        if (sessionError) {
+          console.error("Dashboard: Session error:", sessionError)
+          router.push("/")
+          return
+        }
+
         if (!user) {
+          console.log("Dashboard: No user found, redirecting to home")
           router.push("/")
           return
         }
@@ -36,16 +64,28 @@ export default function DashboardPage() {
         setUser(user)
 
         // Fetch user profile data
+        console.log("Dashboard: Fetching profile for user:", user.id)
         const { data: profileData, error } = await supabase.from("users").select("*").eq("id", user.id).single()
+
+        console.log("Dashboard: Profile data:", profileData, "Error:", error)
 
         if (error) {
           console.error("Error fetching user profile:", error)
+          // Don't redirect immediately, show error state
+          setError("Failed to load profile. Please try refreshing.")
+          setLoading(false)
+          return
+        }
+
+        if (!profileData) {
+          console.log("Dashboard: No profile found, redirecting to onboarding")
           router.push("/onboarding")
           return
         }
 
         // If user hasn't completed onboarding, redirect to onboarding
         if (!profileData?.onboarding_completed) {
+          console.log("Dashboard: Onboarding not completed, redirecting")
           router.push("/onboarding")
           return
         }
@@ -60,14 +100,7 @@ export default function DashboardPage() {
         // If verified, fetch profiles and swipe stats
         const isVerifiedAccount =
           profileData?.verification_status === "verified" ||
-          [
-            "active",
-            "sparsh",
-            "sangam",
-            "samarpan",
-            "premium",
-            "elite",
-          ].includes(profileData?.account_status ?? "")
+          ["active", "sparsh", "sangam", "samarpan", "premium", "elite"].includes(profileData?.account_status ?? "")
 
         if (isVerifiedAccount) {
           fetchProfiles()
@@ -77,7 +110,8 @@ export default function DashboardPage() {
         setLoading(false)
       } catch (error) {
         console.error("Error in auth check:", error)
-        router.push("/")
+        setError("An unexpected error occurred. Please try refreshing.")
+        setLoading(false)
       }
     }
 
@@ -181,12 +215,31 @@ export default function DashboardPage() {
     )
   }
 
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-6">
+          <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-red-500" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Dashboard Error</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <div className="flex gap-2 justify-center">
+            <Button onClick={() => window.location.reload()}>
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Refresh Page
+            </Button>
+            <Button variant="outline" onClick={() => router.push("/")}>
+              Go Home
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   const profileCompleteness = calculateProfileCompleteness()
   const isVerified =
     profile?.verification_status === "verified" ||
-    ["active", "sparsh", "sangam", "samarpan", "premium", "elite"].includes(
-      profile?.account_status ?? "",
-    )
+    ["active", "sparsh", "sangam", "samarpan", "premium", "elite"].includes(profile?.account_status ?? "")
   console.log("Is verified:", isVerified)
 
   return (

@@ -192,18 +192,30 @@ export default function AdminDashboard() {
 
   const fetchCurrentAdminUser = async () => {
     try {
+      console.log("Admin: Fetching current admin user...")
+
       const {
         data: { session },
+        error: sessionError,
       } = await supabase.auth.getSession()
 
+      console.log("Admin: Session:", session, "Error:", sessionError)
+
+      if (sessionError) {
+        console.error("Admin: Session error:", sessionError)
+        return
+      }
+
       if (session?.user) {
-        const { data: userData } = await supabase
+        const { data: userData, error: userError } = await supabase
           .from("users")
           .select("id, email, role, first_name, last_name")
           .eq("id", session.user.id)
           .single()
 
-        if (userData) {
+        console.log("Admin: User data:", userData, "Error:", userError)
+
+        if (userData && !userError) {
           setAdminUser(userData)
         }
       }
@@ -213,6 +225,8 @@ export default function AdminDashboard() {
   }
 
   const fetchAdminData = async (page = 1, includeStats = false) => {
+    console.log("Admin: Starting data fetch...", { page, includeStats, filterStatus, searchTerm })
+
     setLoading(true)
     setUsersLoading(true)
     if (includeStats) setStatsLoading(true)
@@ -227,6 +241,8 @@ export default function AdminDashboard() {
         include_stats: includeStats.toString(),
       })
 
+      console.log("Admin: Making API request to:", `/api/admin/dashboard?${params}`)
+
       const response = await fetch(`/api/admin/dashboard?${params}`, {
         method: "GET",
         credentials: "include",
@@ -235,13 +251,16 @@ export default function AdminDashboard() {
         },
       })
 
+      console.log("Admin: API response status:", response.status)
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
+        console.error("Admin: API error response:", errorData)
         throw new Error(errorData.error || `HTTP ${response.status}`)
       }
 
       const data = await response.json()
-      console.log("Dashboard data received:", {
+      console.log("Admin: Dashboard data received:", {
         usersCount: data.users?.length,
         pagination: data.pagination,
         stats: data.stats,
@@ -250,8 +269,13 @@ export default function AdminDashboard() {
       // Fetch signed URLs for each user
       const usersWithSignedUrls = await Promise.all(
         (data.users || []).map(async (user: UserType) => {
-          const signedUrls = await getSignedUrlsForPhotosClient(user.user_photos || [])
-          return { ...user, signedUrls }
+          try {
+            const signedUrls = await getSignedUrlsForPhotosClient(user.user_photos || [])
+            return { ...user, signedUrls }
+          } catch (photoError) {
+            console.error("Error getting signed URLs for user:", user.id, photoError)
+            return { ...user, signedUrls: [] }
+          }
         }),
       )
 
