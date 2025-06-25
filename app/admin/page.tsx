@@ -83,6 +83,8 @@ interface UserType {
   onboarding_completed: boolean
   last_login_at: string
   role: string
+  profileSignedUrl?: string
+  gallerySignedUrls?: string[]
 }
 
 interface AdminStats {
@@ -204,7 +206,8 @@ export default function AdminDashboard() {
         include_stats: includeStats.toString(),
       })
 
-      const response = await fetch(`/api/admin/dashboard?${params}`, {
+      // Use the new API endpoint that includes signed URLs
+      const response = await fetch(`/api/admin/users-with-photos?${params}`, {
         method: "GET",
         credentials: "include",
         headers: {
@@ -221,13 +224,15 @@ export default function AdminDashboard() {
       console.log("Dashboard data received:", {
         usersCount: data.users?.length,
         pagination: data.pagination,
-        stats: data.stats,
+        hasSignedUrls: data.users?.[0]?.profileSignedUrl ? "Yes" : "No",
       })
 
       setUsers(data.users || [])
       setPagination(data.pagination)
-      if (data.stats) {
-        setStats(data.stats)
+
+      // If we need stats, fetch them separately
+      if (includeStats) {
+        await fetchStats()
       }
     } catch (error) {
       console.error("Dashboard data fetch error:", error)
@@ -240,6 +245,25 @@ export default function AdminDashboard() {
       })
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Add this new function to fetch stats separately
+  const fetchStats = async () => {
+    try {
+      const response = await fetch("/api/admin/dashboard?include_stats=true&limit=1", {
+        method: "GET",
+        credentials: "include",
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.stats) {
+          setStats(data.stats)
+        }
+      }
+    } catch (error) {
+      console.error("Stats fetch error:", error)
     }
   }
 
@@ -730,7 +754,7 @@ export default function AdminDashboard() {
                     <div key={user.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                       <div className="flex items-center gap-3">
                         <Avatar className="h-10 w-10">
-                          <AvatarImage src={user.user_photos?.[0] || "/placeholder.svg"} />
+                          <AvatarImage src={user.profileSignedUrl || "/placeholder.svg"} />
                           <AvatarFallback>
                             {user.first_name?.[0] || "U"}
                             {user.last_name?.[0] || "U"}
@@ -846,7 +870,7 @@ export default function AdminDashboard() {
                       >
                         <div className="flex items-center gap-4">
                           <Avatar className="h-12 w-12">
-                            <AvatarImage src={user.user_photos?.[0] || "/placeholder.svg"} />
+                            <AvatarImage src={user.profileSignedUrl || "/placeholder.svg"} />
                             <AvatarFallback>
                               {user.first_name?.[0] || "U"}
                               {user.last_name?.[0] || "U"}
@@ -1006,7 +1030,7 @@ export default function AdminDashboard() {
                       <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
                         <div className="flex items-center gap-4">
                           <Avatar className="h-16 w-16">
-                            <AvatarImage src={user.user_photos?.[0] || "/placeholder.svg"} />
+                            <AvatarImage src={user.profileSignedUrl || "/placeholder.svg"} />
                             <AvatarFallback className="text-lg">
                               {user.first_name?.[0] || "U"}
                               {user.last_name?.[0] || "U"}
@@ -1227,7 +1251,7 @@ export default function AdminDashboard() {
               {/* Profile Info */}
               <div className="flex items-start gap-4">
                 <Avatar className="h-20 w-20">
-                  <AvatarImage src={selectedUser.user_photos?.[0] || "/placeholder.svg"} />
+                  <AvatarImage src={selectedUser.profileSignedUrl || "/placeholder.svg"} />
                   <AvatarFallback className="text-lg">
                     {selectedUser.first_name?.[0] || "U"}
                     {selectedUser.last_name?.[0] || "U"}
@@ -1322,14 +1346,14 @@ export default function AdminDashboard() {
               )}
 
               {/* Photos */}
-              {selectedUser.user_photos && selectedUser.user_photos.length > 0 && (
+              {selectedUser.gallerySignedUrls && selectedUser.gallerySignedUrls.length > 0 && (
                 <div>
-                  <h4 className="font-medium mb-2">Photos ({selectedUser.user_photos.length})</h4>
+                  <h4 className="font-medium mb-2">Photos ({selectedUser.gallerySignedUrls.length})</h4>
                   <div className="grid grid-cols-3 gap-2">
-                    {selectedUser.user_photos.map((photo, index) => (
+                    {selectedUser.gallerySignedUrls.map((signedUrl, index) => (
                       <div key={index} className="aspect-square rounded-lg overflow-hidden">
                         <Image
-                          src={photo || "/placeholder.svg"}
+                          src={signedUrl || "/placeholder.svg"}
                           alt={`Photo ${index + 1}`}
                           width={200}
                           height={200}
