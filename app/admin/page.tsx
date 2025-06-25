@@ -1094,7 +1094,7 @@ export default function AdminDashboard() {
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
-                    ))\
+                    ))}
                   </div>
                 )}
               </CardContent>
@@ -2002,107 +2002,107 @@ export default function AdminDashboard() {
                       <SelectItem value="pending">Pending</SelectItem>
                       <SelectItem value="verified">Verified</SelectItem>
                       <SelectItem value="rejected">Rejected</SelectItem>
-                  </SelectContent>
-                </Select>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="account_status">Account Status</Label>
+                  <Select
+                    value={editingUser.account_status || "basic"}
+                    onValueChange={(value) => setEditingUser({ ...editingUser, account_status: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="basic">Basic</SelectItem>
+                      <SelectItem value="premium">Premium</SelectItem>
+                      <SelectItem value="elite">Elite</SelectItem>
+                      <SelectItem value="sparsh">Sparsh</SelectItem>
+                      <SelectItem value="sangam">Sangam</SelectItem>
+                      <SelectItem value="samarpan">Samarpan</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <div>
-                <Label htmlFor="account_status">Account Status</Label>
-                <Select
-                  value={editingUser.account_status || "basic"}
-                  onValueChange={(value) => setEditingUser({ ...editingUser, account_status: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="basic">Basic</SelectItem>
-                    <SelectItem value="premium">Premium</SelectItem>
-                    <SelectItem value="elite">Elite</SelectItem>
-                    <SelectItem value="sparsh">Sparsh</SelectItem>
-                    <SelectItem value="sangam">Sangam</SelectItem>
-                    <SelectItem value="samarpan">Samarpan</SelectItem>
-                  </SelectContent>
-                </Select>
+
+              <div className="flex justify-end gap-2 pt-4">
+                <Button variant="outline" onClick={() => setEditingUser(null)}>
+                  Cancel
+                </Button>
+                <Button onClick={() => handleEditUser(editingUser)} disabled={actionLoading === "edit"}>
+                  {actionLoading === "edit" ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save Changes"
+                  )}
+                </Button>
               </div>
             </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
-            <div className="flex justify-end gap-2 pt-4">
-              <Button variant="outline" onClick={() => setEditingUser(null)}>
+      {/* Notification Modal */}
+      <Dialog
+        open={notificationModal.open}
+        onOpenChange={(open) => setNotificationModal({ ...notificationModal, open })}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Send Notification</DialogTitle>
+            <DialogDescription>
+              Send a notification to {notificationModal.user?.first_name} {notificationModal.user?.last_name}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="notification_type">Notification Type</Label>
+              <Select
+                value={notificationModal.type}
+                onValueChange={(value) => setNotificationModal({ ...notificationModal, type: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="profile_update">Profile Update Required</SelectItem>
+                  <SelectItem value="verification_pending">Verification Under Review</SelectItem>
+                  <SelectItem value="verification_rejected">Verification Update Needed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="notification_message">Message</Label>
+              <Textarea
+                id="notification_message"
+                value={notificationModal.message}
+                onChange={(e) => setNotificationModal({ ...notificationModal, message: e.target.value })}
+                rows={4}
+                placeholder="Enter your message here..."
+              />
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setNotificationModal({ open: false, user: null, message: "", type: "profile_update" })}
+              >
                 Cancel
               </Button>
-              <Button onClick={() => handleEditUser(editingUser)} disabled={actionLoading === "edit"}>
-                {actionLoading === "edit" ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  "Save Changes"
-                )}
+              <Button onClick={handleSendNotification}>
+                <Send className="w-4 h-4 mr-2" />
+                Send Notification
               </Button>
             </div>
           </div>
-        )}
-      </DialogContent>
-    </Dialog>
-
-    {/* Notification Modal */}
-    <Dialog
-      open={notificationModal.open}
-      onOpenChange={(open) => setNotificationModal({ ...notificationModal, open })}
-    >
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Send Notification</DialogTitle>
-          <DialogDescription>
-            Send a notification to {notificationModal.user?.first_name} {notificationModal.user?.last_name}
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="notification_type">Notification Type</Label>
-            <Select
-              value={notificationModal.type}
-              onValueChange={(value) => setNotificationModal({ ...notificationModal, type: value })}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="profile_update">Profile Update Required</SelectItem>
-                <SelectItem value="verification_pending">Verification Under Review</SelectItem>
-                <SelectItem value="verification_rejected">Verification Update Needed</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <Label htmlFor="notification_message">Message</Label>
-            <Textarea
-              id="notification_message"
-              value={notificationModal.message}
-              onChange={(e) => setNotificationModal({ ...notificationModal, message: e.target.value })}
-              rows={4}
-              placeholder="Enter your message here..."
-            />
-          </div>
-
-          <div className="flex justify-end gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setNotificationModal({ open: false, user: null, message: "", type: "profile_update" })}
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleSendNotification}>
-              <Send className="w-4 h-4 mr-2" />
-              Send Notification
-            </Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  </div>
+        </DialogContent>
+      </Dialog>
+    </div>
   )
 }
