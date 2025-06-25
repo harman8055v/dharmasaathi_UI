@@ -11,9 +11,16 @@ export async function GET(request: NextRequest) {
     const limit = Number.parseInt(searchParams.get("limit") || "20")
     const filter = searchParams.get("filter") || "all"
     const search = searchParams.get("search") || ""
+    const includeStats = searchParams.get("include_stats") === "true"
     const offset = (page - 1) * limit
 
-    // Server-side supabase client
+    console.log("Admin dashboard API called with params:", {
+      page,
+      limit,
+      filter,
+      search,
+      includeStats,
+    })
 
     // Create auth client to verify user session
     const supabaseAuth = createRouteHandlerClient({ cookies })
@@ -42,10 +49,11 @@ export async function GET(request: NextRequest) {
       .single()
 
     if (adminError || !adminUser || !["admin", "super_admin"].includes(adminUser.role?.toLowerCase())) {
+      console.error("Admin verification failed:", { adminError, adminUser })
       return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 })
     }
 
-    console.log("Admin dashboard access by user:", session.user.email)
+    console.log("Admin access verified for user:", session.user.email)
 
     // Build query based on filters
     let query = supabaseAdmin.from("users").select(
@@ -77,7 +85,14 @@ export async function GET(request: NextRequest) {
         temple_visit_freq,
         onboarding_completed,
         last_login_at,
-        role
+        role,
+        height,
+        mother_tongue,
+        vanaprastha_interest,
+        artha_vs_moksha,
+        spiritual_org,
+        daily_practices,
+        favorite_spiritual_quote
       `,
       { count: "exact" },
     )
@@ -128,106 +143,133 @@ export async function GET(request: NextRequest) {
 
     console.log(`Fetched ${users?.length || 0} users (page ${page}, total: ${count})`)
 
+    // Generate signed URLs for user photos
     if (users) {
-      for (const u of users) {
-        if (
-          u.verification_status === "verified" ||
-          ["admin", "super_admin"].includes(adminUser.role?.toLowerCase())
-        ) {
-          u.signedUrls = await getSignedUrlsForPhotos(u.user_photos || [])
-        } else {
-          u.signedUrls = []
+      for (const user of users) {
+        try {
+          if (user.user_photos && Array.isArray(user.user_photos) && user.user_photos.length > 0) {
+            user.signedUrls = await getSignedUrlsForPhotos(user.user_photos)
+          } else {
+            user.signedUrls = []
+          }
+          // Remove the raw photo paths from response
+          delete user.user_photos
+        } catch (photoError) {
+          console.error("Error generating signed URLs for user:", user.id, photoError)
+          user.signedUrls = []
+          delete user.user_photos
         }
-        delete u.user_photos
       }
     }
 
     // Calculate stats (only when needed - for overview)
     let stats = null
-    if (searchParams.get("include_stats") === "true") {
-      // Get total counts for stats
-      const { count: totalUsers } = await supabaseAdmin.from("users").select("*", { count: "exact", head: true })
-
-      const { count: activeUsers } = await supabaseAdmin
-        .from("users")
-        .select("*", { count: "exact", head: true })
-        .eq("is_active", true)
-
-      const { count: verifiedUsers } = await supabaseAdmin
-        .from("users")
-        .select("*", { count: "exact", head: true })
-        .eq("verification_status", "verified")
-
-      const { count: premiumUsers } = await supabaseAdmin
-        .from("users")
-        .select("*", { count: "exact", head: true })
-        .in("account_status", ["premium", "elite", "sparsh", "sangam", "samarpan"])
-
-      const today = new Date().toISOString().split("T")[0]
-      const { count: todaySignups } = await supabaseAdmin
-        .from("users")
-        .select("*", { count: "exact", head: true })
-        .gte("created_at", today)
-
-      const { count: pendingVerifications } = await supabaseAdmin
-        .from("users")
-        .select("*", { count: "exact", head: true })
-        .eq("verification_status", "pending")
-
-      const { count: maleUsers } = await supabaseAdmin
-        .from("users")
-        .select("*", { count: "exact", head: true })
-        .eq("gender", "Male")
-
-      const { count: femaleUsers } = await supabaseAdmin
-        .from("users")
-        .select("*", { count: "exact", head: true })
-        .eq("gender", "Female")
-
-      const { count: completedProfiles } = await supabaseAdmin
-        .from("users")
-        .select("*", { count: "exact", head: true })
-        .eq("onboarding_completed", true)
-
-      // Try to fetch matches count (optional table)
-      let matchesCount = 0
+    if (includeStats) {
       try {
-        const { count } = await supabaseAdmin
-          .from("swipe_actions")
+        console.log("Calculating stats...")
+
+        // Get total counts for stats
+        const { count: totalUsers } = await supabaseAdmin.from("users").select("*", { count: "exact", head: true })
+
+        const { count: activeUsers } = await supabaseAdmin
+          .from("users")
           .select("*", { count: "exact", head: true })
-          .eq("action", "like")
-        matchesCount = count || 0
-      } catch (e) {
-        console.log("Swipe actions table not accessible:", e)
-        matchesCount = 0
-      }
+          .eq("is_active", true)
 
-      // Try to fetch messages count (optional table)
-      let messagesCount = 0
-      try {
-        const { count } = await supabaseAdmin.from("messages").select("*", { count: "exact", head: true })
-        messagesCount = count || 0
-      } catch (e) {
-        console.log("Messages table not accessible:", e)
-        messagesCount = 0
-      }
+        const { count: verifiedUsers } = await supabaseAdmin
+          .from("users")
+          .select("*", { count: "exact", head: true })
+          .eq("verification_status", "verified")
 
-      stats = {
-        totalUsers: totalUsers || 0,
-        activeUsers: activeUsers || 0,
-        verifiedUsers: verifiedUsers || 0,
-        premiumUsers: premiumUsers || 0,
-        todaySignups: todaySignups || 0,
-        totalMatches: matchesCount,
-        totalMessages: messagesCount,
-        pendingVerifications: pendingVerifications || 0,
-        maleUsers: maleUsers || 0,
-        femaleUsers: femaleUsers || 0,
-        completedProfiles: completedProfiles || 0,
+        const { count: premiumUsers } = await supabaseAdmin
+          .from("users")
+          .select("*", { count: "exact", head: true })
+          .in("account_status", ["premium", "elite", "sparsh", "sangam", "samarpan"])
+
+        const today = new Date().toISOString().split("T")[0]
+        const { count: todaySignups } = await supabaseAdmin
+          .from("users")
+          .select("*", { count: "exact", head: true })
+          .gte("created_at", today)
+
+        const { count: pendingVerifications } = await supabaseAdmin
+          .from("users")
+          .select("*", { count: "exact", head: true })
+          .eq("verification_status", "pending")
+
+        const { count: maleUsers } = await supabaseAdmin
+          .from("users")
+          .select("*", { count: "exact", head: true })
+          .eq("gender", "Male")
+
+        const { count: femaleUsers } = await supabaseAdmin
+          .from("users")
+          .select("*", { count: "exact", head: true })
+          .eq("gender", "Female")
+
+        const { count: completedProfiles } = await supabaseAdmin
+          .from("users")
+          .select("*", { count: "exact", head: true })
+          .eq("onboarding_completed", true)
+
+        // Try to fetch matches count (optional table)
+        let matchesCount = 0
+        try {
+          const { count } = await supabaseAdmin
+            .from("swipe_actions")
+            .select("*", { count: "exact", head: true })
+            .eq("action", "like")
+          matchesCount = count || 0
+        } catch (e) {
+          console.log("Swipe actions table not accessible:", e)
+          matchesCount = 0
+        }
+
+        // Try to fetch messages count (optional table)
+        let messagesCount = 0
+        try {
+          const { count } = await supabaseAdmin.from("messages").select("*", { count: "exact", head: true })
+          messagesCount = count || 0
+        } catch (e) {
+          console.log("Messages table not accessible:", e)
+          messagesCount = 0
+        }
+
+        stats = {
+          totalUsers: totalUsers || 0,
+          activeUsers: activeUsers || 0,
+          verifiedUsers: verifiedUsers || 0,
+          premiumUsers: premiumUsers || 0,
+          todaySignups: todaySignups || 0,
+          totalMatches: matchesCount,
+          totalMessages: messagesCount,
+          pendingVerifications: pendingVerifications || 0,
+          maleUsers: maleUsers || 0,
+          femaleUsers: femaleUsers || 0,
+          completedProfiles: completedProfiles || 0,
+        }
+
+        console.log("Stats calculated:", stats)
+      } catch (statsError) {
+        console.error("Error calculating stats:", statsError)
+        // Don't fail the entire request if stats fail
+        stats = {
+          totalUsers: 0,
+          activeUsers: 0,
+          verifiedUsers: 0,
+          premiumUsers: 0,
+          todaySignups: 0,
+          totalMatches: 0,
+          totalMessages: 0,
+          pendingVerifications: 0,
+          maleUsers: 0,
+          femaleUsers: 0,
+          completedProfiles: 0,
+        }
       }
     }
 
-    return NextResponse.json({
+    const response = {
       users: users || [],
       stats,
       pagination: {
@@ -238,7 +280,15 @@ export async function GET(request: NextRequest) {
         hasNext: offset + limit < (count || 0),
         hasPrev: page > 1,
       },
+    }
+
+    console.log("Sending response:", {
+      usersCount: response.users.length,
+      statsIncluded: !!response.stats,
+      pagination: response.pagination,
     })
+
+    return NextResponse.json(response)
   } catch (error) {
     console.error("Admin dashboard API error:", error)
     return NextResponse.json(
