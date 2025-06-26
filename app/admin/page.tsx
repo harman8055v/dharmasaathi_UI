@@ -36,7 +36,12 @@ import {
   ChevronLeft,
   ChevronRight,
   MessageSquare,
+  Send,
   ImageIcon,
+  ZoomIn,
+  X,
+  ArrowLeft,
+  ArrowRight,
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -48,6 +53,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { toast } from "@/hooks/use-toast"
 import Image from "next/image"
@@ -81,6 +87,29 @@ interface UserType {
   onboarding_completed: boolean
   last_login_at: string
   role: string
+  height: string
+  weight: string
+  marital_status: string
+  mother_tongue: string
+  religion: string
+  caste: string
+  subcaste: string
+  gotra: string
+  manglik: string
+  family_type: string
+  family_status: string
+  family_values: string
+  disability: string
+  smoking: string
+  drinking: string
+  hobbies: string
+  interests: string
+  favorite_books: string
+  favorite_movies: string
+  favorite_music: string
+  favorite_spiritual_quote: string
+  daily_spiritual_practices: string[]
+  spiritual_organizations: string[]
 }
 
 interface AdminStats {
@@ -157,20 +186,27 @@ export default function AdminDashboard() {
     message: "",
     type: "profile_update",
   })
+
+  // New state for enhanced filtering and sorting
   const [sortBy, setSortBy] = useState("created_at")
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc")
   const [genderFilter, setGenderFilter] = useState("all")
   const [photoFilter, setPhotoFilter] = useState("all")
   const [profileCompletionFilter, setProfileCompletionFilter] = useState("all")
-  const [selectedImageIndex, setSelectedImageIndex] = useState<number>(0)
+  const [verificationFilter, setVerificationFilter] = useState("all")
+  const [ageRangeFilter, setAgeRangeFilter] = useState("all")
+
+  // Image zoom modal state
   const [imageZoomModal, setImageZoomModal] = useState<{
     open: boolean
     images: string[]
     currentIndex: number
+    userName: string
   }>({
     open: false,
     images: [],
     currentIndex: 0,
+    userName: "",
   })
 
   useEffect(() => {
@@ -180,7 +216,18 @@ export default function AdminDashboard() {
     } else {
       fetchAdminData(1, false)
     }
-  }, [activeTab, filterStatus, searchTerm, sortBy, sortOrder, genderFilter, photoFilter, profileCompletionFilter])
+  }, [
+    activeTab,
+    filterStatus,
+    searchTerm,
+    sortBy,
+    sortOrder,
+    genderFilter,
+    photoFilter,
+    profileCompletionFilter,
+    verificationFilter,
+    ageRangeFilter,
+  ])
 
   const fetchCurrentAdminUser = async () => {
     try {
@@ -220,6 +267,8 @@ export default function AdminDashboard() {
         gender_filter: genderFilter,
         photo_filter: photoFilter,
         profile_completion_filter: profileCompletionFilter,
+        verification_filter: verificationFilter,
+        age_range_filter: ageRangeFilter,
       })
 
       const response = await fetch(`/api/admin/dashboard?${params}`, {
@@ -516,38 +565,10 @@ export default function AdminDashboard() {
     return age
   }
 
-  const openImageZoom = (images: string[], startIndex = 0) => {
-    setImageZoomModal({
-      open: true,
-      images: images.filter(img => img && img.trim() !== ''),
-      currentIndex: startIndex,
-    })
-  }
-
-  const closeImageZoom = () => {
-    setImageZoomModal({
-      open: false,
-      images: [],
-      currentIndex: 0,
-    })
-  }
-
-  const nextImage = () => {
-    setImageZoomModal(prev => ({
-      ...prev,
-      currentIndex: (prev.currentIndex + 1) % prev.images.length,
-    }))
-  }
-
-  const prevImage = () => {
-    setImageZoomModal(prev => ({
-      ...prev,
-      currentIndex: prev.currentIndex === 0 ? prev.images.length - 1 : prev.currentIndex - 1,
-    }))
-  }
-
   const getProfileCompletionScore = (user: UserType) => {
     let score = 0
+    const totalFields = 20
+
     const fields = [
       user.first_name,
       user.last_name,
@@ -561,15 +582,57 @@ export default function AdminDashboard() {
       user.profession,
       user.about_me,
       user.partner_expectations,
+      user.height,
+      user.religion,
+      user.mother_tongue,
+      user.marital_status,
+      user.diet,
+      user.annual_income,
     ]
-    
-    fields.forEach(field => {
-      if (field && field.toString().trim() !== '') score += 1
+
+    fields.forEach((field) => {
+      if (field && field.toString().trim() !== "") score += 1
     })
-    
-    if (user.user_photos && user.user_photos.length > 0) score += 2
-    
-    return Math.round((score / 14) * 100)
+
+    if (user.user_photos && user.user_photos.length > 0) score += 1
+    if (user.daily_spiritual_practices && user.daily_spiritual_practices.length > 0) score += 1
+
+    return Math.round((score / totalFields) * 100)
+  }
+
+  const openImageZoom = (images: string[], startIndex: number, userName: string) => {
+    const validImages = images.filter((img) => img && img.trim() !== "")
+    if (validImages.length === 0) return
+
+    setImageZoomModal({
+      open: true,
+      images: validImages,
+      currentIndex: startIndex,
+      userName,
+    })
+  }
+
+  const closeImageZoom = () => {
+    setImageZoomModal({
+      open: false,
+      images: [],
+      currentIndex: 0,
+      userName: "",
+    })
+  }
+
+  const nextImage = () => {
+    setImageZoomModal((prev) => ({
+      ...prev,
+      currentIndex: (prev.currentIndex + 1) % prev.images.length,
+    }))
+  }
+
+  const prevImage = () => {
+    setImageZoomModal((prev) => ({
+      ...prev,
+      currentIndex: prev.currentIndex === 0 ? prev.images.length - 1 : prev.currentIndex - 1,
+    }))
   }
 
   if (loading && users.length === 0) {
@@ -842,91 +905,111 @@ export default function AdminDashboard() {
             {/* Search and Filter */}
             <Card>
               <CardContent className="pt-6">
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                    <Input
-                      placeholder="Search users by name, email, or phone..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
-                    />
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                      <Input
+                        placeholder="Search users by name, email, or phone..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                    <Select value={filterStatus} onValueChange={setFilterStatus}>
+                      <SelectTrigger className="w-full sm:w-48">
+                        <Filter className="w-4 h-4 mr-2" />
+                        <SelectValue placeholder="Filter by status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Users</SelectItem>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="inactive">Inactive</SelectItem>
+                        <SelectItem value="verified">Verified</SelectItem>
+                        <SelectItem value="pending">Pending Verification</SelectItem>
+                        <SelectItem value="rejected">Rejected</SelectItem>
+                        <SelectItem value="premium">Premium Users</SelectItem>
+                        <SelectItem value="incomplete">Incomplete Profiles</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <Select value={filterStatus} onValueChange={setFilterStatus}>
-                    <SelectTrigger className="w-full sm:w-48">
-                      <Filter className="w-4 h-4 mr-2" />
-                      <SelectValue placeholder="Filter by status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Users</SelectItem>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="inactive">Inactive</SelectItem>
-                      <SelectItem value="verified">Verified</SelectItem>
-                      <SelectItem value="pending">Pending Verification</SelectItem>
-                      <SelectItem value="rejected">Rejected</SelectItem>
-                      <SelectItem value="premium">Premium Users</SelectItem>
-                      <SelectItem value="incomplete">Incomplete Profiles</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select value={genderFilter} onValueChange={setGenderFilter}>
-                    <SelectTrigger className="w-full sm:w-48">
-                      <Filter className="w-4 h-4 mr-2" />
-                      <SelectValue placeholder="Filter by gender" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Genders</SelectItem>
-                      <SelectItem value="male">Male</SelectItem>
-                      <SelectItem value="female">Female</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select value={photoFilter} onValueChange={setPhotoFilter}>
-                    <SelectTrigger className="w-full sm:w-48">
-                      <Filter className="w-4 h-4 mr-2" />
-                      <SelectValue placeholder="Filter by photos" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Users</SelectItem>
-                      <SelectItem value="has_photos">Has Photos</SelectItem>
-                      <SelectItem value="no_photos">No Photos</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select value={profileCompletionFilter} onValueChange={setProfileCompletionFilter}>
-                    <SelectTrigger className="w-full sm:w-48">
-                      <Filter className="w-4 h-4 mr-2" />
-                      <SelectValue placeholder="Filter by profile completion" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Users</SelectItem>
-                      <SelectItem value="complete">Complete Profiles</SelectItem>
-                      <SelectItem value="incomplete">Incomplete Profiles</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex items-center gap-2 mt-4">
-                  <Label htmlFor="sort_by" className="text-sm font-medium">
-                    Sort By:
-                  </Label>
-                  <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger className="w-full sm:w-48">
-                      <SelectValue placeholder="Sort by" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="created_at">Join Date</SelectItem>
-                      <SelectItem value="last_login_at">Last Login</SelectItem>
-                      <SelectItem value="first_name">First Name</SelectItem>
-                      <SelectItem value="last_name">Last Name</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select value={sortOrder} onValueChange={(value) => setSortOrder(value as "asc" | "desc")}>
-                    <SelectTrigger className="w-full sm:w-48">
-                      <SelectValue placeholder="Sort order" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="asc">Ascending</SelectItem>
-                      <SelectItem value="desc">Descending</SelectItem>
-                    </SelectContent>
-                  </Select>
+
+                  {/* Additional Filters */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <Select value={genderFilter} onValueChange={setGenderFilter}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Gender" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Genders</SelectItem>
+                        <SelectItem value="male">Male</SelectItem>
+                        <SelectItem value="female">Female</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <Select value={photoFilter} onValueChange={setPhotoFilter}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Photos" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Users</SelectItem>
+                        <SelectItem value="has_photos">Has Photos</SelectItem>
+                        <SelectItem value="no_photos">No Photos</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <Select value={ageRangeFilter} onValueChange={setAgeRangeFilter}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Age Range" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Ages</SelectItem>
+                        <SelectItem value="18-25">18-25 years</SelectItem>
+                        <SelectItem value="26-30">26-30 years</SelectItem>
+                        <SelectItem value="31-35">31-35 years</SelectItem>
+                        <SelectItem value="36-40">36-40 years</SelectItem>
+                        <SelectItem value="40+">40+ years</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <Select value={profileCompletionFilter} onValueChange={setProfileCompletionFilter}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Profile Completion" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Profiles</SelectItem>
+                        <SelectItem value="complete">Complete (80%+)</SelectItem>
+                        <SelectItem value="incomplete">Incomplete (&lt;80%)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Sort Options */}
+                  <div className="flex items-center gap-4">
+                    <Label className="text-sm font-medium">Sort by:</Label>
+                    <Select value={sortBy} onValueChange={setSortBy}>
+                      <SelectTrigger className="w-48">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="created_at">Join Date</SelectItem>
+                        <SelectItem value="last_login_at">Last Login</SelectItem>
+                        <SelectItem value="first_name">First Name</SelectItem>
+                        <SelectItem value="verification_status">Verification Status</SelectItem>
+                        <SelectItem value="account_status">Account Status</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={sortOrder} onValueChange={(value) => setSortOrder(value as "asc" | "desc")}>
+                      <SelectTrigger className="w-32">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="desc">Descending</SelectItem>
+                        <SelectItem value="asc">Ascending</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -1022,6 +1105,9 @@ export default function AdminDashboard() {
                               </Badge>
                               {user.gender && <Badge variant="outline">{user.gender}</Badge>}
                               {user.birthdate && <Badge variant="outline">{calculateAge(user.birthdate)} years</Badge>}
+                              <Badge variant="outline" className="text-xs">
+                                {getProfileCompletionScore(user)}% complete
+                              </Badge>
                               {user.last_login_at && (
                                 <Badge variant="outline" className="text-xs">
                                   Last: {new Date(user.last_login_at).toLocaleDateString()}
@@ -1102,11 +1188,78 @@ export default function AdminDashboard() {
 
           {/* Verification Tab */}
           <TabsContent value="verification" className="space-y-6">
+            {/* Enhanced Filters for Verification Tab */}
+            <Card>
+              <CardContent className="pt-6">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                  <Select value={verificationFilter} onValueChange={setVerificationFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Verification Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="verified">Verified</SelectItem>
+                      <SelectItem value="rejected">Rejected</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={genderFilter} onValueChange={setGenderFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Gender" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Genders</SelectItem>
+                      <SelectItem value="male">Male</SelectItem>
+                      <SelectItem value="female">Female</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={photoFilter} onValueChange={setPhotoFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Photos" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Users</SelectItem>
+                      <SelectItem value="has_photos">Has Photos</SelectItem>
+                      <SelectItem value="no_photos">No Photos</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={profileCompletionFilter} onValueChange={setProfileCompletionFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Profile Completion" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Profiles</SelectItem>
+                      <SelectItem value="complete">Complete (80%+)</SelectItem>
+                      <SelectItem value="incomplete">Incomplete (&lt;80%)</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={ageRangeFilter} onValueChange={setAgeRangeFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Age Range" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Ages</SelectItem>
+                      <SelectItem value="18-25">18-25 years</SelectItem>
+                      <SelectItem value="26-30">26-30 years</SelectItem>
+                      <SelectItem value="31-35">31-35 years</SelectItem>
+                      <SelectItem value="36-40">36-40 years</SelectItem>
+                      <SelectItem value="40+">40+ years</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
-                  <CardTitle>Pending Verifications ({stats.pendingVerifications})</CardTitle>
-                  <CardDescription>Review and approve user verification requests</CardDescription>
+                  <CardTitle>User Verification ({pagination.total})</CardTitle>
+                  <CardDescription>Review and manage user verification requests</CardDescription>
                 </div>
                 {/* Pagination Controls for Verification */}
                 <div className="flex items-center gap-2">
@@ -1133,104 +1286,108 @@ export default function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {users
-                    .filter((u) => u.verification_status === "pending")
-                    .map((user) => (
-                      <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
-                        <div className="flex items-center gap-4">
-                          <Avatar className="h-16 w-16">
-                            <AvatarImage src={user.user_photos?.[0] || "/placeholder.svg"} />
-                            <AvatarFallback className="text-lg">
-                              {user.first_name?.[0] || "U"}
-                              {user.last_name?.[0] || "U"}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <h3 className="font-medium text-lg">
-                                {user.first_name || "Unknown"} {user.last_name || "User"}
-                              </h3>
-                              {!user.onboarding_completed && <Badge variant="outline">Incomplete Profile</Badge>}
-                            </div>
-                            <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
-                              <div>
-                                <p>
-                                  <Mail className="w-3 h-3 inline mr-1" />
-                                  {user.email}
-                                </p>
-                                <p>
-                                  <Phone className="w-3 h-3 inline mr-1" />
-                                  {user.mobile_number || "No phone"}
-                                </p>
-                              </div>
-                              <div>
-                                <p>
-                                  <MapPin className="w-3 h-3 inline mr-1" />
-                                  {user.city && user.state ? `${user.city}, ${user.state}` : "Location not set"}
-                                </p>
-                                <p>
-                                  <Calendar className="w-3 h-3 inline mr-1" />
-                                  {user.birthdate ? `${calculateAge(user.birthdate)} years` : "Age not set"}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2 mt-2">
-                              <Badge variant="outline">{user.gender || "Not specified"}</Badge>
-                              <Badge variant="outline">{user.education || "Education not set"}</Badge>
-                              <Badge variant="outline">{user.profession || "Profession not set"}</Badge>
-                              {user.user_photos && user.user_photos.length > 0 && (
-                                <Badge variant="outline" className="text-green-600">
-                                  <ImageIcon className="w-3 h-3 mr-1" />
-                                  {user.user_photos.length} photos
-                                </Badge>
-                              )}
-                            </div>
-                            <p className="text-xs text-gray-400 mt-2">
-                              Submitted {new Date(user.created_at).toLocaleDateString()}
-                            </p>
+                  {users.map((user) => (
+                    <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex items-center gap-4">
+                        <Avatar className="h-16 w-16">
+                          <AvatarImage src={user.user_photos?.[0] || "/placeholder.svg"} />
+                          <AvatarFallback className="text-lg">
+                            {user.first_name?.[0] || "U"}
+                            {user.last_name?.[0] || "U"}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h3 className="font-medium text-lg">
+                              {user.first_name || "Unknown"} {user.last_name || "User"}
+                            </h3>
+                            {!user.onboarding_completed && <Badge variant="outline">Incomplete Profile</Badge>}
+                            <Badge className={getStatusColor(user.verification_status)}>
+                              {user.verification_status || "pending"}
+                            </Badge>
                           </div>
+                          <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
+                            <div>
+                              <p>
+                                <Mail className="w-3 h-3 inline mr-1" />
+                                {user.email}
+                              </p>
+                              <p>
+                                <Phone className="w-3 h-3 inline mr-1" />
+                                {user.mobile_number || "No phone"}
+                              </p>
+                            </div>
+                            <div>
+                              <p>
+                                <MapPin className="w-3 h-3 inline mr-1" />
+                                {user.city && user.state ? `${user.city}, ${user.state}` : "Location not set"}
+                              </p>
+                              <p>
+                                <Calendar className="w-3 h-3 inline mr-1" />
+                                {user.birthdate ? `${calculateAge(user.birthdate)} years` : "Age not set"}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 mt-2">
+                            <Badge variant="outline">{user.gender || "Not specified"}</Badge>
+                            <Badge variant="outline">{user.education || "Education not set"}</Badge>
+                            <Badge variant="outline">{user.profession || "Profession not set"}</Badge>
+                            <Badge variant="outline" className="text-xs">
+                              {getProfileCompletionScore(user)}% complete
+                            </Badge>
+                            {user.user_photos && user.user_photos.length > 0 && (
+                              <Badge variant="outline" className="text-green-600">
+                                <ImageIcon className="w-3 h-3 mr-1" />
+                                {user.user_photos.length} photos
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-400 mt-2">
+                            Submitted {new Date(user.created_at).toLocaleDateString()}
+                          </p>
                         </div>
-                        <div className="flex flex-col gap-2">
-                          <Button size="sm" variant="outline" onClick={() => fetchUserDetails(user)}>
-                            <Eye className="w-4 h-4 mr-2" />
-                            Preview Profile
-                          </Button>
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <Button size="sm" variant="outline" onClick={() => fetchUserDetails(user)}>
+                          <Eye className="w-4 h-4 mr-2" />
+                          Preview Profile
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => openNotificationModal(user, "profile_update")}
+                        >
+                          <MessageSquare className="w-4 h-4 mr-2" />
+                          Request Update
+                        </Button>
+                        <div className="flex gap-2">
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => openNotificationModal(user, "profile_update")}
+                            onClick={() => handleUserAction(user.id, "reject")}
+                            disabled={actionLoading === user.id + "reject"}
                           >
-                            <MessageSquare className="w-4 h-4 mr-2" />
-                            Request Update
+                            <XCircle className="w-4 h-4 mr-2" />
+                            Reject
                           </Button>
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleUserAction(user.id, "reject")}
-                              disabled={actionLoading === user.id + "reject"}
-                            >
-                              <XCircle className="w-4 h-4 mr-2" />
-                              Reject
-                            </Button>
-                            <Button
-                              size="sm"
-                              onClick={() => handleUserAction(user.id, "verify")}
-                              disabled={actionLoading === user.id + "verify"}
-                            >
-                              <CheckCircle className="w-4 h-4 mr-2" />
-                              Approve
-                            </Button>
-                          </div>
+                          <Button
+                            size="sm"
+                            onClick={() => handleUserAction(user.id, "verify")}
+                            disabled={actionLoading === user.id + "verify"}
+                          >
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                            Approve
+                          </Button>
                         </div>
                       </div>
-                    ))}
+                    </div>
+                  ))}
 
-                  {users.filter((u) => u.verification_status === "pending").length === 0 && (
+                  {users.length === 0 && (
                     <div className="text-center py-8 text-gray-500">
                       <Shield className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                      <p>No pending verifications on this page</p>
-                      {pagination.totalPages > 1 && <p className="text-sm mt-2">Check other pages or adjust filters</p>}
+                      <p>No users found matching the current filters</p>
+                      <p className="text-sm mt-2">Try adjusting your filter criteria</p>
                     </div>
                   )}
                 </div>
@@ -1343,374 +1500,674 @@ export default function AdminDashboard() {
             </div>
           </TabsContent>
         </Tabs>
+      </div>
 
-        {/* User Details Modal */}
-        <Dialog open={!!selectedUser} onOpenChange={() => setSelectedUser(null)}>
-          <DialogContent className="sm:max-w-[825px]">
-            <DialogHeader>
-              <DialogTitle>User Details</DialogTitle>
-              <DialogDescription>View all information about the selected user.</DialogDescription>
-            </DialogHeader>
+      {/* Enhanced User Details Modal */}
+      <Dialog open={!!selectedUser} onOpenChange={() => setSelectedUser(null)}>
+        <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Complete User Profile</DialogTitle>
+            <DialogDescription>
+              Comprehensive profile information for {selectedUser?.first_name} {selectedUser?.last_name}
+            </DialogDescription>
+          </DialogHeader>
 
-            {selectedUser && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Left Column - Profile */}
-                <div className="space-y-4">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Profile</CardTitle>
-                      <CardDescription>User profile information</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="flex items-center gap-4">
-                        <Avatar className="h-20 w-20">
-                          <AvatarImage src={selectedUser.user_photos?.[0] || "/placeholder.svg"} />
-                          <AvatarFallback>
-                            {selectedUser.first_name?.[0] || "U"}
-                            {selectedUser.last_name?.[0] || "U"}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <h3 className="text-lg font-medium">
-                            {selectedUser.first_name || "Unknown"} {selectedUser.last_name || "User"}
-                          </h3>
-                          <p className="text-sm text-gray-500">
-                            {selectedUser.city && selectedUser.state
-                              ? `${selectedUser.city}, ${selectedUser.state}`
-                              : "Location not set"}
-                          </p>
-                          <div className="flex items-center gap-2 mt-2">
-                            <Badge className={getStatusColor(selectedUser.verification_status)}>
-                              {selectedUser.verification_status || "pending"}
-                            </Badge>
-                            <Badge className={getStatusColor(selectedUser.account_status)}>
-                              {selectedUser.account_status || "basic"}
-                            </Badge>
-                            {selectedUser.is_active === false && <Badge variant="destructive">Inactive</Badge>}
-                            {!selectedUser.onboarding_completed && <Badge variant="outline">Incomplete</Badge>}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">Email</p>
-                          <p className="text-sm text-gray-500">{selectedUser.email || "Not set"}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">Phone</p>
-                          <p className="text-sm text-gray-500">{selectedUser.mobile_number || "Not set"}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">Gender</p>
-                          <p className="text-sm text-gray-500">{selectedUser.gender || "Not set"}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">Age</p>
-                          <p className="text-sm text-gray-500">
-                            {selectedUser.birthdate ? calculateAge(selectedUser.birthdate) : "Not set"}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">Join Date</p>
-                          <p className="text-sm text-gray-500">
-                            {new Date(selectedUser.created_at).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">Last Login</p>
-                          <p className="text-sm text-gray-500">
-                            {selectedUser.last_login_at ? new Date(selectedUser.last_login_at).toLocaleDateString() : "Never"}
-                          </p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>About Me</CardTitle>
-                      <CardDescription>User's self-description</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-gray-700">{selectedUser.about_me || "No information provided"}</p>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Partner Expectations</CardTitle>
-                      <CardDescription>What the user is looking for in a partner</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-gray-700">
-                        {selectedUser.partner_expectations || "No information provided"}
-                      </p>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {/* Right Column - Details */}
-                <div className="space-y-4">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Details</CardTitle>
-                      <CardDescription>Additional user details</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">Education</p>
-                          <p className="text-sm text-gray-500">{selectedUser.education || "Not set"}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">Profession</p>
-                          <p className="text-sm text-gray-500">{selectedUser.profession || "Not set"}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">Annual Income</p>
-                          <p className="text-sm text-gray-500">{selectedUser.annual_income || "Not set"}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">Diet</p>
-                          <p className="text-sm text-gray-500">{selectedUser.diet || "Not set"}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">Temple Visit Frequency</p>
-                          <p className="text-sm text-gray-500">{selectedUser.temple_visit_freq || "Not set"}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">Profile Completion</p>
-                          <p className="text-sm text-gray-500">{getProfileCompletionScore(selectedUser)}%</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>User Photos</CardTitle>
-                      <CardDescription>Uploaded photos by the user</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
-                        {selectedUser.user_photos && selectedUser.user_photos.length > 0 ? (
-                          selectedUser.user_photos.map((photo, index) => (
-                            <div key={index} className="relative aspect-square rounded-md overflow-hidden">
-                              <Image
-                                src={photo || "/placeholder.svg"}
-                                alt={`User Photo ${index + 1}`}
-                                fill
-                                style={{ objectFit: "cover" }}
-                                className="cursor-pointer hover:opacity-75 transition-opacity"
-                                onClick={() => openImageZoom(selectedUser.user_photos || [], index)}
-                              />
-                            </div>
-                          ))
-                        ) : (
-                          <p className="text-sm text-gray-500">No photos uploaded</p>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
-
-        {/* Edit User Modal */}
-        <Dialog open={!!editingUser} onOpenChange={() => setEditingUser(null)}>
-          <DialogContent className="sm:max-w-[825px]">
-            <DialogHeader>
-              <DialogTitle>Edit User Profile</DialogTitle>
-              <DialogDescription>Make changes to the user's profile information.</DialogDescription>
-            </DialogHeader>
-
-            {editingUser && (
+          {selectedUser && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Left Column - Basic Info */}
               <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Left Column - Basic Information */}
-                  <div className="space-y-4">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Basic Information</CardTitle>
-                        <CardDescription>Edit basic user details</CardDescription>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <div>
-                            <Label htmlFor="first_name">First Name</Label>
-                            <Input
-                              id="first_name"
-                              defaultValue={editingUser.first_name || ""}
-                              onChange={(e) =>
-                                setEditingUser({ ...editingUser, first_name: e.target.value })
-                              }
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="last_name">Last Name</Label>
-                            <Input
-                              id="last_name"
-                              defaultValue={editingUser.last_name || ""}
-                              onChange={(e) =>
-                                setEditingUser({ ...editingUser, last_name: e.target.value })
-                              }
-                            />
-                          </div>
-                        </div>
-
-                        <div>
-                          <Label htmlFor="email">Email</Label>
-                          <Input
-                            id="email"
-                            type="email"
-                            defaultValue={editingUser.email || ""}
-                            onChange={(e) =>
-                              setEditingUser({ ...editingUser, email: e.target.value })
-                            }
-                          />
-                        </div>
-
-                        <div>
-                          <Label htmlFor="mobile_number">Mobile Number</Label>
-                          <Input
-                            id="mobile_number"
-                            defaultValue={editingUser.mobile_number || ""}
-                            onChange={(e) =>
-                              setEditingUser({ ...editingUser, mobile_number: e.target.value })
-                            }
-                          />
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <div>
-                            <Label htmlFor="birthdate">Birthdate</Label>
-                            <Input
-                              id="birthdate"
-                              type="date"
-                              defaultValue={editingUser.birthdate || ""}
-                              onChange={(e) =>
-                                setEditingUser({ ...editingUser, birthdate: e.target.value })
-                              }
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="gender">Gender</Label>
-                            <Select
-                              value={editingUser.gender || ""}
-                              onValueChange={(value) =>
-                                setEditingUser({ ...editingUser, gender: value })
-                              }
-                            >
-                              <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Select gender" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="male">Male</SelectItem>
-                                <SelectItem value="female">Female</SelectItem>
-                                <SelectItem value="other">Other</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <div>
-                            <Label htmlFor="city">City</Label>
-                            <Input
-                              id="city"
-                              defaultValue={editingUser.city || ""}
-                              onChange={(e) =>
-                                setEditingUser({ ...editingUser, city: e.target.value })
-                              }
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="state">State</Label>
-                            <Input
-                              id="state"
-                              defaultValue={editingUser.state || ""}
-                              onChange={(e) =>
-                                setEditingUser({ ...editingUser, state: e.target.value })
-                              }
-                            />
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-
-                  {/* Right Column - Additional Information */}
-                  <div className="space-y-4">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Additional Information</CardTitle>
-                        <CardDescription>Edit additional user details</CardDescription>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div>
-                          <Label htmlFor="education">Education</Label>
-                          <Input
-                            id="education"
-                            defaultValue={editingUser.education || ""}
-                            onChange={(e) =>
-                              setEditingUser({ ...editingUser, education: e.target.value })
-                            }
-                          />
-                        </div>
-
-                        <div>
-                          <Label htmlFor="profession">Profession</Label>
-                          <Input
-                            id="profession"
-                            defaultValue={editingUser.profession || ""}
-                            onChange={(e) =>
-                              setEditingUser({ ...editingUser, profession: e.target.value })
-                            }
-                          />
-                        </div>
-
-                        <div>
-                          <Label htmlFor="annual_income">Annual Income</Label>
-                          <Input
-                            id="annual_income"
-                            defaultValue={editingUser.annual_income || ""}
-                            onChange={(e) =>
-                              setEditingUser({ ...editingUser, annual_income: e.target.value })
-                            }
-                          />
-                        </div>
-
-                        <div>
-                          <Label htmlFor="diet">Diet</Label>
-                          <Input
-                            id="diet"
-                            defaultValue={editingUser.diet || ""}
-                            onChange={(e) =>
-                              setEditingUser({ ...editingUser, diet: e.target.value })
-                            }
-                          />
-                        </div>
-
-                        <div>
-                          <Label htmlFor="temple_visit_freq">Temple Visit Frequency</Label>
-                          <Input
-                            id="temple_visit_freq"
-                            defaultValue={editingUser.temple_visit_freq || ""}
-                            onChange={(e) =>
-                              setEditingUser({ ...editingUser, temple_visit_freq: e.target.value })
-                            }
-                          />
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-                </div>
-
-                {/* Textareas */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>About & Expectations</CardTitle>
-                    <CardDescription>\
+                    <CardTitle className="text-lg">Basic Information</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center gap-4">
+                      <Avatar className="h-20 w-20">
+                        <AvatarImage src={selectedUser.user_photos?.[0] || "/placeholder.svg"} />
+                        <AvatarFallback className="text-lg">
+                          {selectedUser.first_name?.[0] || "U"}
+                          {selectedUser.last_name?.[0] || "U"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <h3 className="text-xl font-semibold">
+                          {selectedUser.first_name || "Unknown"} {selectedUser.last_name || "User"}
+                        </h3>
+                        <p className="text-gray-600">
+                          {selectedUser.birthdate
+                            ? `${calculateAge(selectedUser.birthdate)} years old`
+                            : "Age not specified"}
+                          {selectedUser.gender && `, ${selectedUser.gender}`}
+                        </p>
+                        <div className="flex gap-2 mt-2">
+                          <Badge className={getStatusColor(selectedUser.verification_status)}>
+                            {selectedUser.verification_status || "pending"}
+                          </Badge>
+                          <Badge className={getStatusColor(selectedUser.account_status)}>
+                            {selectedUser.account_status || "basic"}
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 text-sm">
+                      <div className="flex items-center gap-2">
+                        <Mail className="w-4 h-4 text-gray-500" />
+                        <span>{selectedUser.email || "No email"}</span>
+                        {selectedUser.email_verified && <CheckCircle className="w-3 h-3 text-green-500" />}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Phone className="w-4 h-4 text-gray-500" />
+                        <span>{selectedUser.mobile_number || "No phone"}</span>
+                        {selectedUser.mobile_verified && <CheckCircle className="w-3 h-3 text-green-500" />}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <MapPin className="w-4 h-4 text-gray-500" />
+                        <span>
+                          {selectedUser.city && selectedUser.state
+                            ? `${selectedUser.city}, ${selectedUser.state}`
+                            : "Location not set"}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-gray-500" />
+                        <span>Joined {new Date(selectedUser.created_at).toLocaleDateString()}</span>
+                      </div>
+                      {selectedUser.last_login_at && (
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-4 h-4 text-gray-500" />
+                          <span>Last login {new Date(selectedUser.last_login_at).toLocaleDateString()}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="pt-2">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm font-medium">Profile Completion</span>
+                        <span className="text-sm text-gray-600">{getProfileCompletionScore(selectedUser)}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-green-500 h-2 rounded-full"
+                          style={{ width: `${getProfileCompletionScore(selectedUser)}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Personal Details */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Personal Details</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2 text-sm">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <span className="font-medium">Height:</span>
+                        <p className="text-gray-600">{selectedUser.height || "Not specified"}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium">Weight:</span>
+                        <p className="text-gray-600">{selectedUser.weight || "Not specified"}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium">Marital Status:</span>
+                        <p className="text-gray-600">{selectedUser.marital_status || "Not specified"}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium">Mother Tongue:</span>
+                        <p className="text-gray-600">{selectedUser.mother_tongue || "Not specified"}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium">Religion:</span>
+                        <p className="text-gray-600">{selectedUser.religion || "Not specified"}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium">Caste:</span>
+                        <p className="text-gray-600">{selectedUser.caste || "Not specified"}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium">Subcaste:</span>
+                        <p className="text-gray-600">{selectedUser.subcaste || "Not specified"}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium">Gotra:</span>
+                        <p className="text-gray-600">{selectedUser.gotra || "Not specified"}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium">Manglik:</span>
+                        <p className="text-gray-600">{selectedUser.manglik || "Not specified"}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium">Diet:</span>
+                        <p className="text-gray-600">{selectedUser.diet || "Not specified"}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium">Smoking:</span>
+                        <p className="text-gray-600">{selectedUser.smoking || "Not specified"}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium">Drinking:</span>
+                        <p className="text-gray-600">{selectedUser.drinking || "Not specified"}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Middle Column - Professional & Family */}
+              <div className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Professional Details</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3 text-sm">
+                    <div>
+                      <span className="font-medium">Education:</span>
+                      <p className="text-gray-600">{selectedUser.education || "Not specified"}</p>
+                    </div>
+                    <div>
+                      <span className="font-medium">Profession:</span>
+                      <p className="text-gray-600">{selectedUser.profession || "Not specified"}</p>
+                    </div>
+                    <div>
+                      <span className="font-medium">Annual Income:</span>
+                      <p className="text-gray-600">{selectedUser.annual_income || "Not specified"}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Family Details</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3 text-sm">
+                    <div>
+                      <span className="font-medium">Family Type:</span>
+                      <p className="text-gray-600">{selectedUser.family_type || "Not specified"}</p>
+                    </div>
+                    <div>
+                      <span className="font-medium">Family Status:</span>
+                      <p className="text-gray-600">{selectedUser.family_status || "Not specified"}</p>
+                    </div>
+                    <div>
+                      <span className="font-medium">Family Values:</span>
+                      <p className="text-gray-600">{selectedUser.family_values || "Not specified"}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Spiritual Details</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3 text-sm">
+                    <div>
+                      <span className="font-medium">Temple Visit Frequency:</span>
+                      <p className="text-gray-600">{selectedUser.temple_visit_freq || "Not specified"}</p>
+                    </div>
+                    <div>
+                      <span className="font-medium">Daily Spiritual Practices:</span>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {selectedUser.daily_spiritual_practices && selectedUser.daily_spiritual_practices.length > 0 ? (
+                          selectedUser.daily_spiritual_practices.map((practice, index) => (
+                            <Badge key={index} variant="outline" className="text-xs">
+                              {practice}
+                            </Badge>
+                          ))
+                        ) : (
+                          <p className="text-gray-600">Not specified</p>
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <span className="font-medium">Spiritual Organizations:</span>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {selectedUser.spiritual_organizations && selectedUser.spiritual_organizations.length > 0 ? (
+                          selectedUser.spiritual_organizations.map((org, index) => (
+                            <Badge key={index} variant="outline" className="text-xs">
+                              {org}
+                            </Badge>
+                          ))
+                        ) : (
+                          <p className="text-gray-600">Not specified</p>
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <span className="font-medium">Favorite Spiritual Quote:</span>
+                      <p className="text-gray-600 italic">{selectedUser.favorite_spiritual_quote || "Not specified"}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Interests & Hobbies</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3 text-sm">
+                    <div>
+                      <span className="font-medium">Hobbies:</span>
+                      <p className="text-gray-600">{selectedUser.hobbies || "Not specified"}</p>
+                    </div>
+                    <div>
+                      <span className="font-medium">Interests:</span>
+                      <p className="text-gray-600">{selectedUser.interests || "Not specified"}</p>
+                    </div>
+                    <div>
+                      <span className="font-medium">Favorite Books:</span>
+                      <p className="text-gray-600">{selectedUser.favorite_books || "Not specified"}</p>
+                    </div>
+                    <div>
+                      <span className="font-medium">Favorite Movies:</span>
+                      <p className="text-gray-600">{selectedUser.favorite_movies || "Not specified"}</p>
+                    </div>
+                    <div>
+                      <span className="font-medium">Favorite Music:</span>
+                      <p className="text-gray-600">{selectedUser.favorite_music || "Not specified"}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Right Column - About, Photos, Actions */}
+              <div className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">About Me</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                      {selectedUser.about_me || "No information provided"}
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Partner Expectations</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                      {selectedUser.partner_expectations || "No information provided"}
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center justify-between">
+                      User Photos
+                      {selectedUser.user_photos && selectedUser.user_photos.length > 0 && (
+                        <Badge variant="outline">
+                          {selectedUser.user_photos.length} photo{selectedUser.user_photos.length !== 1 ? "s" : ""}
+                        </Badge>
+                      )}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {selectedUser.user_photos && selectedUser.user_photos.length > 0 ? (
+                      <div className="grid grid-cols-2 gap-3">
+                        {selectedUser.user_photos.map((photo, index) => (
+                          <div
+                            key={index}
+                            className="relative aspect-square rounded-lg overflow-hidden cursor-pointer group"
+                            onClick={() =>
+                              openImageZoom(
+                                selectedUser.user_photos || [],
+                                index,
+                                `${selectedUser.first_name} ${selectedUser.last_name}`,
+                              )
+                            }
+                          >
+                            <Image
+                              src={photo || "/placeholder.svg"}
+                              alt={`Photo ${index + 1}`}
+                              fill
+                              className="object-cover transition-transform group-hover:scale-105"
+                            />
+                            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 flex items-center justify-center">
+                              <ZoomIn className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-gray-500">
+                        <ImageIcon className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                        <p>No photos uploaded</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Action Buttons */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Admin Actions</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-col gap-2">
+                      <Button variant="outline" size="sm" onClick={() => setEditingUser(selectedUser)}>
+                        <Edit className="w-4 h-4 mr-2" />
+                        Edit Profile
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openNotificationModal(selectedUser, "profile_update")}
+                      >
+                        <MessageSquare className="w-4 h-4 mr-2" />
+                        Send Notification
+                      </Button>
+                      {selectedUser.verification_status === "pending" && (
+                        <>
+                          <Button
+                            size="sm"
+                            onClick={() => handleUserAction(selectedUser.id, "verify")}
+                            disabled={actionLoading === selectedUser.id + "verify"}
+                          >
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                            Approve Verification
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleUserAction(selectedUser.id, "reject")}
+                            disabled={actionLoading === selectedUser.id + "reject"}
+                          >
+                            <XCircle className="w-4 h-4 mr-2" />
+                            Reject Verification
+                          </Button>
+                        </>
+                      )}
+                      {selectedUser.is_active !== false ? (
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleUserAction(selectedUser.id, "deactivate")}
+                          disabled={actionLoading === selectedUser.id + "deactivate"}
+                        >
+                          <Ban className="w-4 h-4 mr-2" />
+                          Deactivate Account
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          onClick={() => handleUserAction(selectedUser.id, "activate")}
+                          disabled={actionLoading === selectedUser.id + "activate"}
+                        >
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          Activate Account
+                        </Button>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Image Zoom Modal */}
+      <Dialog open={imageZoomModal.open} onOpenChange={closeImageZoom}>
+        <DialogContent className="max-w-4xl max-h-[95vh] p-0">
+          <div className="relative">
+            {/* Header */}
+            <div className="absolute top-0 left-0 right-0 z-10 bg-black bg-opacity-50 text-white p-4 flex items-center justify-between">
+              <div>
+                <h3 className="font-medium">{imageZoomModal.userName}</h3>
+                <p className="text-sm opacity-75">
+                  Photo {imageZoomModal.currentIndex + 1} of {imageZoomModal.images.length}
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={closeImageZoom}
+                className="text-white hover:bg-white hover:bg-opacity-20"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+
+            {/* Image */}
+            <div className="relative aspect-square max-h-[80vh]">
+              <Image
+                src={imageZoomModal.images[imageZoomModal.currentIndex] || "/placeholder.svg"}
+                alt={`Photo ${imageZoomModal.currentIndex + 1}`}
+                fill
+                className="object-contain bg-black"
+              />
+            </div>
+
+            {/* Navigation */}
+            {imageZoomModal.images.length > 1 && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white hover:bg-opacity-75"
+                  onClick={prevImage}
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white hover:bg-opacity-75"
+                  onClick={nextImage}
+                >
+                  <ArrowRight className="w-4 h-4" />
+                </Button>
+              </>
+            )}
+
+            {/* Thumbnail Navigation */}
+            {imageZoomModal.images.length > 1 && (
+              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2 bg-black bg-opacity-50 p-2 rounded-lg">
+                {imageZoomModal.images.map((_, index) => (
+                  <button
+                    key={index}
+                    className={`w-3 h-3 rounded-full transition-all ${
+                      index === imageZoomModal.currentIndex ? "bg-white" : "bg-white bg-opacity-50"
+                    }`}
+                    onClick={() => setImageZoomModal((prev) => ({ ...prev, currentIndex: index }))}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit User Modal */}
+      <Dialog open={!!editingUser} onOpenChange={() => setEditingUser(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit User Profile</DialogTitle>
+            <DialogDescription>Update user information and settings</DialogDescription>
+          </DialogHeader>
+
+          {editingUser && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="first_name">First Name</Label>
+                  <Input
+                    id="first_name"
+                    value={editingUser.first_name || ""}
+                    onChange={(e) => setEditingUser({ ...editingUser, first_name: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="last_name">Last Name</Label>
+                  <Input
+                    id="last_name"
+                    value={editingUser.last_name || ""}
+                    onChange={(e) => setEditingUser({ ...editingUser, last_name: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={editingUser.email || ""}
+                  onChange={(e) => setEditingUser({ ...editingUser, email: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="mobile_number">Mobile Number</Label>
+                <Input
+                  id="mobile_number"
+                  value={editingUser.mobile_number || ""}
+                  onChange={(e) => setEditingUser({ ...editingUser, mobile_number: e.target.value })}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="city">City</Label>
+                  <Input
+                    id="city"
+                    value={editingUser.city || ""}
+                    onChange={(e) => setEditingUser({ ...editingUser, city: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="state">State</Label>
+                  <Input
+                    id="state"
+                    value={editingUser.state || ""}
+                    onChange={(e) => setEditingUser({ ...editingUser, state: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="about_me">About Me</Label>
+                <Textarea
+                  id="about_me"
+                  value={editingUser.about_me || ""}
+                  onChange={(e) => setEditingUser({ ...editingUser, about_me: e.target.value })}
+                  rows={3}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="verification_status">Verification Status</Label>
+                  <Select
+                    value={editingUser.verification_status || "pending"}
+                    onValueChange={(value) => setEditingUser({ ...editingUser, verification_status: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="verified">Verified</SelectItem>
+                      <SelectItem value="rejected">Rejected</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="account_status">Account Status</Label>
+                  <Select
+                    value={editingUser.account_status || "basic"}
+                    onValueChange={(value) => setEditingUser({ ...editingUser, account_status: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="basic">Basic</SelectItem>
+                      <SelectItem value="premium">Premium</SelectItem>
+                      <SelectItem value="elite">Elite</SelectItem>
+                      <SelectItem value="sparsh">Sparsh</SelectItem>
+                      <SelectItem value="sangam">Sangam</SelectItem>
+                      <SelectItem value="samarpan">Samarpan</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4">
+                <Button variant="outline" onClick={() => setEditingUser(null)}>
+                  Cancel
+                </Button>
+                <Button onClick={() => handleEditUser(editingUser)} disabled={actionLoading === "edit"}>
+                  {actionLoading === "edit" ? "Saving..." : "Save Changes"}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Notification Modal */}
+      <Dialog
+        open={notificationModal.open}
+        onOpenChange={(open) => setNotificationModal({ ...notificationModal, open })}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Send Notification</DialogTitle>
+            <DialogDescription>
+              Send a notification to {notificationModal.user?.first_name} {notificationModal.user?.last_name}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="notification_type">Notification Type</Label>
+              <Select
+                value={notificationModal.type}
+                onValueChange={(value) => setNotificationModal({ ...notificationModal, type: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="profile_update">Profile Update Required</SelectItem>
+                  <SelectItem value="verification_pending">Verification Under Review</SelectItem>
+                  <SelectItem value="verification_rejected">Verification Update Needed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="notification_message">Message</Label>
+              <Textarea
+                id="notification_message"
+                value={notificationModal.message}
+                onChange={(e) => setNotificationModal({ ...notificationModal, message: e.target.value })}
+                rows={4}
+                placeholder="Enter your message here..."
+              />
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setNotificationModal({ open: false, user: null, message: "", type: "profile_update" })}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleSendNotification}>
+                <Send className="w-4 h-4 mr-2" />
+                Send Notification
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}
