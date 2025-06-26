@@ -88,7 +88,6 @@ interface UserType {
   last_login_at: string
   role: string
   height: string
-  weight: string
   marital_status: string
   mother_tongue: string
   religion: string
@@ -567,7 +566,7 @@ export default function AdminDashboard() {
 
   const getProfileCompletionScore = (user: UserType) => {
     let score = 0
-    const totalFields = 20
+    const totalFields = 19 // Adjusted total fields after removing 'weight'
 
     const fields = [
       user.first_name,
@@ -1601,16 +1600,13 @@ export default function AdminDashboard() {
                   <CardHeader>
                     <CardTitle className="text-lg">Personal Details</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-2 text-sm">
+                  <CardContent className="space-y-3 text-sm">
                     <div className="grid grid-cols-2 gap-2">
                       <div>
                         <span className="font-medium">Height:</span>
                         <p className="text-gray-600">{selectedUser.height || "Not specified"}</p>
                       </div>
-                      <div>
-                        <span className="font-medium">Weight:</span>
-                        <p className="text-gray-600">{selectedUser.weight || "Not specified"}</p>
-                      </div>
+                      {/* Removed Weight field */}
                       <div>
                         <span className="font-medium">Marital Status:</span>
                         <p className="text-gray-600">{selectedUser.marital_status || "Not specified"}</p>

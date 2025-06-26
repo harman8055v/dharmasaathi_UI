@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
         updated_at, user_photos, is_active, email_verified, mobile_verified,
         about_me, partner_expectations, education, profession, annual_income,
         diet, temple_visit_freq, onboarding_completed, last_login_at, role,
-        height, weight, marital_status, mother_tongue, religion, caste,
+        height, marital_status, mother_tongue, religion, caste,
         subcaste, gotra, manglik, family_type, family_status, family_values,
         disability, smoking, drinking, hobbies, interests, favorite_books,
         favorite_movies, favorite_music, favorite_spiritual_quote,
@@ -207,7 +207,7 @@ export async function GET(request: NextRequest) {
 
 function calculateProfileCompletion(user: any): number {
   let score = 0
-  const totalFields = 20
+  const totalFields = 19 // Adjusted total fields after removing 'weight'
 
   const fields = [
     user.first_name,
