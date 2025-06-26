@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit
 
     // Build the base query with actual schema columns
-    let query = supabase.from("users").select(`
+    let baseQuery = supabase.from("users").select(`
         id, first_name, last_name, full_name, email, mobile_number, phone, birthdate, gender,
         city, state, country, account_status, verification_status, kyc_status, created_at,
         updated_at, user_photos, profile_photo_url, is_active, email_verified, mobile_verified,
@@ -38,101 +38,118 @@ export async function GET(request: NextRequest) {
         privacy_settings, deactivated_at, message_highlights_count, premium_expires_at
       `)
 
-    // Apply filters
-    if (filter !== "all") {
-      switch (filter) {
-        case "active":
-          query = query.eq("is_active", true)
-          break
-        case "inactive":
-          query = query.eq("is_active", false)
-          break
-        case "verified":
-          query = query.eq("verification_status", "verified")
-          break
-        case "pending":
-          query = query.eq("verification_status", "pending")
-          break
-        case "rejected":
-          query = query.eq("verification_status", "rejected")
-          break
-        case "premium":
-          query = query.not("premium_expires_at", "is", null)
-          break
-        case "incomplete":
-          query = query.eq("onboarding_completed", false)
-          break
-      }
-    }
+    // Create a separate query for counting
+    let countQuery = supabase.from("users").select("id", { count: "exact", head: true })
 
-    // Apply verification filter
-    if (verificationFilter !== "all") {
-      query = query.eq("verification_status", verificationFilter)
-    }
-
-    // Apply gender filter
-    if (genderFilter !== "all") {
-      query = query.eq("gender", genderFilter)
-    }
-
-    // Apply photo filter
-    if (photoFilter !== "all") {
-      if (photoFilter === "has_photos") {
-        query = query.not("user_photos", "is", null).neq("user_photos", "{}")
-      } else if (photoFilter === "no_photos") {
-        query = query.or("user_photos.is.null,user_photos.eq.{}")
-      }
-    }
-
-    // Apply age range filter
-    if (ageRangeFilter !== "all") {
-      const today = new Date()
-      let minDate: Date, maxDate: Date
-
-      switch (ageRangeFilter) {
-        case "18-25":
-          minDate = new Date(today.getFullYear() - 25, today.getMonth(), today.getDate())
-          maxDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate())
-          break
-        case "26-30":
-          minDate = new Date(today.getFullYear() - 30, today.getMonth(), today.getDate())
-          maxDate = new Date(today.getFullYear() - 26, today.getMonth(), today.getDate())
-          break
-        case "31-35":
-          minDate = new Date(today.getFullYear() - 35, today.getMonth(), today.getDate())
-          maxDate = new Date(today.getFullYear() - 31, today.getMonth(), today.getDate())
-          break
-        case "36-40":
-          minDate = new Date(today.getFullYear() - 40, today.getMonth(), today.getDate())
-          maxDate = new Date(today.getFullYear() - 36, today.getMonth(), today.getDate())
-          break
-        case "40+":
-          minDate = new Date(today.getFullYear() - 100, today.getMonth(), today.getDate())
-          maxDate = new Date(today.getFullYear() - 40, today.getMonth(), today.getDate())
-          break
-        default:
-          minDate = maxDate = today
+    // Apply filters to both queries
+    const applyFilters = (query: any) => {
+      // Apply main filter
+      if (filter !== "all") {
+        switch (filter) {
+          case "active":
+            query = query.eq("is_active", true)
+            break
+          case "inactive":
+            query = query.eq("is_active", false)
+            break
+          case "verified":
+            query = query.eq("verification_status", "verified")
+            break
+          case "pending":
+            query = query.eq("verification_status", "pending")
+            break
+          case "rejected":
+            query = query.eq("verification_status", "rejected")
+            break
+          case "premium":
+            query = query.not("premium_expires_at", "is", null)
+            break
+          case "incomplete":
+            query = query.eq("onboarding_completed", false)
+            break
+        }
       }
 
+      // Apply verification filter
+      if (verificationFilter !== "all") {
+        query = query.eq("verification_status", verificationFilter)
+      }
+
+      // Apply gender filter
+      if (genderFilter !== "all") {
+        query = query.eq("gender", genderFilter)
+      }
+
+      // Apply photo filter
+      if (photoFilter !== "all") {
+        if (photoFilter === "has_photos") {
+          query = query.not("user_photos", "is", null).neq("user_photos", "{}")
+        } else if (photoFilter === "no_photos") {
+          query = query.or("user_photos.is.null,user_photos.eq.{}")
+        }
+      }
+
+      // Apply age range filter
       if (ageRangeFilter !== "all") {
-        query = query
-          .gte("birthdate", minDate.toISOString().split("T")[0])
-          .lte("birthdate", maxDate.toISOString().split("T")[0])
+        const today = new Date()
+        let minDate: Date, maxDate: Date
+
+        switch (ageRangeFilter) {
+          case "18-25":
+            minDate = new Date(today.getFullYear() - 25, today.getMonth(), today.getDate())
+            maxDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate())
+            break
+          case "26-30":
+            minDate = new Date(today.getFullYear() - 30, today.getMonth(), today.getDate())
+            maxDate = new Date(today.getFullYear() - 26, today.getMonth(), today.getDate())
+            break
+          case "31-35":
+            minDate = new Date(today.getFullYear() - 35, today.getMonth(), today.getDate())
+            maxDate = new Date(today.getFullYear() - 31, today.getMonth(), today.getDate())
+            break
+          case "36-40":
+            minDate = new Date(today.getFullYear() - 40, today.getMonth(), today.getDate())
+            maxDate = new Date(today.getFullYear() - 36, today.getMonth(), today.getDate())
+            break
+          case "40+":
+            minDate = new Date(today.getFullYear() - 100, today.getMonth(), today.getDate())
+            maxDate = new Date(today.getFullYear() - 40, today.getMonth(), today.getDate())
+            break
+          default:
+            minDate = maxDate = today
+        }
+
+        if (ageRangeFilter !== "all") {
+          query = query
+            .gte("birthdate", minDate.toISOString().split("T")[0])
+            .lte("birthdate", maxDate.toISOString().split("T")[0])
+        }
       }
+
+      // Apply search
+      if (search) {
+        query = query.or(
+          `first_name.ilike.%${search}%,last_name.ilike.%${search}%,full_name.ilike.%${search}%,email.ilike.%${search}%,mobile_number.ilike.%${search}%,phone.ilike.%${search}%`,
+        )
+      }
+
+      return query
     }
 
-    // Apply search
-    if (search) {
-      query = query.or(
-        `first_name.ilike.%${search}%,last_name.ilike.%${search}%,full_name.ilike.%${search}%,email.ilike.%${search}%,mobile_number.ilike.%${search}%,phone.ilike.%${search}%`,
-      )
-    }
+    // Apply filters to both queries
+    baseQuery = applyFilters(baseQuery)
+    countQuery = applyFilters(countQuery)
 
     // Get total count for pagination
-    const { count } = await query
+    const { count, error: countError } = await countQuery
 
-    // Apply sorting, pagination and execute query
-    const { data: users, error } = await query
+    if (countError) {
+      console.error("Count query error:", countError)
+      return NextResponse.json({ error: "Failed to count users" }, { status: 500 })
+    }
+
+    // Apply sorting and pagination to the main query
+    const { data: users, error } = await baseQuery
       .order(sortBy, { ascending: sortOrder === "asc" })
       .range(offset, offset + limit - 1)
 
@@ -141,7 +158,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 })
     }
 
-    // Filter by profile completion if needed
+    // Filter by profile completion if needed (client-side filtering for complex logic)
     let filteredUsers = users || []
     if (profileCompletionFilter !== "all") {
       filteredUsers = filteredUsers.filter((user) => {
@@ -155,14 +172,15 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    const totalPages = Math.ceil((count || 0) / limit)
+    const totalCount = count || 0
+    const totalPages = Math.ceil(totalCount / limit)
     const hasNext = page < totalPages
     const hasPrev = page > 1
 
     const pagination = {
       page,
       limit,
-      total: count || 0,
+      total: totalCount,
       totalPages,
       hasNext,
       hasPrev,
@@ -170,18 +188,36 @@ export async function GET(request: NextRequest) {
 
     let stats = null
     if (includeStats) {
-      // Fetch statistics
-      const { data: allUsers } = await supabase
+      // Fetch statistics with a separate optimized query
+      const { data: allUsers, error: statsError } = await supabase
         .from("users")
-        .select("account_status, verification_status, gender, onboarding_completed, created_at, premium_expires_at")
+        .select(
+          "account_status, verification_status, gender, onboarding_completed, created_at, premium_expires_at, is_active",
+        )
 
-      if (allUsers) {
+      if (statsError) {
+        console.error("Stats query error:", statsError)
+        // Don't fail the whole request if stats fail
+        stats = {
+          totalUsers: 0,
+          activeUsers: 0,
+          verifiedUsers: 0,
+          premiumUsers: 0,
+          todaySignups: 0,
+          totalMatches: 0,
+          totalMessages: 0,
+          pendingVerifications: 0,
+          maleUsers: 0,
+          femaleUsers: 0,
+          completedProfiles: 0,
+        }
+      } else if (allUsers) {
         const today = new Date()
         const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate())
 
         stats = {
           totalUsers: allUsers.length,
-          activeUsers: allUsers.filter((u) => u.verification_status === "verified").length,
+          activeUsers: allUsers.filter((u) => u.is_active === true).length,
           verifiedUsers: allUsers.filter((u) => u.verification_status === "verified").length,
           premiumUsers: allUsers.filter((u) => u.premium_expires_at && new Date(u.premium_expires_at) > today).length,
           todaySignups: allUsers.filter((u) => new Date(u.created_at) >= todayStart).length,
@@ -190,7 +226,7 @@ export async function GET(request: NextRequest) {
           pendingVerifications: allUsers.filter((u) => u.verification_status === "pending").length,
           maleUsers: allUsers.filter((u) => u.gender === "Male").length,
           femaleUsers: allUsers.filter((u) => u.gender === "Female").length,
-          completedProfiles: allUsers.filter((u) => u.onboarding_completed).length,
+          completedProfiles: allUsers.filter((u) => u.onboarding_completed === true).length,
         }
       }
     }
@@ -199,6 +235,7 @@ export async function GET(request: NextRequest) {
       users: filteredUsers,
       pagination,
       stats,
+      success: true,
     })
   } catch (error) {
     console.error("API error:", error)

@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   Users,
   BarChart3,
@@ -42,6 +43,7 @@ import {
   X,
   ArrowLeft,
   ArrowRight,
+  Loader2,
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -180,6 +182,8 @@ export default function AdminDashboard() {
     hasPrev: false,
   })
   const [loading, setLoading] = useState(true)
+  const [statsLoading, setStatsLoading] = useState(true)
+  const [usersLoading, setUsersLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [filterStatus, setFilterStatus] = useState("all")
@@ -265,7 +269,10 @@ export default function AdminDashboard() {
   }
 
   const fetchAdminData = async (page = 1, includeStats = false) => {
-    setLoading(true)
+    setUsersLoading(true)
+    if (includeStats) {
+      setStatsLoading(true)
+    }
     setError(null)
 
     try {
@@ -302,6 +309,7 @@ export default function AdminDashboard() {
         usersCount: data.users?.length,
         pagination: data.pagination,
         stats: data.stats,
+        success: data.success,
       })
 
       setUsers(data.users || [])
@@ -319,6 +327,8 @@ export default function AdminDashboard() {
         variant: "destructive",
       })
     } finally {
+      setUsersLoading(false)
+      setStatsLoading(false)
       setLoading(false)
     }
   }
@@ -648,11 +658,49 @@ export default function AdminDashboard() {
     }))
   }
 
+  // Loading skeleton components
+  const StatsCardSkeleton = () => (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <Skeleton className="h-4 w-24" />
+        <Skeleton className="h-4 w-4" />
+      </CardHeader>
+      <CardContent>
+        <Skeleton className="h-8 w-16 mb-2" />
+        <Skeleton className="h-3 w-20" />
+      </CardContent>
+    </Card>
+  )
+
+  const UserCardSkeleton = () => (
+    <div className="flex items-center justify-between p-4 border rounded-lg">
+      <div className="flex items-center gap-4">
+        <Skeleton className="h-12 w-12 rounded-full" />
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-2">
+            <Skeleton className="h-5 w-32" />
+            <Skeleton className="h-4 w-16" />
+          </div>
+          <div className="space-y-1">
+            <Skeleton className="h-3 w-48" />
+            <Skeleton className="h-3 w-40" />
+          </div>
+          <div className="flex items-center gap-2 mt-2">
+            <Skeleton className="h-4 w-16" />
+            <Skeleton className="h-4 w-12" />
+            <Skeleton className="h-4 w-20" />
+          </div>
+        </div>
+      </div>
+      <Skeleton className="h-8 w-8" />
+    </div>
+  )
+
   if (loading && users.length === 0) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-50 to-pink-50 flex items-center justify-center">
         <div className="text-center">
-          <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-4 text-orange-500" />
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-orange-500" />
           <p className="text-gray-600">Loading admin dashboard...</p>
         </div>
       </div>
@@ -697,9 +745,9 @@ export default function AdminDashboard() {
                 variant="outline"
                 size="sm"
                 onClick={() => fetchAdminData(pagination.page, activeTab === "overview")}
-                disabled={loading}
+                disabled={usersLoading}
               >
-                <RefreshCw className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`} />
+                <RefreshCw className={`w-4 h-4 mr-2 ${usersLoading ? "animate-spin" : ""}`} />
                 Refresh
               </Button>
               <Button variant="outline" size="sm" onClick={exportData}>
@@ -765,107 +813,130 @@ export default function AdminDashboard() {
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.totalUsers.toLocaleString()}</div>
-                  <p className="text-xs text-muted-foreground">+{stats.todaySignups} today</p>
-                </CardContent>
-              </Card>
+              {statsLoading ? (
+                <>
+                  <StatsCardSkeleton />
+                  <StatsCardSkeleton />
+                  <StatsCardSkeleton />
+                  <StatsCardSkeleton />
+                </>
+              ) : (
+                <>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{stats.totalUsers.toLocaleString()}</div>
+                      <p className="text-xs text-muted-foreground">+{stats.todaySignups} today</p>
+                    </CardContent>
+                  </Card>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Active Users</CardTitle>
-                  <UserCheck className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.activeUsers.toLocaleString()}</div>
-                  <p className="text-xs text-muted-foreground">
-                    {stats.totalUsers > 0 ? ((stats.activeUsers / stats.totalUsers) * 100).toFixed(1) : 0}% of total
-                  </p>
-                </CardContent>
-              </Card>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Active Users</CardTitle>
+                      <UserCheck className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{stats.activeUsers.toLocaleString()}</div>
+                      <p className="text-xs text-muted-foreground">
+                        {stats.totalUsers > 0 ? ((stats.activeUsers / stats.totalUsers) * 100).toFixed(1) : 0}% of total
+                      </p>
+                    </CardContent>
+                  </Card>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Verified</CardTitle>
-                  <CheckCircle className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.verifiedUsers.toLocaleString()}</div>
-                  <p className="text-xs text-muted-foreground">
-                    {stats.totalUsers > 0 ? ((stats.verifiedUsers / stats.totalUsers) * 100).toFixed(1) : 0}% verified
-                  </p>
-                </CardContent>
-              </Card>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Verified</CardTitle>
+                      <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{stats.verifiedUsers.toLocaleString()}</div>
+                      <p className="text-xs text-muted-foreground">
+                        {stats.totalUsers > 0 ? ((stats.verifiedUsers / stats.totalUsers) * 100).toFixed(1) : 0}%
+                        verified
+                      </p>
+                    </CardContent>
+                  </Card>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Premium Users</CardTitle>
-                  <Crown className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.premiumUsers.toLocaleString()}</div>
-                  <p className="text-xs text-muted-foreground">
-                    {stats.totalUsers > 0 ? ((stats.premiumUsers / stats.totalUsers) * 100).toFixed(1) : 0}% premium
-                  </p>
-                </CardContent>
-              </Card>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Premium Users</CardTitle>
+                      <Crown className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{stats.premiumUsers.toLocaleString()}</div>
+                      <p className="text-xs text-muted-foreground">
+                        {stats.totalUsers > 0 ? ((stats.premiumUsers / stats.totalUsers) * 100).toFixed(1) : 0}% premium
+                      </p>
+                    </CardContent>
+                  </Card>
+                </>
+              )}
             </div>
 
             {/* Additional Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Pending Verification</CardTitle>
-                  <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.pendingVerifications.toLocaleString()}</div>
-                  <p className="text-xs text-muted-foreground">Awaiting review</p>
-                </CardContent>
-              </Card>
+              {statsLoading ? (
+                <>
+                  <StatsCardSkeleton />
+                  <StatsCardSkeleton />
+                  <StatsCardSkeleton />
+                  <StatsCardSkeleton />
+                </>
+              ) : (
+                <>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Pending Verification</CardTitle>
+                      <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{stats.pendingVerifications.toLocaleString()}</div>
+                      <p className="text-xs text-muted-foreground">Awaiting review</p>
+                    </CardContent>
+                  </Card>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Gender Split</CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {stats.maleUsers}M / {stats.femaleUsers}F
-                  </div>
-                  <p className="text-xs text-muted-foreground">Male / Female ratio</p>
-                </CardContent>
-              </Card>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Gender Split</CardTitle>
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">
+                        {stats.maleUsers}M / {stats.femaleUsers}F
+                      </div>
+                      <p className="text-xs text-muted-foreground">Male / Female ratio</p>
+                    </CardContent>
+                  </Card>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Complete Profiles</CardTitle>
-                  <CheckCircle className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.completedProfiles.toLocaleString()}</div>
-                  <p className="text-xs text-muted-foreground">
-                    {stats.totalUsers > 0 ? ((stats.completedProfiles / stats.totalUsers) * 100).toFixed(1) : 0}%
-                    complete
-                  </p>
-                </CardContent>
-              </Card>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Complete Profiles</CardTitle>
+                      <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{stats.completedProfiles.toLocaleString()}</div>
+                      <p className="text-xs text-muted-foreground">
+                        {stats.totalUsers > 0 ? ((stats.completedProfiles / stats.totalUsers) * 100).toFixed(1) : 0}%
+                        complete
+                      </p>
+                    </CardContent>
+                  </Card>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Matches</CardTitle>
-                  <Heart className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.totalMatches.toLocaleString()}</div>
-                  <p className="text-xs text-muted-foreground">Successful connections</p>
-                </CardContent>
-              </Card>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Total Matches</CardTitle>
+                      <Heart className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{stats.totalMatches.toLocaleString()}</div>
+                      <p className="text-xs text-muted-foreground">Successful connections</p>
+                    </CardContent>
+                  </Card>
+                </>
+              )}
             </div>
 
             {/* Recent Activity */}
@@ -875,40 +946,59 @@ export default function AdminDashboard() {
                 <CardDescription>Latest user registrations and profile updates</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {users.slice(0, 8).map((user) => (
-                    <div key={user.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-10 w-10">
-                          <AvatarImage src={user.profile_photo_url || user.user_photos?.[0] || "/placeholder.svg"} />
-                          <AvatarFallback>
-                            {user.first_name?.[0] || "U"}
-                            {user.last_name?.[0] || "U"}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium">
-                            {user.first_name || "Unknown"} {user.last_name || "User"}
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            {user.city && user.state ? `${user.city}, ${user.state}` : "Location not set"}
-                          </p>
-                          {user.last_login_at && (
-                            <p className="text-xs text-gray-400">
-                              Last login: {new Date(user.last_login_at).toLocaleDateString()}
-                            </p>
-                          )}
+                {usersLoading ? (
+                  <div className="space-y-4">
+                    {Array.from({ length: 8 }).map((_, i) => (
+                      <div key={i} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                        <Skeleton className="h-10 w-10 rounded-full" />
+                        <div className="flex-1">
+                          <Skeleton className="h-4 w-32 mb-2" />
+                          <Skeleton className="h-3 w-48 mb-1" />
+                          <Skeleton className="h-3 w-24" />
+                        </div>
+                        <div className="text-right">
+                          <Skeleton className="h-4 w-16 mb-1" />
+                          <Skeleton className="h-3 w-20" />
                         </div>
                       </div>
-                      <div className="text-right">
-                        <Badge className={getStatusColor(user.verification_status)}>
-                          {user.verification_status || "pending"}
-                        </Badge>
-                        <p className="text-xs text-gray-500 mt-1">{new Date(user.created_at).toLocaleDateString()}</p>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {users.slice(0, 8).map((user) => (
+                      <div key={user.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-10 w-10">
+                            <AvatarImage src={user.profile_photo_url || user.user_photos?.[0] || "/placeholder.svg"} />
+                            <AvatarFallback>
+                              {user.first_name?.[0] || "U"}
+                              {user.last_name?.[0] || "U"}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-medium">
+                              {user.first_name || "Unknown"} {user.last_name || "User"}
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              {user.city && user.state ? `${user.city}, ${user.state}` : "Location not set"}
+                            </p>
+                            {user.last_login_at && (
+                              <p className="text-xs text-gray-400">
+                                Last login: {new Date(user.last_login_at).toLocaleDateString()}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <Badge className={getStatusColor(user.verification_status)}>
+                            {user.verification_status || "pending"}
+                          </Badge>
+                          <p className="text-xs text-gray-500 mt-1">{new Date(user.created_at).toLocaleDateString()}</p>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -1031,7 +1121,10 @@ export default function AdminDashboard() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
-                  <CardTitle>Users ({pagination.total.toLocaleString()})</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    Users ({pagination.total.toLocaleString()})
+                    {usersLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                  </CardTitle>
                   <CardDescription>
                     Showing {users.length} of {pagination.total} users (Page {pagination.page} of{" "}
                     {pagination.totalPages})
@@ -1043,7 +1136,7 @@ export default function AdminDashboard() {
                     variant="outline"
                     size="sm"
                     onClick={() => handlePageChange(pagination.page - 1)}
-                    disabled={!pagination.hasPrev || loading}
+                    disabled={!pagination.hasPrev || usersLoading}
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </Button>
@@ -1054,17 +1147,24 @@ export default function AdminDashboard() {
                     variant="outline"
                     size="sm"
                     onClick={() => handlePageChange(pagination.page + 1)}
-                    disabled={!pagination.hasNext || loading}
+                    disabled={!pagination.hasNext || usersLoading}
                   >
                     <ChevronRight className="w-4 h-4" />
                   </Button>
                 </div>
               </CardHeader>
               <CardContent>
-                {loading && users.length === 0 ? (
-                  <div className="text-center py-8">
-                    <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-4 text-orange-500" />
-                    <p className="text-gray-600">Loading users...</p>
+                {usersLoading ? (
+                  <div className="space-y-4">
+                    {Array.from({ length: 10 }).map((_, i) => (
+                      <UserCardSkeleton key={i} />
+                    ))}
+                  </div>
+                ) : users.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>No users found matching the current filters</p>
+                    <p className="text-sm mt-2">Try adjusting your filter criteria</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -1128,7 +1228,11 @@ export default function AdminDashboard() {
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="sm" disabled={actionLoading?.startsWith(user.id)}>
-                              <MoreVertical className="w-4 h-4" />
+                              {actionLoading?.startsWith(user.id) ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <MoreVertical className="w-4 h-4" />
+                              )}
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-48">
@@ -1265,7 +1369,9 @@ export default function AdminDashboard() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
-                  <CardTitle>User Verification ({pagination.total})</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    User Verification ({pagination.total}){usersLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                  </CardTitle>
                   <CardDescription>Review and manage user verification requests</CardDescription>
                 </div>
                 {/* Pagination Controls for Verification */}
@@ -1274,7 +1380,7 @@ export default function AdminDashboard() {
                     variant="outline"
                     size="sm"
                     onClick={() => handlePageChange(pagination.page - 1)}
-                    disabled={!pagination.hasPrev || loading}
+                    disabled={!pagination.hasPrev || usersLoading}
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </Button>
@@ -1285,119 +1391,168 @@ export default function AdminDashboard() {
                     variant="outline"
                     size="sm"
                     onClick={() => handlePageChange(pagination.page + 1)}
-                    disabled={!pagination.hasNext || loading}
+                    disabled={!pagination.hasNext || usersLoading}
                   >
                     <ChevronRight className="w-4 h-4" />
                   </Button>
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {users.map((user) => (
-                    <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center gap-4">
-                        <Avatar className="h-16 w-16">
-                          <AvatarImage src={user.profile_photo_url || user.user_photos?.[0] || "/placeholder.svg"} />
-                          <AvatarFallback className="text-lg">
-                            {user.first_name?.[0] || "U"}
-                            {user.last_name?.[0] || "U"}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <h3 className="font-medium text-lg">
-                              {user.first_name || "Unknown"} {user.last_name || "User"}
-                            </h3>
-                            {!user.onboarding_completed && <Badge variant="outline">Incomplete Profile</Badge>}
-                            <Badge className={getStatusColor(user.verification_status)}>
-                              {user.verification_status || "pending"}
-                            </Badge>
-                          </div>
-                          <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
-                            <div>
-                              <p>
-                                <Mail className="w-3 h-3 inline mr-1" />
-                                {user.email}
-                              </p>
-                              <p>
-                                <Phone className="w-3 h-3 inline mr-1" />
-                                {user.mobile_number || user.phone || "No phone"}
-                              </p>
+                {usersLoading ? (
+                  <div className="space-y-4">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <div key={i} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex items-center gap-4">
+                          <Skeleton className="h-16 w-16 rounded-full" />
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Skeleton className="h-5 w-40" />
+                              <Skeleton className="h-4 w-20" />
                             </div>
-                            <div>
-                              <p>
-                                <MapPin className="w-3 h-3 inline mr-1" />
-                                {user.city && user.state ? `${user.city}, ${user.state}` : "Location not set"}
-                              </p>
-                              <p>
-                                <Calendar className="w-3 h-3 inline mr-1" />
-                                {user.birthdate ? `${calculateAge(user.birthdate)} years` : "Age not set"}
-                              </p>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <Skeleton className="h-3 w-32 mb-1" />
+                                <Skeleton className="h-3 w-28" />
+                              </div>
+                              <div>
+                                <Skeleton className="h-3 w-36 mb-1" />
+                                <Skeleton className="h-3 w-24" />
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 mt-2">
+                              <Skeleton className="h-4 w-16" />
+                              <Skeleton className="h-4 w-20" />
+                              <Skeleton className="h-4 w-24" />
                             </div>
                           </div>
-                          <div className="flex items-center gap-2 mt-2">
-                            <Badge variant="outline">{user.gender || "Not specified"}</Badge>
-                            <Badge variant="outline">{user.education || "Education not set"}</Badge>
-                            <Badge variant="outline">{user.profession || "Profession not set"}</Badge>
-                            <Badge variant="outline" className="text-xs">
-                              {getProfileCompletionScore(user)}% complete
-                            </Badge>
-                            {user.user_photos && user.user_photos.length > 0 && (
-                              <Badge variant="outline" className="text-green-600">
-                                <ImageIcon className="w-3 h-3 mr-1" />
-                                {user.user_photos.length} photos
-                              </Badge>
-                            )}
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          <Skeleton className="h-8 w-32" />
+                          <Skeleton className="h-8 w-32" />
+                          <div className="flex gap-2">
+                            <Skeleton className="h-8 w-16" />
+                            <Skeleton className="h-8 w-20" />
                           </div>
-                          <p className="text-xs text-gray-400 mt-2">
-                            Submitted {new Date(user.created_at).toLocaleDateString()}
-                          </p>
                         </div>
                       </div>
-                      <div className="flex flex-col gap-2">
-                        <Button size="sm" variant="outline" onClick={() => fetchUserDetails(user)}>
-                          <Eye className="w-4 h-4 mr-2" />
-                          Preview Profile
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => openNotificationModal(user, "profile_update")}
-                        >
-                          <MessageSquare className="w-4 h-4 mr-2" />
-                          Request Update
-                        </Button>
-                        <div className="flex gap-2">
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {users.map((user) => (
+                      <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex items-center gap-4">
+                          <Avatar className="h-16 w-16">
+                            <AvatarImage src={user.profile_photo_url || user.user_photos?.[0] || "/placeholder.svg"} />
+                            <AvatarFallback className="text-lg">
+                              {user.first_name?.[0] || "U"}
+                              {user.last_name?.[0] || "U"}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <h3 className="font-medium text-lg">
+                                {user.first_name || "Unknown"} {user.last_name || "User"}
+                              </h3>
+                              {!user.onboarding_completed && <Badge variant="outline">Incomplete Profile</Badge>}
+                              <Badge className={getStatusColor(user.verification_status)}>
+                                {user.verification_status || "pending"}
+                              </Badge>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
+                              <div>
+                                <p>
+                                  <Mail className="w-3 h-3 inline mr-1" />
+                                  {user.email}
+                                </p>
+                                <p>
+                                  <Phone className="w-3 h-3 inline mr-1" />
+                                  {user.mobile_number || user.phone || "No phone"}
+                                </p>
+                              </div>
+                              <div>
+                                <p>
+                                  <MapPin className="w-3 h-3 inline mr-1" />
+                                  {user.city && user.state ? `${user.city}, ${user.state}` : "Location not set"}
+                                </p>
+                                <p>
+                                  <Calendar className="w-3 h-3 inline mr-1" />
+                                  {user.birthdate ? `${calculateAge(user.birthdate)} years` : "Age not set"}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 mt-2">
+                              <Badge variant="outline">{user.gender || "Not specified"}</Badge>
+                              <Badge variant="outline">{user.education || "Education not set"}</Badge>
+                              <Badge variant="outline">{user.profession || "Profession not set"}</Badge>
+                              <Badge variant="outline" className="text-xs">
+                                {getProfileCompletionScore(user)}% complete
+                              </Badge>
+                              {user.user_photos && user.user_photos.length > 0 && (
+                                <Badge variant="outline" className="text-green-600">
+                                  <ImageIcon className="w-3 h-3 mr-1" />
+                                  {user.user_photos.length} photos
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-xs text-gray-400 mt-2">
+                              Submitted {new Date(user.created_at).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          <Button size="sm" variant="outline" onClick={() => fetchUserDetails(user)}>
+                            <Eye className="w-4 h-4 mr-2" />
+                            Preview Profile
+                          </Button>
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => handleUserAction(user.id, "reject")}
-                            disabled={actionLoading === user.id + "reject"}
+                            onClick={() => openNotificationModal(user, "profile_update")}
                           >
-                            <XCircle className="w-4 h-4 mr-2" />
-                            Reject
+                            <MessageSquare className="w-4 h-4 mr-2" />
+                            Request Update
                           </Button>
-                          <Button
-                            size="sm"
-                            onClick={() => handleUserAction(user.id, "verify")}
-                            disabled={actionLoading === user.id + "verify"}
-                          >
-                            <CheckCircle className="w-4 h-4 mr-2" />
-                            Approve
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleUserAction(user.id, "reject")}
+                              disabled={actionLoading === user.id + "reject"}
+                            >
+                              {actionLoading === user.id + "reject" ? (
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              ) : (
+                                <XCircle className="w-4 h-4 mr-2" />
+                              )}
+                              Reject
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={() => handleUserAction(user.id, "verify")}
+                              disabled={actionLoading === user.id + "verify"}
+                            >
+                              {actionLoading === user.id + "verify" ? (
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              ) : (
+                                <CheckCircle className="w-4 h-4 mr-2" />
+                              )}
+                              Approve
+                            </Button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
 
-                  {users.length === 0 && (
-                    <div className="text-center py-8 text-gray-500">
-                      <Shield className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                      <p>No users found matching the current filters</p>
-                      <p className="text-sm mt-2">Try adjusting your filter criteria</p>
-                    </div>
-                  )}
-                </div>
+                    {users.length === 0 && (
+                      <div className="text-center py-8 text-gray-500">
+                        <Shield className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                        <p>No users found matching the current filters</p>
+                        <p className="text-sm mt-2">Try adjusting your filter criteria</p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -1411,64 +1566,78 @@ export default function AdminDashboard() {
                   <CardDescription>Breakdown of user characteristics</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span>Male Users</span>
-                      <div className="flex items-center gap-2">
-                        <div className="w-24 bg-gray-200 rounded-full h-2">
-                          <div
-                            className="bg-blue-500 h-2 rounded-full"
-                            style={{
-                              width: `${stats.totalUsers > 0 ? (stats.maleUsers / stats.totalUsers) * 100 : 0}%`,
-                            }}
-                          ></div>
+                  {statsLoading ? (
+                    <div className="space-y-4">
+                      {Array.from({ length: 4 }).map((_, i) => (
+                        <div key={i} className="flex justify-between items-center">
+                          <Skeleton className="h-4 w-20" />
+                          <div className="flex items-center gap-2">
+                            <Skeleton className="h-2 w-24 rounded-full" />
+                            <Skeleton className="h-4 w-8" />
+                          </div>
                         </div>
-                        <Badge variant="outline">{stats.maleUsers}</Badge>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <span>Male Users</span>
+                        <div className="flex items-center gap-2">
+                          <div className="w-24 bg-gray-200 rounded-full h-2">
+                            <div
+                              className="bg-blue-500 h-2 rounded-full"
+                              style={{
+                                width: `${stats.totalUsers > 0 ? (stats.maleUsers / stats.totalUsers) * 100 : 0}%`,
+                              }}
+                            ></div>
+                          </div>
+                          <Badge variant="outline">{stats.maleUsers}</Badge>
+                        </div>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span>Female Users</span>
+                        <div className="flex items-center gap-2">
+                          <div className="w-24 bg-gray-200 rounded-full h-2">
+                            <div
+                              className="bg-pink-500 h-2 rounded-full"
+                              style={{
+                                width: `${stats.totalUsers > 0 ? (stats.femaleUsers / stats.totalUsers) * 100 : 0}%`,
+                              }}
+                            ></div>
+                          </div>
+                          <Badge variant="outline">{stats.femaleUsers}</Badge>
+                        </div>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span>Verified Users</span>
+                        <div className="flex items-center gap-2">
+                          <div className="w-24 bg-gray-200 rounded-full h-2">
+                            <div
+                              className="bg-green-500 h-2 rounded-full"
+                              style={{
+                                width: `${stats.totalUsers > 0 ? (stats.verifiedUsers / stats.totalUsers) * 100 : 0}%`,
+                              }}
+                            ></div>
+                          </div>
+                          <Badge variant="outline">{stats.verifiedUsers}</Badge>
+                        </div>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span>Premium Users</span>
+                        <div className="flex items-center gap-2">
+                          <div className="w-24 bg-gray-200 rounded-full h-2">
+                            <div
+                              className="bg-purple-500 h-2 rounded-full"
+                              style={{
+                                width: `${stats.totalUsers > 0 ? (stats.premiumUsers / stats.totalUsers) * 100 : 0}%`,
+                              }}
+                            ></div>
+                          </div>
+                          <Badge variant="outline">{stats.premiumUsers}</Badge>
+                        </div>
                       </div>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span>Female Users</span>
-                      <div className="flex items-center gap-2">
-                        <div className="w-24 bg-gray-200 rounded-full h-2">
-                          <div
-                            className="bg-pink-500 h-2 rounded-full"
-                            style={{
-                              width: `${stats.totalUsers > 0 ? (stats.femaleUsers / stats.totalUsers) * 100 : 0}%`,
-                            }}
-                          ></div>
-                        </div>
-                        <Badge variant="outline">{stats.femaleUsers}</Badge>
-                      </div>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>Verified Users</span>
-                      <div className="flex items-center gap-2">
-                        <div className="w-24 bg-gray-200 rounded-full h-2">
-                          <div
-                            className="bg-green-500 h-2 rounded-full"
-                            style={{
-                              width: `${stats.totalUsers > 0 ? (stats.verifiedUsers / stats.totalUsers) * 100 : 0}%`,
-                            }}
-                          ></div>
-                        </div>
-                        <Badge variant="outline">{stats.verifiedUsers}</Badge>
-                      </div>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>Premium Users</span>
-                      <div className="flex items-center gap-2">
-                        <div className="w-24 bg-gray-200 rounded-full h-2">
-                          <div
-                            className="bg-purple-500 h-2 rounded-full"
-                            style={{
-                              width: `${stats.totalUsers > 0 ? (stats.premiumUsers / stats.totalUsers) * 100 : 0}%`,
-                            }}
-                          ></div>
-                        </div>
-                        <Badge variant="outline">{stats.premiumUsers}</Badge>
-                      </div>
-                    </div>
-                  </div>
+                  )}
                 </CardContent>
               </Card>
 
@@ -1478,30 +1647,43 @@ export default function AdminDashboard() {
                   <CardDescription>User account types and verification status</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span>Verified</span>
-                      <Badge className="bg-green-100 text-green-800">{stats.verifiedUsers}</Badge>
+                  {statsLoading ? (
+                    <div className="space-y-3">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <div key={i} className="flex justify-between items-center">
+                          <Skeleton className="h-4 w-24" />
+                          <Skeleton className="h-4 w-12" />
+                        </div>
+                      ))}
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span>Pending</span>
-                      <Badge className="bg-yellow-100 text-yellow-800">{stats.pendingVerifications}</Badge>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span>Verified</span>
+                        <Badge className="bg-green-100 text-green-800">{stats.verifiedUsers}</Badge>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span>Pending</span>
+                        <Badge className="bg-yellow-100 text-yellow-800">{stats.pendingVerifications}</Badge>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span>Rejected</span>
+                        <Badge className="bg-red-100 text-red-800">
+                          {users.filter((u) => u.verification_status === "rejected").length}
+                        </Badge>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span>Complete Profiles</span>
+                        <Badge className="bg-blue-100 text-blue-800">{stats.completedProfiles}</Badge>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span>Incomplete Profiles</span>
+                        <Badge className="bg-gray-100 text-gray-800">
+                          {stats.totalUsers - stats.completedProfiles}
+                        </Badge>
+                      </div>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span>Rejected</span>
-                      <Badge className="bg-red-100 text-red-800">
-                        {users.filter((u) => u.verification_status === "rejected").length}
-                      </Badge>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>Complete Profiles</span>
-                      <Badge className="bg-blue-100 text-blue-800">{stats.completedProfiles}</Badge>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>Incomplete Profiles</span>
-                      <Badge className="bg-gray-100 text-gray-800">{stats.totalUsers - stats.completedProfiles}</Badge>
-                    </div>
-                  </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -1893,7 +2075,11 @@ export default function AdminDashboard() {
                             onClick={() => handleUserAction(selectedUser.id, "verify")}
                             disabled={actionLoading === selectedUser.id + "verify"}
                           >
-                            <CheckCircle className="w-4 h-4 mr-2" />
+                            {actionLoading === selectedUser.id + "verify" ? (
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            ) : (
+                              <CheckCircle className="w-4 h-4 mr-2" />
+                            )}
                             Approve Verification
                           </Button>
                           <Button
@@ -1902,7 +2088,11 @@ export default function AdminDashboard() {
                             onClick={() => handleUserAction(selectedUser.id, "reject")}
                             disabled={actionLoading === selectedUser.id + "reject"}
                           >
-                            <XCircle className="w-4 h-4 mr-2" />
+                            {actionLoading === selectedUser.id + "reject" ? (
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            ) : (
+                              <XCircle className="w-4 h-4 mr-2" />
+                            )}
                             Reject Verification
                           </Button>
                         </>
@@ -1914,7 +2104,11 @@ export default function AdminDashboard() {
                           onClick={() => handleUserAction(selectedUser.id, "removePremium")}
                           disabled={actionLoading === selectedUser.id + "removePremium"}
                         >
-                          <Crown className="w-4 h-4 mr-2" />
+                          {actionLoading === selectedUser.id + "removePremium" ? (
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          ) : (
+                            <Crown className="w-4 h-4 mr-2" />
+                          )}
                           Remove Premium
                         </Button>
                       ) : (
@@ -1923,7 +2117,11 @@ export default function AdminDashboard() {
                           onClick={() => handleUserAction(selectedUser.id, "makePremium")}
                           disabled={actionLoading === selectedUser.id + "makePremium"}
                         >
-                          <Crown className="w-4 h-4 mr-2" />
+                          {actionLoading === selectedUser.id + "makePremium" ? (
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          ) : (
+                            <Crown className="w-4 h-4 mr-2" />
+                          )}
                           Make Premium
                         </Button>
                       )}
@@ -1934,7 +2132,11 @@ export default function AdminDashboard() {
                           onClick={() => handleUserAction(selectedUser.id, "deactivate")}
                           disabled={actionLoading === selectedUser.id + "deactivate"}
                         >
-                          <Ban className="w-4 h-4 mr-2" />
+                          {actionLoading === selectedUser.id + "deactivate" ? (
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          ) : (
+                            <Ban className="w-4 h-4 mr-2" />
+                          )}
                           Deactivate Account
                         </Button>
                       ) : (
@@ -1943,7 +2145,11 @@ export default function AdminDashboard() {
                           onClick={() => handleUserAction(selectedUser.id, "activate")}
                           disabled={actionLoading === selectedUser.id + "activate"}
                         >
-                          <CheckCircle className="w-4 h-4 mr-2" />
+                          {actionLoading === selectedUser.id + "activate" ? (
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          ) : (
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                          )}
                           Activate Account
                         </Button>
                       )}
@@ -2145,7 +2351,14 @@ export default function AdminDashboard() {
                   Cancel
                 </Button>
                 <Button onClick={() => handleEditUser(editingUser)} disabled={actionLoading === "edit"}>
-                  {actionLoading === "edit" ? "Saving..." : "Save Changes"}
+                  {actionLoading === "edit" ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save Changes"
+                  )}
                 </Button>
               </div>
             </div>
