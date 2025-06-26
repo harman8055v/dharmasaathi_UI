@@ -21,18 +21,21 @@ export async function GET(request: NextRequest) {
 
     const offset = (page - 1) * limit
 
-    // Build the base query
+    // Build the base query with actual schema columns
     let query = supabase.from("users").select(`
-        id, first_name, last_name, email, mobile_number, birthdate, gender,
-        city, state, country, account_status, verification_status, created_at,
-        updated_at, user_photos, is_active, email_verified, mobile_verified,
+        id, first_name, last_name, full_name, email, mobile_number, phone, birthdate, gender,
+        city, state, country, account_status, verification_status, kyc_status, created_at,
+        updated_at, user_photos, profile_photo_url, is_active, email_verified, mobile_verified,
         about_me, partner_expectations, education, profession, annual_income,
         diet, temple_visit_freq, onboarding_completed, last_login_at, role,
-        height, marital_status, mother_tongue, religion, caste,
-        subcaste, gotra, manglik, family_type, family_status, family_values,
-        disability, smoking, drinking, hobbies, interests, favorite_books,
-        favorite_movies, favorite_music, favorite_spiritual_quote,
-        daily_spiritual_practices, spiritual_organizations
+        height, marital_status, mother_tongue, spiritual_org, daily_practices,
+        smoking, drinking, vanaprastha_interest, artha_vs_moksha,
+        favorite_spiritual_quote, is_verified, super_likes_count, swipe_count,
+        referral_code, referral_count, fast_track_verification, referred_by,
+        preferred_age_min, preferred_age_max, preferred_gender, preferred_location,
+        preferred_education, preferred_profession, preferred_diet, preferred_spiritual_org,
+        preferred_temple_visit_freq, preferred_height_min, preferred_height_max,
+        privacy_settings, deactivated_at, message_highlights_count, premium_expires_at
       `)
 
     // Apply filters
@@ -54,7 +57,7 @@ export async function GET(request: NextRequest) {
           query = query.eq("verification_status", "rejected")
           break
         case "premium":
-          query = query.in("account_status", ["premium", "elite", "sparsh", "sangam", "samarpan"])
+          query = query.not("premium_expires_at", "is", null)
           break
         case "incomplete":
           query = query.eq("onboarding_completed", false)
@@ -121,7 +124,7 @@ export async function GET(request: NextRequest) {
     // Apply search
     if (search) {
       query = query.or(
-        `first_name.ilike.%${search}%,last_name.ilike.%${search}%,email.ilike.%${search}%,mobile_number.ilike.%${search}%`,
+        `first_name.ilike.%${search}%,last_name.ilike.%${search}%,full_name.ilike.%${search}%,email.ilike.%${search}%,mobile_number.ilike.%${search}%,phone.ilike.%${search}%`,
       )
     }
 
@@ -170,7 +173,7 @@ export async function GET(request: NextRequest) {
       // Fetch statistics
       const { data: allUsers } = await supabase
         .from("users")
-        .select("account_status, verification_status, gender, onboarding_completed, created_at")
+        .select("account_status, verification_status, gender, onboarding_completed, created_at, premium_expires_at")
 
       if (allUsers) {
         const today = new Date()
@@ -180,15 +183,13 @@ export async function GET(request: NextRequest) {
           totalUsers: allUsers.length,
           activeUsers: allUsers.filter((u) => u.verification_status === "verified").length,
           verifiedUsers: allUsers.filter((u) => u.verification_status === "verified").length,
-          premiumUsers: allUsers.filter((u) =>
-            ["premium", "elite", "sparsh", "sangam", "samarpan"].includes(u.account_status),
-          ).length,
+          premiumUsers: allUsers.filter((u) => u.premium_expires_at && new Date(u.premium_expires_at) > today).length,
           todaySignups: allUsers.filter((u) => new Date(u.created_at) >= todayStart).length,
           totalMatches: 0, // This would need to be calculated from a matches table
           totalMessages: 0, // This would need to be calculated from a messages table
           pendingVerifications: allUsers.filter((u) => u.verification_status === "pending").length,
-          maleUsers: allUsers.filter((u) => u.gender === "male").length,
-          femaleUsers: allUsers.filter((u) => u.gender === "female").length,
+          maleUsers: allUsers.filter((u) => u.gender === "Male").length,
+          femaleUsers: allUsers.filter((u) => u.gender === "Female").length,
           completedProfiles: allUsers.filter((u) => u.onboarding_completed).length,
         }
       }
@@ -207,13 +208,13 @@ export async function GET(request: NextRequest) {
 
 function calculateProfileCompletion(user: any): number {
   let score = 0
-  const totalFields = 19 // Adjusted total fields after removing 'weight'
+  const totalFields = 18 // Adjusted to match actual schema fields
 
   const fields = [
     user.first_name,
     user.last_name,
     user.email,
-    user.mobile_number,
+    user.mobile_number || user.phone,
     user.birthdate,
     user.gender,
     user.city,
@@ -223,11 +224,11 @@ function calculateProfileCompletion(user: any): number {
     user.about_me,
     user.partner_expectations,
     user.height,
-    user.religion,
     user.mother_tongue,
     user.marital_status,
     user.diet,
     user.annual_income,
+    user.temple_visit_freq,
   ]
 
   fields.forEach((field) => {
@@ -235,7 +236,7 @@ function calculateProfileCompletion(user: any): number {
   })
 
   if (user.user_photos && user.user_photos.length > 0) score += 1
-  if (user.daily_spiritual_practices && user.daily_spiritual_practices.length > 0) score += 1
+  if (user.daily_practices && user.daily_practices.length > 0) score += 1
 
   return Math.round((score / totalFields) * 100)
 }

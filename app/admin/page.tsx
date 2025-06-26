@@ -62,8 +62,10 @@ interface UserType {
   id: string
   first_name: string
   last_name: string
+  full_name: string
   email: string
   mobile_number: string
+  phone: string
   birthdate: string
   gender: string
   city: string
@@ -71,9 +73,11 @@ interface UserType {
   country: string
   account_status: string
   verification_status: string
+  kyc_status: string
   created_at: string
   updated_at: string
   user_photos: string[]
+  profile_photo_url: string
   is_active: boolean
   email_verified: boolean
   mobile_verified: boolean
@@ -90,25 +94,35 @@ interface UserType {
   height: string
   marital_status: string
   mother_tongue: string
-  religion: string
-  caste: string
-  subcaste: string
-  gotra: string
-  manglik: string
-  family_type: string
-  family_status: string
-  family_values: string
-  disability: string
-  smoking: string
-  drinking: string
-  hobbies: string
-  interests: string
-  favorite_books: string
-  favorite_movies: string
-  favorite_music: string
+  spiritual_org: string[]
+  daily_practices: string[]
+  smoking: boolean
+  drinking: boolean
+  vanaprastha_interest: string
+  artha_vs_moksha: string
   favorite_spiritual_quote: string
-  daily_spiritual_practices: string[]
-  spiritual_organizations: string[]
+  is_verified: boolean
+  super_likes_count: number
+  swipe_count: number
+  referral_code: string
+  referral_count: number
+  fast_track_verification: boolean
+  referred_by: string
+  preferred_age_min: number
+  preferred_age_max: number
+  preferred_gender: string
+  preferred_location: string
+  preferred_education: string
+  preferred_profession: string
+  preferred_diet: string
+  preferred_spiritual_org: string[]
+  preferred_temple_visit_freq: string
+  preferred_height_min: number
+  preferred_height_max: number
+  privacy_settings: any
+  deactivated_at: string
+  message_highlights_count: number
+  premium_expires_at: string
 }
 
 interface AdminStats {
@@ -332,25 +346,24 @@ export default function AdminDashboard() {
 
       switch (action) {
         case "deactivate":
-          updateData = { is_active: false }
+          updateData = { is_active: false, deactivated_at: new Date().toISOString() }
           break
         case "activate":
-          updateData = { is_active: true }
+          updateData = { is_active: true, deactivated_at: null }
           break
         case "verify":
-          updateData = { verification_status: "verified" }
+          updateData = { verification_status: "verified", is_verified: true }
           break
         case "reject":
-          updateData = { verification_status: "rejected" }
-          break
-        case "makeBasic":
-          updateData = { account_status: "basic" }
+          updateData = { verification_status: "rejected", is_verified: false }
           break
         case "makePremium":
-          updateData = { account_status: "premium" }
+          const premiumExpiry = new Date()
+          premiumExpiry.setMonth(premiumExpiry.getMonth() + 1)
+          updateData = { premium_expires_at: premiumExpiry.toISOString() }
           break
-        case "makeElite":
-          updateData = { account_status: "elite" }
+        case "removePremium":
+          updateData = { premium_expires_at: null }
           break
         default:
           return
@@ -499,10 +512,10 @@ export default function AdminDashboard() {
           [
             `${user.first_name || ""} ${user.last_name || ""}`,
             user.email || "",
-            user.mobile_number || "",
+            user.mobile_number || user.phone || "",
             user.gender || "",
             `${user.city || ""}, ${user.state || ""}`,
-            user.account_status || "basic",
+            user.premium_expires_at ? "Premium" : "Basic",
             user.verification_status || "pending",
             new Date(user.created_at).toLocaleDateString(),
             user.last_login_at ? new Date(user.last_login_at).toLocaleDateString() : "Never",
@@ -540,10 +553,6 @@ export default function AdminDashboard() {
       case "rejected":
         return "bg-red-100 text-red-800"
       case "premium":
-      case "elite":
-      case "sparsh":
-      case "sangam":
-      case "samarpan":
         return "bg-purple-100 text-purple-800"
       case "basic":
         return "bg-blue-100 text-blue-800"
@@ -566,13 +575,13 @@ export default function AdminDashboard() {
 
   const getProfileCompletionScore = (user: UserType) => {
     let score = 0
-    const totalFields = 19 // Adjusted total fields after removing 'weight'
+    const totalFields = 18
 
     const fields = [
       user.first_name,
       user.last_name,
       user.email,
-      user.mobile_number,
+      user.mobile_number || user.phone,
       user.birthdate,
       user.gender,
       user.city,
@@ -582,11 +591,11 @@ export default function AdminDashboard() {
       user.about_me,
       user.partner_expectations,
       user.height,
-      user.religion,
       user.mother_tongue,
       user.marital_status,
       user.diet,
       user.annual_income,
+      user.temple_visit_freq,
     ]
 
     fields.forEach((field) => {
@@ -594,9 +603,14 @@ export default function AdminDashboard() {
     })
 
     if (user.user_photos && user.user_photos.length > 0) score += 1
-    if (user.daily_spiritual_practices && user.daily_spiritual_practices.length > 0) score += 1
+    if (user.daily_practices && user.daily_practices.length > 0) score += 1
 
     return Math.round((score / totalFields) * 100)
+  }
+
+  const isPremiumUser = (user: UserType) => {
+    if (!user.premium_expires_at) return false
+    return new Date(user.premium_expires_at) > new Date()
   }
 
   const openImageZoom = (images: string[], startIndex: number, userName: string) => {
@@ -711,7 +725,7 @@ export default function AdminDashboard() {
                       </p>
                       <p className="text-xs text-muted-foreground">{adminUser?.email}</p>
                       <Badge variant="outline" className="text-xs w-fit">
-                        {adminUser?.role === "super_admin" ? "Super Admin" : "Admin"}
+                        {adminUser?.role}
                       </Badge>
                     </div>
                   </DropdownMenuLabel>
@@ -866,7 +880,7 @@ export default function AdminDashboard() {
                     <div key={user.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                       <div className="flex items-center gap-3">
                         <Avatar className="h-10 w-10">
-                          <AvatarImage src={user.user_photos?.[0] || "/placeholder.svg"} />
+                          <AvatarImage src={user.profile_photo_url || user.user_photos?.[0] || "/placeholder.svg"} />
                           <AvatarFallback>
                             {user.first_name?.[0] || "U"}
                             {user.last_name?.[0] || "U"}
@@ -941,9 +955,9 @@ export default function AdminDashboard() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">All Genders</SelectItem>
-                        <SelectItem value="male">Male</SelectItem>
-                        <SelectItem value="female">Female</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
+                        <SelectItem value="Male">Male</SelectItem>
+                        <SelectItem value="Female">Female</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
                       </SelectContent>
                     </Select>
 
@@ -996,7 +1010,7 @@ export default function AdminDashboard() {
                         <SelectItem value="last_login_at">Last Login</SelectItem>
                         <SelectItem value="first_name">First Name</SelectItem>
                         <SelectItem value="verification_status">Verification Status</SelectItem>
-                        <SelectItem value="account_status">Account Status</SelectItem>
+                        <SelectItem value="premium_expires_at">Premium Status</SelectItem>
                       </SelectContent>
                     </Select>
                     <Select value={sortOrder} onValueChange={(value) => setSortOrder(value as "asc" | "desc")}>
@@ -1061,7 +1075,7 @@ export default function AdminDashboard() {
                       >
                         <div className="flex items-center gap-4">
                           <Avatar className="h-12 w-12">
-                            <AvatarImage src={user.user_photos?.[0] || "/placeholder.svg"} />
+                            <AvatarImage src={user.profile_photo_url || user.user_photos?.[0] || "/placeholder.svg"} />
                             <AvatarFallback>
                               {user.first_name?.[0] || "U"}
                               {user.last_name?.[0] || "U"}
@@ -1077,9 +1091,7 @@ export default function AdminDashboard() {
                               {user.role?.toLowerCase() === "admin" && (
                                 <Badge className="bg-red-100 text-red-800">Admin</Badge>
                               )}
-                              {user.role?.toLowerCase() === "super_admin" && (
-                                <Badge className="bg-red-200 text-red-900">Super Admin</Badge>
-                              )}
+                              {isPremiumUser(user) && <Badge className="bg-purple-100 text-purple-800">Premium</Badge>}
                             </div>
                             <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-sm text-gray-500">
                               <span className="flex items-center gap-1">
@@ -1088,7 +1100,7 @@ export default function AdminDashboard() {
                               </span>
                               <span className="flex items-center gap-1">
                                 <Phone className="w-3 h-3" />
-                                {user.mobile_number || "No phone"}
+                                {user.mobile_number || user.phone || "No phone"}
                               </span>
                               <span className="flex items-center gap-1">
                                 <MapPin className="w-3 h-3" />
@@ -1098,9 +1110,6 @@ export default function AdminDashboard() {
                             <div className="flex items-center gap-2 mt-2">
                               <Badge className={getStatusColor(user.verification_status)}>
                                 {user.verification_status || "pending"}
-                              </Badge>
-                              <Badge className={getStatusColor(user.account_status)}>
-                                {user.account_status || "basic"}
                               </Badge>
                               {user.gender && <Badge variant="outline">{user.gender}</Badge>}
                               {user.birthdate && <Badge variant="outline">{calculateAge(user.birthdate)} years</Badge>}
@@ -1151,18 +1160,17 @@ export default function AdminDashboard() {
                                 <DropdownMenuSeparator />
                               </>
                             )}
-                            <DropdownMenuItem onClick={() => handleUserAction(user.id, "makeBasic")}>
-                              <Crown className="w-4 h-4 mr-2" />
-                              Make Basic
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleUserAction(user.id, "makePremium")}>
-                              <Crown className="w-4 h-4 mr-2" />
-                              Make Premium
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleUserAction(user.id, "makeElite")}>
-                              <Crown className="w-4 h-4 mr-2" />
-                              Make Elite
-                            </DropdownMenuItem>
+                            {isPremiumUser(user) ? (
+                              <DropdownMenuItem onClick={() => handleUserAction(user.id, "removePremium")}>
+                                <Crown className="w-4 h-4 mr-2" />
+                                Remove Premium
+                              </DropdownMenuItem>
+                            ) : (
+                              <DropdownMenuItem onClick={() => handleUserAction(user.id, "makePremium")}>
+                                <Crown className="w-4 h-4 mr-2" />
+                                Make Premium
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuSeparator />
                             {user.is_active !== false ? (
                               <DropdownMenuItem onClick={() => handleUserAction(user.id, "deactivate")}>
@@ -1209,9 +1217,9 @@ export default function AdminDashboard() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Genders</SelectItem>
-                      <SelectItem value="male">Male</SelectItem>
-                      <SelectItem value="female">Female</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
+                      <SelectItem value="Male">Male</SelectItem>
+                      <SelectItem value="Female">Female</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
                     </SelectContent>
                   </Select>
 
@@ -1289,7 +1297,7 @@ export default function AdminDashboard() {
                     <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
                       <div className="flex items-center gap-4">
                         <Avatar className="h-16 w-16">
-                          <AvatarImage src={user.user_photos?.[0] || "/placeholder.svg"} />
+                          <AvatarImage src={user.profile_photo_url || user.user_photos?.[0] || "/placeholder.svg"} />
                           <AvatarFallback className="text-lg">
                             {user.first_name?.[0] || "U"}
                             {user.last_name?.[0] || "U"}
@@ -1313,7 +1321,7 @@ export default function AdminDashboard() {
                               </p>
                               <p>
                                 <Phone className="w-3 h-3 inline mr-1" />
-                                {user.mobile_number || "No phone"}
+                                {user.mobile_number || user.phone || "No phone"}
                               </p>
                             </div>
                             <div>
@@ -1522,7 +1530,9 @@ export default function AdminDashboard() {
                   <CardContent className="space-y-3">
                     <div className="flex items-center gap-4">
                       <Avatar className="h-20 w-20">
-                        <AvatarImage src={selectedUser.user_photos?.[0] || "/placeholder.svg"} />
+                        <AvatarImage
+                          src={selectedUser.profile_photo_url || selectedUser.user_photos?.[0] || "/placeholder.svg"}
+                        />
                         <AvatarFallback className="text-lg">
                           {selectedUser.first_name?.[0] || "U"}
                           {selectedUser.last_name?.[0] || "U"}
@@ -1542,9 +1552,9 @@ export default function AdminDashboard() {
                           <Badge className={getStatusColor(selectedUser.verification_status)}>
                             {selectedUser.verification_status || "pending"}
                           </Badge>
-                          <Badge className={getStatusColor(selectedUser.account_status)}>
-                            {selectedUser.account_status || "basic"}
-                          </Badge>
+                          {isPremiumUser(selectedUser) && (
+                            <Badge className="bg-purple-100 text-purple-800">Premium</Badge>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -1557,7 +1567,7 @@ export default function AdminDashboard() {
                       </div>
                       <div className="flex items-center gap-2">
                         <Phone className="w-4 h-4 text-gray-500" />
-                        <span>{selectedUser.mobile_number || "No phone"}</span>
+                        <span>{selectedUser.mobile_number || selectedUser.phone || "No phone"}</span>
                         {selectedUser.mobile_verified && <CheckCircle className="w-3 h-3 text-green-500" />}
                       </div>
                       <div className="flex items-center gap-2">
@@ -1606,7 +1616,6 @@ export default function AdminDashboard() {
                         <span className="font-medium">Height:</span>
                         <p className="text-gray-600">{selectedUser.height || "Not specified"}</p>
                       </div>
-                      {/* Removed Weight field */}
                       <div>
                         <span className="font-medium">Marital Status:</span>
                         <p className="text-gray-600">{selectedUser.marital_status || "Not specified"}</p>
@@ -1616,43 +1625,31 @@ export default function AdminDashboard() {
                         <p className="text-gray-600">{selectedUser.mother_tongue || "Not specified"}</p>
                       </div>
                       <div>
-                        <span className="font-medium">Religion:</span>
-                        <p className="text-gray-600">{selectedUser.religion || "Not specified"}</p>
-                      </div>
-                      <div>
-                        <span className="font-medium">Caste:</span>
-                        <p className="text-gray-600">{selectedUser.caste || "Not specified"}</p>
-                      </div>
-                      <div>
-                        <span className="font-medium">Subcaste:</span>
-                        <p className="text-gray-600">{selectedUser.subcaste || "Not specified"}</p>
-                      </div>
-                      <div>
-                        <span className="font-medium">Gotra:</span>
-                        <p className="text-gray-600">{selectedUser.gotra || "Not specified"}</p>
-                      </div>
-                      <div>
-                        <span className="font-medium">Manglik:</span>
-                        <p className="text-gray-600">{selectedUser.manglik || "Not specified"}</p>
-                      </div>
-                      <div>
                         <span className="font-medium">Diet:</span>
                         <p className="text-gray-600">{selectedUser.diet || "Not specified"}</p>
                       </div>
                       <div>
                         <span className="font-medium">Smoking:</span>
-                        <p className="text-gray-600">{selectedUser.smoking || "Not specified"}</p>
+                        <p className="text-gray-600">{selectedUser.smoking ? "Yes" : "No"}</p>
                       </div>
                       <div>
                         <span className="font-medium">Drinking:</span>
-                        <p className="text-gray-600">{selectedUser.drinking || "Not specified"}</p>
+                        <p className="text-gray-600">{selectedUser.drinking ? "Yes" : "No"}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium">Vanaprastha Interest:</span>
+                        <p className="text-gray-600">{selectedUser.vanaprastha_interest || "Not specified"}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium">Artha vs Moksha:</span>
+                        <p className="text-gray-600">{selectedUser.artha_vs_moksha || "Not specified"}</p>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
               </div>
 
-              {/* Middle Column - Professional & Family */}
+              {/* Middle Column - Professional & Spiritual */}
               <div className="space-y-4">
                 <Card>
                   <CardHeader>
@@ -1676,26 +1673,6 @@ export default function AdminDashboard() {
 
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-lg">Family Details</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3 text-sm">
-                    <div>
-                      <span className="font-medium">Family Type:</span>
-                      <p className="text-gray-600">{selectedUser.family_type || "Not specified"}</p>
-                    </div>
-                    <div>
-                      <span className="font-medium">Family Status:</span>
-                      <p className="text-gray-600">{selectedUser.family_status || "Not specified"}</p>
-                    </div>
-                    <div>
-                      <span className="font-medium">Family Values:</span>
-                      <p className="text-gray-600">{selectedUser.family_values || "Not specified"}</p>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
                     <CardTitle className="text-lg">Spiritual Details</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3 text-sm">
@@ -1704,10 +1681,10 @@ export default function AdminDashboard() {
                       <p className="text-gray-600">{selectedUser.temple_visit_freq || "Not specified"}</p>
                     </div>
                     <div>
-                      <span className="font-medium">Daily Spiritual Practices:</span>
+                      <span className="font-medium">Daily Practices:</span>
                       <div className="flex flex-wrap gap-1 mt-1">
-                        {selectedUser.daily_spiritual_practices && selectedUser.daily_spiritual_practices.length > 0 ? (
-                          selectedUser.daily_spiritual_practices.map((practice, index) => (
+                        {selectedUser.daily_practices && selectedUser.daily_practices.length > 0 ? (
+                          selectedUser.daily_practices.map((practice, index) => (
                             <Badge key={index} variant="outline" className="text-xs">
                               {practice}
                             </Badge>
@@ -1720,8 +1697,8 @@ export default function AdminDashboard() {
                     <div>
                       <span className="font-medium">Spiritual Organizations:</span>
                       <div className="flex flex-wrap gap-1 mt-1">
-                        {selectedUser.spiritual_organizations && selectedUser.spiritual_organizations.length > 0 ? (
-                          selectedUser.spiritual_organizations.map((org, index) => (
+                        {selectedUser.spiritual_org && selectedUser.spiritual_org.length > 0 ? (
+                          selectedUser.spiritual_org.map((org, index) => (
                             <Badge key={index} variant="outline" className="text-xs">
                               {org}
                             </Badge>
@@ -1740,29 +1717,81 @@ export default function AdminDashboard() {
 
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-lg">Interests & Hobbies</CardTitle>
+                    <CardTitle className="text-lg">Partner Preferences</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3 text-sm">
-                    <div>
-                      <span className="font-medium">Hobbies:</span>
-                      <p className="text-gray-600">{selectedUser.hobbies || "Not specified"}</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <span className="font-medium">Age Range:</span>
+                        <p className="text-gray-600">
+                          {selectedUser.preferred_age_min && selectedUser.preferred_age_max
+                            ? `${selectedUser.preferred_age_min} - ${selectedUser.preferred_age_max} years`
+                            : "Not specified"}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="font-medium">Gender:</span>
+                        <p className="text-gray-600">{selectedUser.preferred_gender || "Not specified"}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium">Location:</span>
+                        <p className="text-gray-600">{selectedUser.preferred_location || "Not specified"}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium">Education:</span>
+                        <p className="text-gray-600">{selectedUser.preferred_education || "Not specified"}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium">Profession:</span>
+                        <p className="text-gray-600">{selectedUser.preferred_profession || "Not specified"}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium">Diet:</span>
+                        <p className="text-gray-600">{selectedUser.preferred_diet || "Not specified"}</p>
+                      </div>
                     </div>
                     <div>
-                      <span className="font-medium">Interests:</span>
-                      <p className="text-gray-600">{selectedUser.interests || "Not specified"}</p>
+                      <span className="font-medium">Height Range:</span>
+                      <p className="text-gray-600">
+                        {selectedUser.preferred_height_min && selectedUser.preferred_height_max
+                          ? `${selectedUser.preferred_height_min} - ${selectedUser.preferred_height_max} cm`
+                          : "Not specified"}
+                      </p>
                     </div>
-                    <div>
-                      <span className="font-medium">Favorite Books:</span>
-                      <p className="text-gray-600">{selectedUser.favorite_books || "Not specified"}</p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Account Stats</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3 text-sm">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <span className="font-medium">Super Likes:</span>
+                        <p className="text-gray-600">{selectedUser.super_likes_count || 0}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium">Swipe Count:</span>
+                        <p className="text-gray-600">{selectedUser.swipe_count || 0}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium">Referral Code:</span>
+                        <p className="text-gray-600">{selectedUser.referral_code || "Not generated"}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium">Referrals:</span>
+                        <p className="text-gray-600">{selectedUser.referral_count || 0}</p>
+                      </div>
                     </div>
-                    <div>
-                      <span className="font-medium">Favorite Movies:</span>
-                      <p className="text-gray-600">{selectedUser.favorite_movies || "Not specified"}</p>
-                    </div>
-                    <div>
-                      <span className="font-medium">Favorite Music:</span>
-                      <p className="text-gray-600">{selectedUser.favorite_music || "Not specified"}</p>
-                    </div>
+                    {selectedUser.premium_expires_at && (
+                      <div>
+                        <span className="font-medium">Premium Expires:</span>
+                        <p className="text-gray-600">
+                          {new Date(selectedUser.premium_expires_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </div>
@@ -1877,6 +1906,26 @@ export default function AdminDashboard() {
                             Reject Verification
                           </Button>
                         </>
+                      )}
+                      {isPremiumUser(selectedUser) ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleUserAction(selectedUser.id, "removePremium")}
+                          disabled={actionLoading === selectedUser.id + "removePremium"}
+                        >
+                          <Crown className="w-4 h-4 mr-2" />
+                          Remove Premium
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          onClick={() => handleUserAction(selectedUser.id, "makePremium")}
+                          disabled={actionLoading === selectedUser.id + "makePremium"}
+                        >
+                          <Crown className="w-4 h-4 mr-2" />
+                          Make Premium
+                        </Button>
                       )}
                       {selectedUser.is_active !== false ? (
                         <Button
@@ -2074,21 +2123,18 @@ export default function AdminDashboard() {
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="account_status">Account Status</Label>
+                  <Label htmlFor="kyc_status">KYC Status</Label>
                   <Select
-                    value={editingUser.account_status || "basic"}
-                    onValueChange={(value) => setEditingUser({ ...editingUser, account_status: value })}
+                    value={editingUser.kyc_status || "Pending"}
+                    onValueChange={(value) => setEditingUser({ ...editingUser, kyc_status: value })}
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="basic">Basic</SelectItem>
-                      <SelectItem value="premium">Premium</SelectItem>
-                      <SelectItem value="elite">Elite</SelectItem>
-                      <SelectItem value="sparsh">Sparsh</SelectItem>
-                      <SelectItem value="sangam">Sangam</SelectItem>
-                      <SelectItem value="samarpan">Samarpan</SelectItem>
+                      <SelectItem value="Pending">Pending</SelectItem>
+                      <SelectItem value="Verified">Verified</SelectItem>
+                      <SelectItem value="Rejected">Rejected</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
