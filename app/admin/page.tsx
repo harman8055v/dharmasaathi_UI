@@ -36,7 +36,6 @@ import {
   ChevronLeft,
   ChevronRight,
   MessageSquare,
-  Send,
   ImageIcon,
 } from "lucide-react"
 import {
@@ -47,9 +46,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { toast } from "@/hooks/use-toast"
 import Image from "next/image"
@@ -159,6 +156,21 @@ export default function AdminDashboard() {
     message: "",
     type: "profile_update",
   })
+  const [sortBy, setSortBy] = useState("created_at")
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc")
+  const [genderFilter, setGenderFilter] = useState("all")
+  const [photoFilter, setPhotoFilter] = useState("all")
+  const [profileCompletionFilter, setProfileCompletionFilter] = useState("all")
+  const [selectedImageIndex, setSelectedImageIndex] = useState<number>(0)
+  const [imageZoomModal, setImageZoomModal] = useState<{
+    open: boolean
+    images: string[]
+    currentIndex: number
+  }>({
+    open: false,
+    images: [],
+    currentIndex: 0,
+  })
 
   useEffect(() => {
     fetchCurrentAdminUser()
@@ -167,7 +179,7 @@ export default function AdminDashboard() {
     } else {
       fetchAdminData(1, false)
     }
-  }, [activeTab, filterStatus, searchTerm])
+  }, [activeTab, filterStatus, searchTerm, sortBy, sortOrder, genderFilter, photoFilter, profileCompletionFilter])
 
   const fetchCurrentAdminUser = async () => {
     try {
@@ -202,6 +214,11 @@ export default function AdminDashboard() {
         filter: filterStatus,
         search: searchTerm,
         include_stats: includeStats.toString(),
+        sort_by: sortBy,
+        sort_order: sortOrder,
+        gender_filter: genderFilter,
+        photo_filter: photoFilter,
+        profile_completion_filter: profileCompletionFilter,
       })
 
       const response = await fetch(`/api/admin/dashboard?${params}`, {
@@ -496,6 +513,62 @@ export default function AdminDashboard() {
       age--
     }
     return age
+  }
+
+  const openImageZoom = (images: string[], startIndex = 0) => {
+    setImageZoomModal({
+      open: true,
+      images: images.filter(img => img && img.trim() !== ''),
+      currentIndex: startIndex,
+    })
+  }
+
+  const closeImageZoom = () => {
+    setImageZoomModal({
+      open: false,
+      images: [],
+      currentIndex: 0,
+    })
+  }
+
+  const nextImage = () => {
+    setImageZoomModal(prev => ({
+      ...prev,
+      currentIndex: (prev.currentIndex + 1) % prev.images.length,
+    }))
+  }
+
+  const prevImage = () => {
+    setImageZoomModal(prev => ({
+      ...prev,
+      currentIndex: prev.currentIndex === 0 ? prev.images.length - 1 : prev.currentIndex - 1,
+    }))
+  }
+
+  const getProfileCompletionScore = (user: UserType) => {
+    let score = 0
+    const fields = [
+      user.first_name,
+      user.last_name,
+      user.email,
+      user.mobile_number,
+      user.birthdate,
+      user.gender,
+      user.city,
+      user.state,
+      user.education,
+      user.profession,
+      user.about_me,
+      user.partner_expectations,
+    ]
+    
+    fields.forEach(field => {
+      if (field && field.toString().trim() !== '') score += 1
+    })
+    
+    if (user.user_photos && user.user_photos.length > 0) score += 2
+    
+    return Math.round((score / 14) * 100)
   }
 
   if (loading && users.length === 0) {
@@ -794,6 +867,65 @@ export default function AdminDashboard() {
                       <SelectItem value="incomplete">Incomplete Profiles</SelectItem>
                     </SelectContent>
                   </Select>
+                  <Select value={genderFilter} onValueChange={setGenderFilter}>
+                    <SelectTrigger className="w-full sm:w-48">
+                      <Filter className="w-4 h-4 mr-2" />
+                      <SelectValue placeholder="Filter by gender" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Genders</SelectItem>
+                      <SelectItem value="male">Male</SelectItem>
+                      <SelectItem value="female">Female</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={photoFilter} onValueChange={setPhotoFilter}>
+                    <SelectTrigger className="w-full sm:w-48">
+                      <Filter className="w-4 h-4 mr-2" />
+                      <SelectValue placeholder="Filter by photos" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Users</SelectItem>
+                      <SelectItem value="has_photos">Has Photos</SelectItem>
+                      <SelectItem value="no_photos">No Photos</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={profileCompletionFilter} onValueChange={setProfileCompletionFilter}>
+                    <SelectTrigger className="w-full sm:w-48">
+                      <Filter className="w-4 h-4 mr-2" />
+                      <SelectValue placeholder="Filter by profile completion" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Users</SelectItem>
+                      <SelectItem value="complete">Complete Profiles</SelectItem>
+                      <SelectItem value="incomplete">Incomplete Profiles</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center gap-2 mt-4">
+                  <Label htmlFor="sort_by" className="text-sm font-medium">
+                    Sort By:
+                  </Label>
+                  <Select value={sortBy} onValueChange={setSortBy}>
+                    <SelectTrigger className="w-full sm:w-48">
+                      <SelectValue placeholder="Sort by" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="created_at">Join Date</SelectItem>
+                      <SelectItem value="last_login_at">Last Login</SelectItem>
+                      <SelectItem value="first_name">First Name</SelectItem>
+                      <SelectItem value="last_name">Last Name</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={sortOrder} onValueChange={(value) => setSortOrder(value as "asc" | "desc")}>
+                    <SelectTrigger className="w-full sm:w-48">
+                      <SelectValue placeholder="Sort order" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="asc">Ascending</SelectItem>
+                      <SelectItem value="desc">Descending</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </CardContent>
             </Card>
@@ -969,7 +1101,83 @@ export default function AdminDashboard() {
 
           {/* Verification Tab */}
           <TabsContent value="verification" className="space-y-6">
+            {/* Enhanced Search and Filter for Verification */}
             <Card>
+              <CardContent className="pt-6">
+                <div className="space-y-4">
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                      <Input
+                        placeholder="Search users by name, email, or phone..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                    <Select value={sortBy} onValueChange={setSortBy}>
+                      <SelectTrigger className="w-full sm:w-48">
+                        <SelectValue placeholder="Sort by" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="created_at">Date Joined</SelectItem>
+                        <SelectItem value="first_name">Name</SelectItem>
+                        <SelectItem value="birthdate">Age</SelectItem>
+                        <SelectItem value="city">Location</SelectItem>
+                        <SelectItem value="education">Education</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={sortOrder} onValueChange={(value: "asc" | "desc") => setSortOrder(value)}>
+                      <SelectTrigger className="w-full sm:w-32">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="desc">Newest</SelectItem>
+                        <SelectItem value="asc">Oldest</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="flex flex-wrap gap-4">
+                    <Select value={genderFilter} onValueChange={setGenderFilter}>
+                      <SelectTrigger className="w-full sm:w-40">
+                        <SelectValue placeholder="Gender" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Genders</SelectItem>
+                        <SelectItem value="Male">Male</SelectItem>
+                        <SelectItem value="Female">Female</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    
+                    <Select value={photoFilter} onValueChange={setPhotoFilter}>
+                      <SelectTrigger className="w-full sm:w-40">
+                        <SelectValue placeholder="Photos" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Users</SelectItem>
+                        <SelectItem value="with_photos">With Photos</SelectItem>
+                        <SelectItem value="without_photos">No Photos</SelectItem>
+                        <SelectItem value="multiple_photos">Multiple Photos</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    
+                    <Select value={profileCompletionFilter} onValueChange={setProfileCompletionFilter}>
+                      <SelectTrigger className="w-full sm:w-48">
+                        <SelectValue placeholder="Profile Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Profiles</SelectItem>
+                        <SelectItem value="complete">Complete (80%+)</SelectItem>
+                        <SelectItem value="partial">Partial (50-79%)</SelectItem>
+                        <SelectItem value="incomplete\">Incomplete (<50%)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
                   <CardTitle>Pending Verifications ({stats.pendingVerifications})</CardTitle>
@@ -1001,592 +1209,140 @@ export default function AdminDashboard() {
               <CardContent>
                 <div className="space-y-4">
                   {users
-                    .filter((u) => u.verification_status === "pending")
-                    .map((user) => (
-                      <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
-                        <div className="flex items-center gap-4">
-                          <Avatar className="h-16 w-16">
-                            <AvatarImage src={user.user_photos?.[0] || "/placeholder.svg"} />
-                            <AvatarFallback className="text-lg">
-                              {user.first_name?.[0] || "U"}
-                              {user.last_name?.[0] || "U"}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <h3 className="font-medium text-lg">
-                                {user.first_name || "Unknown"} {user.last_name || "User"}
-                              </h3>
-                              {!user.onboarding_completed && <Badge variant="outline">Incomplete Profile</Badge>}
-                            </div>
-                            <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
-                              <div>
-                                <p>
-                                  <Mail className="w-3 h-3 inline mr-1" />
-                                  {user.email}
-                                </p>
-                                <p>
-                                  <Phone className="w-3 h-3 inline mr-1" />
-                                  {user.mobile_number || "No phone"}
-                                </p>
-                              </div>
-                              <div>
-                                <p>
-                                  <MapPin className="w-3 h-3 inline mr-1" />
-                                  {user.city && user.state ? `${user.city}, ${user.state}` : "Location not set"}
-                                </p>
-                                <p>
-                                  <Calendar className="w-3 h-3 inline mr-1" />
-                                  {user.birthdate ? `${calculateAge(user.birthdate)} years` : "Age not set"}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2 mt-2">
-                              <Badge variant="outline">{user.gender || "Not specified"}</Badge>
-                              <Badge variant="outline">{user.education || "Education not set"}</Badge>
-                              <Badge variant="outline">{user.profession || "Profession not set"}</Badge>
-                              {user.user_photos && user.user_photos.length > 0 && (
-                                <Badge variant="outline" className="text-green-600">
-                                  <ImageIcon className="w-3 h-3 mr-1" />
-                                  {user.user_photos.length} photos
-                                </Badge>
-                              )}
-                            </div>
-                            <p className="text-xs text-gray-400 mt-2">
-                              Submitted {new Date(user.created_at).toLocaleDateString()}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex flex-col gap-2">
-                          <Button size="sm" variant="outline" onClick={() => fetchUserDetails(user)}>
-                            <Eye className="w-4 h-4 mr-2" />
-                            Preview Profile
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => openNotificationModal(user, "profile_update")}
-                          >
-                            <MessageSquare className="w-4 h-4 mr-2" />
-                            Request Update
-                          </Button>
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleUserAction(user.id, "reject")}
-                              disabled={actionLoading === user.id + "reject"}
-                            >
-                              <XCircle className="w-4 h-4 mr-2" />
-                              Reject
-                            </Button>
-                            <Button
-                              size="sm"
-                              onClick={() => handleUserAction(user.id, "verify")}
-                              disabled={actionLoading === user.id + "verify"}
-                            >
-                              <CheckCircle className="w-4 h-4 mr-2" />
-                              Approve
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-
-                  {users.filter((u) => u.verification_status === "pending").length === 0 && (
-                    <div className="text-center py-8 text-gray-500">
-                      <Shield className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                      <p>No pending verifications on this page</p>
-                      {pagination.totalPages > 1 && <p className="text-sm mt-2">Check other pages or adjust filters</p>}
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Analytics Tab */}
-          <TabsContent value="analytics" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>User Demographics</CardTitle>
-                  <CardDescription>Breakdown of user characteristics</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span>Male Users</span>
-                      <div className="flex items-center gap-2">
-                        <div className="w-24 bg-gray-200 rounded-full h-2">
-                          <div
-                            className="bg-blue-500 h-2 rounded-full"
-                            style={{
-                              width: `${stats.totalUsers > 0 ? (stats.maleUsers / stats.totalUsers) * 100 : 0}%`,
-                            }}
-                          ></div>
-                        </div>
-                        <Badge variant="outline">{stats.maleUsers}</Badge>
-                      </div>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>Female Users</span>
-                      <div className="flex items-center gap-2">
-                        <div className="w-24 bg-gray-200 rounded-full h-2">
-                          <div
-                            className="bg-pink-500 h-2 rounded-full"
-                            style={{
-                              width: `${stats.totalUsers > 0 ? (stats.femaleUsers / stats.totalUsers) * 100 : 0}%`,
-                            }}
-                          ></div>
-                        </div>
-                        <Badge variant="outline">{stats.femaleUsers}</Badge>
-                      </div>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>Verified Users</span>
-                      <div className="flex items-center gap-2">
-                        <div className="w-24 bg-gray-200 rounded-full h-2">
-                          <div
-                            className="bg-green-500 h-2 rounded-full"
-                            style={{
-                              width: `${stats.totalUsers > 0 ? (stats.verifiedUsers / stats.totalUsers) * 100 : 0}%`,
-                            }}
-                          ></div>
-                        </div>
-                        <Badge variant="outline">{stats.verifiedUsers}</Badge>
-                      </div>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>Premium Users</span>
-                      <div className="flex items-center gap-2">
-                        <div className="w-24 bg-gray-200 rounded-full h-2">
-                          <div
-                            className="bg-purple-500 h-2 rounded-full"
-                            style={{
-                              width: `${stats.totalUsers > 0 ? (stats.premiumUsers / stats.totalUsers) * 100 : 0}%`,
-                            }}
-                          ></div>
-                        </div>
-                        <Badge variant="outline">{stats.premiumUsers}</Badge>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Account Status Distribution</CardTitle>
-                  <CardDescription>User account types and verification status</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span>Verified</span>
-                      <Badge className="bg-green-100 text-green-800">{stats.verifiedUsers}</Badge>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>Pending</span>
-                      <Badge className="bg-yellow-100 text-yellow-800">{stats.pendingVerifications}</Badge>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>Rejected</span>
-                      <Badge className="bg-red-100 text-red-800">
-                        {users.filter((u) => u.verification_status === "rejected").length}
-                      </Badge>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>Complete Profiles</span>
-                      <Badge className="bg-blue-100 text-blue-800">{stats.completedProfiles}</Badge>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>Incomplete Profiles</span>
-                      <Badge className="bg-gray-100 text-gray-800">{stats.totalUsers - stats.completedProfiles}</Badge>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+  .filter((u) => u.verification_status === "pending")
+  .map((user) => {
+    const completionScore = getProfileCompletionScore(user)
+    return (
+      <div key={user.id} className="border rounded-lg overflow-hidden">
+        <div className="flex items-start justify-between p-6">
+          <div className="flex items-start gap-4 flex-1">
+            <div className="relative">
+              <Avatar className="h-20 w-20 cursor-pointer" onClick={() => user.user_photos && user.user_photos.length > 0 && openImageZoom(user.user_photos, 0)}>
+                <AvatarImage src={user.user_photos?.[0] || "/placeholder.svg"} />
+                <AvatarFallback className="text-lg">
+                  {user.first_name?.[0] || "U"}
+                  {user.last_name?.[0] || "U"}
+                </AvatarFallback>
+              </Avatar>
+              {user.user_photos && user.user_photos.length > 1 && (
+                <Badge className="absolute -bottom-1 -right-1 text-xs bg-blue-500">
+                  +{user.user_photos.length - 1}
+                </Badge>
+              )}
             </div>
-          </TabsContent>
-        </Tabs>
-      </div>
-
-      {/* User Details Modal */}
-      <Dialog open={!!selectedUser} onOpenChange={() => setSelectedUser(null)}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>User Profile Preview</DialogTitle>
-            <DialogDescription>
-              Complete profile information and activity for {selectedUser?.first_name} {selectedUser?.last_name}
-            </DialogDescription>
-          </DialogHeader>
-
-          {selectedUser && (
-            <div className="space-y-6">
-              {/* Profile Info */}
-              <div className="flex items-start gap-4">
-                <Avatar className="h-20 w-20">
-                  <AvatarImage src={selectedUser.user_photos?.[0] || "/placeholder.svg"} />
-                  <AvatarFallback className="text-lg">
-                    {selectedUser.first_name?.[0] || "U"}
-                    {selectedUser.last_name?.[0] || "U"}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1">
-                  <h3 className="text-xl font-semibold">
-                    {selectedUser.first_name || "Unknown"} {selectedUser.last_name || "User"}
+            
+            <div className="flex-1 space-y-3">
+              <div>
+                <div className="flex items-center gap-3 mb-2">
+                  <h3 className="font-semibold text-lg">
+                    {user.first_name || "Unknown"} {user.last_name || "User"}
                   </h3>
-                  <p className="text-gray-600">
-                    {selectedUser.birthdate ? `${calculateAge(selectedUser.birthdate)} years old` : "Age not specified"}
-                    , {selectedUser.gender || "Gender not specified"}
-                  </p>
-                  <p className="text-gray-600">
-                    {selectedUser.city && selectedUser.state
-                      ? `${selectedUser.city}, ${selectedUser.state}`
-                      : "Location not set"}
-                  </p>
-                  <div className="flex gap-2 mt-2">
-                    <Badge className={getStatusColor(selectedUser.verification_status)}>
-                      {selectedUser.verification_status || "pending"}
-                    </Badge>
-                    <Badge className={getStatusColor(selectedUser.account_status)}>
-                      {selectedUser.account_status || "basic"}
-                    </Badge>
-                    {selectedUser.onboarding_completed && (
-                      <Badge className="bg-green-100 text-green-800">Complete Profile</Badge>
-                    )}
-                    {selectedUser.role?.toLowerCase() === "admin" && (
-                      <Badge className="bg-red-100 text-red-800">Admin</Badge>
-                    )}
-                    {selectedUser.role?.toLowerCase() === "super_admin" && (
-                      <Badge className="bg-red-200 text-red-900">Super Admin</Badge>
-                    )}
+                  <Badge variant="outline" className={`${completionScore >= 80 ? 'bg-green-100 text-green-800' : completionScore >= 50 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}`}>
+                    {completionScore}% Complete
+                  </Badge>
+                  {!user.onboarding_completed && <Badge variant="outline" className="bg-orange-100 text-orange-800">Incomplete Onboarding</Badge>}
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                  <div className="space-y-1">
+                    <p className="flex items-center gap-2">
+                      <Mail className="w-4 h-4 text-gray-500" />
+                      <span>{user.email}</span>
+                      {user.email_verified && <CheckCircle className="w-3 h-3 text-green-500" />}
+                    </p>
+                    <p className="flex items-center gap-2">
+                      <Phone className="w-4 h-4 text-gray-500" />
+                      <span>{user.mobile_number || "Not provided"}</span>
+                      {user.mobile_verified && <CheckCircle className="w-3 h-3 text-green-500" />}
+                    </p>
+                    <p className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-gray-500" />
+                      <span>{user.city && user.state ? `${user.city}, ${user.state}` : "Location not set"}</span>
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <p className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-gray-500" />
+                      <span>{user.birthdate ? `${calculateAge(user.birthdate)} years` : "Age not set"}</span>
+                    </p>
+                    <p className="flex items-center gap-2">
+                      <User className="w-4 h-4 text-gray-500" />
+                      <span>{user.gender || "Not specified"}</span>
+                    </p>
+                    <p className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-gray-500" />
+                      <span>Joined {new Date(user.created_at).toLocaleDateString()}</span>
+                    </p>
                   </div>
                 </div>
               </div>
-
-              {/* Contact Info */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <h4 className="font-medium mb-2">Contact Information</h4>
-                  <div className="space-y-2 text-sm">
-                    <p>
-                      <Mail className="w-4 h-4 inline mr-2" />
-                      {selectedUser.email || "No email"}
-                      {selectedUser.email_verified && <CheckCircle className="w-3 h-3 inline ml-1 text-green-500" />}
-                    </p>
-                    <p>
-                      <Phone className="w-4 h-4 inline mr-2" />
-                      {selectedUser.mobile_number || "No phone"}
-                      {selectedUser.mobile_verified && <CheckCircle className="w-3 h-3 inline ml-1 text-green-500" />}
-                    </p>
-                    <p>
-                      <Calendar className="w-4 h-4 inline mr-2" />
-                      Joined {new Date(selectedUser.created_at).toLocaleDateString()}
-                    </p>
-                    {selectedUser.last_login_at && (
-                      <p>
-                        <Calendar className="w-4 h-4 inline mr-2" />
-                        Last login {new Date(selectedUser.last_login_at).toLocaleDateString()}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <div>
-                  <h4 className="font-medium mb-2">Profile Details</h4>
-                  <div className="space-y-2 text-sm">
-                    <p>Education: {selectedUser.education || "Not specified"}</p>
-                    <p>Profession: {selectedUser.profession || "Not specified"}</p>
-                    <p>Income: {selectedUser.annual_income || "Not specified"}</p>
-                    <p>Diet: {selectedUser.diet || "Not specified"}</p>
-                    <p>Temple Visits: {selectedUser.temple_visit_freq || "Not specified"}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* About Me */}
-              {selectedUser.about_me && (
-                <div>
-                  <h4 className="font-medium mb-2">About Me</h4>
-                  <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">{selectedUser.about_me}</p>
-                </div>
-              )}
-
-              {/* Partner Expectations */}
-              {selectedUser.partner_expectations && (
-                <div>
-                  <h4 className="font-medium mb-2">Partner Expectations</h4>
-                  <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">{selectedUser.partner_expectations}</p>
-                </div>
-              )}
-
-              {/* Photos */}
-              {selectedUser.user_photos && selectedUser.user_photos.length > 0 && (
-                <div>
-                  <h4 className="font-medium mb-2">Photos ({selectedUser.user_photos.length})</h4>
-                  <div className="grid grid-cols-3 gap-2">
-                    {selectedUser.user_photos.map((photo, index) => (
-                      <div key={index} className="aspect-square rounded-lg overflow-hidden">
-                        <Image
-                          src={photo || "/placeholder.svg"}
-                          alt={`Photo ${index + 1}`}
-                          width={200}
-                          height={200}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Action Buttons */}
-              <div className="flex flex-wrap gap-2 pt-4 border-t">
-                <Button variant="outline" size="sm" onClick={() => setEditingUser(selectedUser)}>
-                  <Edit className="w-4 h-4 mr-2" />
-                  Edit Profile
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => openNotificationModal(selectedUser, "profile_update")}
-                >
-                  <MessageSquare className="w-4 h-4 mr-2" />
-                  Send Notification
-                </Button>
-                {selectedUser.verification_status === "pending" && (
-                  <>
-                    <Button
-                      size="sm"
-                      onClick={() => handleUserAction(selectedUser.id, "verify")}
-                      disabled={actionLoading === selectedUser.id + "verify"}
-                    >
-                      <CheckCircle className="w-4 h-4 mr-2" />
-                      Approve
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleUserAction(selectedUser.id, "reject")}
-                      disabled={actionLoading === selectedUser.id + "reject"}
-                    >
-                      <XCircle className="w-4 h-4 mr-2" />
-                      Reject
-                    </Button>
-                  </>
+              
+              <div className="flex flex-wrap gap-2">
+                <Badge variant="outline">{user.education || "Education not set"}</Badge>
+                <Badge variant="outline">{user.profession || "Profession not set"}</Badge>
+                <Badge variant="outline">{user.diet || "Diet not specified"}</Badge>
+                {user.user_photos && user.user_photos.length > 0 && (
+                  <Badge variant="outline" className="text-green-600">
+                    <ImageIcon className="w-3 h-3 mr-1" />
+                    {user.user_photos.length} photo{user.user_photos.length > 1 ? 's' : ''}
+                  </Badge>
                 )}
-                {selectedUser.is_active !== false ? (
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => handleUserAction(selectedUser.id, "deactivate")}
-                    disabled={actionLoading === selectedUser.id + "deactivate"}
-                  >
-                    <Ban className="w-4 h-4 mr-2" />
-                    Deactivate
-                  </Button>
-                ) : (
-                  <Button
-                    size="sm"
-                    onClick={() => handleUserAction(selectedUser.id, "activate")}
-                    disabled={actionLoading === selectedUser.id + "activate"}
-                  >
-                    <CheckCircle className="w-4 h-4 mr-2" />
-                    Activate
-                  </Button>
+                {user.about_me && (
+                  <Badge variant="outline" className="text-blue-600">
+                    About Me ✓
+                  </Badge>
+                )}
+                {user.partner_expectations && (
+                  <Badge variant="outline" className="text-purple-600">
+                    Partner Expectations ✓
+                  </Badge>
                 )}
               </div>
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit User Modal */}
-      <Dialog open={!!editingUser} onOpenChange={() => setEditingUser(null)}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Edit User Profile</DialogTitle>
-            <DialogDescription>Update user information and settings</DialogDescription>
-          </DialogHeader>
-
-          {editingUser && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="first_name">First Name</Label>
-                  <Input
-                    id="first_name"
-                    value={editingUser.first_name || ""}
-                    onChange={(e) => setEditingUser({ ...editingUser, first_name: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="last_name">Last Name</Label>
-                  <Input
-                    id="last_name"
-                    value={editingUser.last_name || ""}
-                    onChange={(e) => setEditingUser({ ...editingUser, last_name: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={editingUser.email || ""}
-                  onChange={(e) => setEditingUser({ ...editingUser, email: e.target.value })}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="mobile_number">Mobile Number</Label>
-                <Input
-                  id="mobile_number"
-                  value={editingUser.mobile_number || ""}
-                  onChange={(e) => setEditingUser({ ...editingUser, mobile_number: e.target.value })}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="city">City</Label>
-                  <Input
-                    id="city"
-                    value={editingUser.city || ""}
-                    onChange={(e) => setEditingUser({ ...editingUser, city: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="state">State</Label>
-                  <Input
-                    id="state"
-                    value={editingUser.state || ""}
-                    onChange={(e) => setEditingUser({ ...editingUser, state: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="about_me">About Me</Label>
-                <Textarea
-                  id="about_me"
-                  value={editingUser.about_me || ""}
-                  onChange={(e) => setEditingUser({ ...editingUser, about_me: e.target.value })}
-                  rows={3}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="verification_status">Verification Status</Label>
-                  <Select
-                    value={editingUser.verification_status || "pending"}
-                    onValueChange={(value) => setEditingUser({ ...editingUser, verification_status: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="verified">Verified</SelectItem>
-                      <SelectItem value="rejected">Rejected</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="account_status">Account Status</Label>
-                  <Select
-                    value={editingUser.account_status || "basic"}
-                    onValueChange={(value) => setEditingUser({ ...editingUser, account_status: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="basic">Basic</SelectItem>
-                      <SelectItem value="premium">Premium</SelectItem>
-                      <SelectItem value="elite">Elite</SelectItem>
-                      <SelectItem value="sparsh">Sparsh</SelectItem>
-                      <SelectItem value="sangam">Sangam</SelectItem>
-                      <SelectItem value="samarpan">Samarpan</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-4">
-                <Button variant="outline" onClick={() => setEditingUser(null)}>
-                  Cancel
-                </Button>
-                <Button onClick={() => handleEditUser(editingUser)} disabled={actionLoading === "edit"}>
-                  {actionLoading === "edit" ? "Saving..." : "Save Changes"}
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Notification Modal */}
-      <Dialog
-        open={notificationModal.open}
-        onOpenChange={(open) => setNotificationModal({ ...notificationModal, open })}
-      >
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Send Notification</DialogTitle>
-            <DialogDescription>
-              Send a notification to {notificationModal.user?.first_name} {notificationModal.user?.last_name}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="notification_type">Notification Type</Label>
-              <Select
-                value={notificationModal.type}
-                onValueChange={(value) => setNotificationModal({ ...notificationModal, type: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="profile_update">Profile Update Required</SelectItem>
-                  <SelectItem value="verification_pending">Verification Under Review</SelectItem>
-                  <SelectItem value="verification_rejected">Verification Update Needed</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="notification_message">Message</Label>
-              <Textarea
-                id="notification_message"
-                value={notificationModal.message}
-                onChange={(e) => setNotificationModal({ ...notificationModal, message: e.target.value })}
-                rows={4}
-                placeholder="Enter your message here..."
-              />
-            </div>
-
-            <div className="flex justify-end gap-2">
+          </div>
+          
+          <div className="flex flex-col gap-2 ml-4">
+            <Button size="sm" variant="outline" onClick={() => fetchUserDetails(user)}>
+              <Eye className="w-4 h-4 mr-2" />
+              View Full Profile
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => openNotificationModal(user, "profile_update")}
+            >
+              <MessageSquare className="w-4 h-4 mr-2" />
+              Send Message
+            </Button>
+            <div className="flex gap-2">
               <Button
+                size="sm"
                 variant="outline"
-                onClick={() => setNotificationModal({ open: false, user: null, message: "", type: "profile_update" })}
+                onClick={() => handleUserAction(user.id, "reject")}
+                disabled={actionLoading === user.id + "reject"}
+                className="text-red-600 hover:bg-red-50"
               >
-                Cancel
+                <XCircle className="w-4 h-4 mr-1" />
+                Reject
               </Button>
-              <Button onClick={handleSendNotification}>
-                <Send className="w-4 h-4 mr-2" />
-                Send Notification
+              <Button
+                size="sm"
+                onClick={() => handleUserAction(user.id, "verify")}
+                disabled={actionLoading === user.id + "verify"}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                <CheckCircle className="w-4 h-4 mr-1" />
+                Approve
               </Button>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
-    </div>
-  )
-}
+        </div>
+        
+        {/* Quick preview of about me and partner expectations */}
+        {(user.about_me || user.partner_expectations) && (
+          <div className="border-t bg-gray-50 p-4 space-y-2">
+            {user.about_me && (
+              <div>
+                <p className="text-xs font-medium text-gray-600 mb-1">About Me:</p>
+                <p className="text-sm text-gray-700 line-clamp-2">{user.about_me}</p>
