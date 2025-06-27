@@ -61,7 +61,7 @@ export default function Footer() {
                 <span className="sr-only">Instagram</span>
               </Link>
               <Link
-                href="https://facebook.com/DharmaSaathi-Matrimony"
+                href="https://www.facebook.com/share/16Zi4J9zrp/"
                 className="text-muted-foreground hover:text-primary transition-colors"
                 onClick={() => handleSocialClick("Facebook")}
               >
