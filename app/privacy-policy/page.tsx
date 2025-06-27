@@ -339,7 +339,7 @@ export default function PrivacyPolicyPage() {
                   <strong>Email:</strong> privacy@dharmasaathi.com
                 </p>
                 <p className="text-lg">
-                  <strong>Address:</strong> DharmaSaathi Privacy Team, Ahmedabad, Gujarat, India
+                  <strong>Phone:</strong> +91 9537376569
                 </p>
               </div>
             </div>
