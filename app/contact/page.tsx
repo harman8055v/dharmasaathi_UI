@@ -57,7 +57,7 @@ export default function ContactPage() {
                       <Phone className="h-6 w-6 text-primary" />
                     </div>
                     <h3 className="text-lg font-semibold mb-2">Phone Support</h3>
-                    <p className="text-muted-foreground text-sm">+91 98765 43210</p>
+                    <p className="text-muted-foreground text-sm">+91 9537376569</p>
                   </CardContent>
                 </Card>
 
@@ -67,7 +67,9 @@ export default function ContactPage() {
                       <MapPin className="h-6 w-6 text-primary" />
                     </div>
                     <h3 className="text-lg font-semibold mb-2">Location</h3>
-                    <p className="text-muted-foreground text-sm">Ahmedabad, Gujarat, India</p>
+                    <p className="text-muted-foreground text-sm">
+                      39, Shiv Business Hub, Nikol, Ahmedabad 382350 Gujarat
+                    </p>
                   </CardContent>
                 </Card>
 

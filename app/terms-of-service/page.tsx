@@ -340,7 +340,7 @@ export default function TermsOfServicePage() {
                   <strong>Email:</strong> legal@dharmasaathi.com
                 </p>
                 <p className="text-lg">
-                  <strong>Address:</strong> DharmaSaathi Legal Team, Ahmedabad, Gujarat, India
+                  <strong>Phone:</strong> +91 9537376569
                 </p>
               </div>
               <div className="bg-white/50 p-6 rounded-lg">
