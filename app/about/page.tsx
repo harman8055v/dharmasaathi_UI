@@ -152,6 +152,7 @@ export default function AboutPage() {
               <p className="text-xl text-muted-foreground">
                 Join our community of conscious souls seeking divine partnership
               </p>
+              {/* Simplified the button container for single button centering */}
               <div className="flex justify-center">
                 <Button asChild size="lg" className="bg-primary hover:bg-primary/90">
                   <Link href="/#signup">
