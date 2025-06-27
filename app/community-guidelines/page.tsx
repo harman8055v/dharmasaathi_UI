@@ -1,3 +1,6 @@
+"use client"
+
+import { useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Heart, Shield, Users, Star, AlertTriangle, CheckCircle } from "lucide-react"
@@ -5,6 +8,10 @@ import Header from "@/components/header"
 import Footer from "@/components/footer"
 
 export default function CommunityGuidelinesPage() {
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [])
+
   return (
     <>
       <Header />

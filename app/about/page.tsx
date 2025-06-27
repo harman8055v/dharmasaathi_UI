@@ -1,3 +1,6 @@
+"use client"
+
+import { useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Heart, Users, Compass, Star, ArrowRight, NotebookIcon as Lotus } from "lucide-react"
@@ -6,6 +9,10 @@ import Header from "@/components/header"
 import Footer from "@/components/footer"
 
 export default function AboutPage() {
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [])
+
   return (
     <>
       <Header />

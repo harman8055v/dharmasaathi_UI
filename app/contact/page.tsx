@@ -1,3 +1,6 @@
+"use client"
+
+import { useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -7,6 +10,10 @@ import Header from "@/components/header"
 import Footer from "@/components/footer"
 
 export default function ContactPage() {
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [])
+
   return (
     <>
       <Header />
