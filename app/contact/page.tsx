@@ -79,7 +79,7 @@ export default function ContactPage() {
                       <Clock className="h-6 w-6 text-primary" />
                     </div>
                     <h3 className="text-lg font-semibold mb-2">Support Hours</h3>
-                    <p className="text-muted-foreground text-sm">24/7 Available</p>
+                    <p className="text-muted-foreground text-sm">Monday to Friday 10am to 6pm</p>
                   </CardContent>
                 </Card>
               </div>
