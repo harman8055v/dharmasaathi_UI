@@ -4,12 +4,22 @@ import { Button } from "@/components/ui/button"
 import { Heart, Instagram, Facebook, Twitter, Linkedin } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
+import { useRouter, usePathname } from "next/navigation"
 
 export default function Footer() {
-  const scrollToSignup = () => {
-    const signupForm = document.getElementById("signup")
-    if (signupForm) {
-      signupForm.scrollIntoView({ behavior: "smooth" })
+  const router = useRouter()
+  const pathname = usePathname()
+
+  const handleStartJourney = () => {
+    // If we're on the home page, scroll to signup
+    if (pathname === "/") {
+      const signupForm = document.getElementById("signup")
+      if (signupForm) {
+        signupForm.scrollIntoView({ behavior: "smooth" })
+      }
+    } else {
+      // If we're on any other page, navigate to home page with signup section
+      router.push("/#signup")
     }
   }
 
@@ -53,7 +63,7 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="#how-it-works" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link href="/#how-it-works" className="text-muted-foreground hover:text-primary transition-colors">
                   How It Works
                 </Link>
               </li>
@@ -103,7 +113,7 @@ export default function Footer() {
               Ready to find your spiritual partner? Join thousands of conscious souls already on their path.
             </p>
             <Button
-              onClick={scrollToSignup}
+              onClick={handleStartJourney}
               className="w-full bg-primary hover:bg-primary/90 text-white shadow-lg hover:shadow-xl transition-all duration-300"
             >
               Start Your Sacred Journey
