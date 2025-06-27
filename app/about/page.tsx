@@ -152,15 +152,12 @@ export default function AboutPage() {
               <p className="text-xl text-muted-foreground">
                 Join our community of conscious souls seeking divine partnership
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <div className="flex justify-center">
                 <Button asChild size="lg" className="bg-primary hover:bg-primary/90">
                   <Link href="/#signup">
                     Start Your Journey
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Link>
-                </Button>
-                <Button asChild variant="outline" size="lg">
-                  <Link href="/blog">Read Our Blog</Link>
                 </Button>
               </div>
             </div>
