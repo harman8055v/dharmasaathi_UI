@@ -109,15 +109,6 @@ export default function Footer() {
               </li>
               <li>
                 <Link
-                  href="/blog"
-                  className="text-muted-foreground hover:text-primary transition-colors"
-                  onClick={() => handleLinkClick("Spiritual Blog", "/blog")}
-                >
-                  Spiritual Blog
-                </Link>
-              </li>
-              <li>
-                <Link
                   href="/community-guidelines"
                   className="text-muted-foreground hover:text-primary transition-colors"
                   onClick={() => handleLinkClick("Community Guidelines", "/community-guidelines")}
