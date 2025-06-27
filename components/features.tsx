@@ -10,8 +10,8 @@ export default function Features() {
       {/* Background decoration */}
       <div className="absolute top-0 left-0 w-full h-full opacity-30">
         <Image
-          src="/placeholder.svg?height=400&width=800&text=Background+Pattern"
-          alt="Background Pattern"
+          src="/images/Spiritual Union.jpeg"
+          alt="Spiritual Union Background"
           width={800}
           height={400}
           className="w-full h-full object-cover"
