@@ -4,14 +4,28 @@ import { useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Heart, Users, Compass, Star, ArrowRight, NotebookIcon as Lotus } from "lucide-react"
-import Link from "next/link"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
+import { useRouter, usePathname } from "next/navigation"
 
 export default function AboutPage() {
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [])
+
+  const router = useRouter()
+  const pathname = usePathname()
+
+  const handleStartJourney = () => {
+    if (pathname === "/") {
+      const signupForm = document.getElementById("signup")
+      if (signupForm) {
+        signupForm.scrollIntoView({ behavior: "smooth" })
+      }
+    } else {
+      router.push("/#signup")
+    }
+  }
 
   return (
     <>
@@ -154,11 +168,9 @@ export default function AboutPage() {
               </p>
               {/* Simplified the button container for single button centering */}
               <div className="flex justify-center">
-                <Button asChild size="lg" className="bg-primary hover:bg-primary/90">
-                  <Link href="/#signup">
-                    Start Your Journey
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </Link>
+                <Button onClick={handleStartJourney} size="lg" className="bg-primary hover:bg-primary/90">
+                  Start Your Journey
+                  <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </div>
             </div>
