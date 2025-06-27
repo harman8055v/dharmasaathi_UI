@@ -5,12 +5,20 @@ import { Heart, Instagram, Facebook, Twitter, Linkedin } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { useRouter, usePathname } from "next/navigation"
+import { useFooterAnalytics } from "@/hooks/use-analytics"
 
 export default function Footer() {
   const router = useRouter()
   const pathname = usePathname()
+  const { trackFooterButtonClick, trackFooterLinkClick, trackSocialMediaClick } = useFooterAnalytics()
 
   const handleStartJourney = () => {
+    // Track the button click with additional context
+    trackFooterButtonClick("Start Your Sacred Journey", {
+      current_page: pathname,
+      action_type: pathname === "/" ? "scroll_to_signup" : "navigate_to_signup",
+    })
+
     // If we're on the home page, scroll to signup
     if (pathname === "/") {
       const signupForm = document.getElementById("signup")
@@ -21,6 +29,14 @@ export default function Footer() {
       // If we're on any other page, navigate to home page with signup section
       router.push("/#signup")
     }
+  }
+
+  const handleLinkClick = (linkName: string, linkUrl: string) => {
+    trackFooterLinkClick(linkName, linkUrl)
+  }
+
+  const handleSocialClick = (platform: string) => {
+    trackSocialMediaClick(platform)
   }
 
   return (
@@ -36,19 +52,35 @@ export default function Footer() {
               conscious living.
             </p>
             <div className="flex space-x-4">
-              <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
+              <Link
+                href="#"
+                className="text-muted-foreground hover:text-primary transition-colors"
+                onClick={() => handleSocialClick("Instagram")}
+              >
                 <Instagram className="h-5 w-5" />
                 <span className="sr-only">Instagram</span>
               </Link>
-              <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
+              <Link
+                href="#"
+                className="text-muted-foreground hover:text-primary transition-colors"
+                onClick={() => handleSocialClick("Facebook")}
+              >
                 <Facebook className="h-5 w-5" />
                 <span className="sr-only">Facebook</span>
               </Link>
-              <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
+              <Link
+                href="#"
+                className="text-muted-foreground hover:text-primary transition-colors"
+                onClick={() => handleSocialClick("Twitter")}
+              >
                 <Twitter className="h-5 w-5" />
                 <span className="sr-only">Twitter</span>
               </Link>
-              <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
+              <Link
+                href="#"
+                className="text-muted-foreground hover:text-primary transition-colors"
+                onClick={() => handleSocialClick("LinkedIn")}
+              >
                 <Linkedin className="h-5 w-5" />
                 <span className="sr-only">LinkedIn</span>
               </Link>
@@ -58,17 +90,29 @@ export default function Footer() {
             <h3 className="text-lg font-semibold text-foreground">Quick Links</h3>
             <ul className="space-y-3 text-sm">
               <li>
-                <Link href="/about" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link
+                  href="/about"
+                  className="text-muted-foreground hover:text-primary transition-colors"
+                  onClick={() => handleLinkClick("About Our Mission", "/about")}
+                >
                   About Our Mission
                 </Link>
               </li>
               <li>
-                <Link href="/#how-it-works" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link
+                  href="/#how-it-works"
+                  className="text-muted-foreground hover:text-primary transition-colors"
+                  onClick={() => handleLinkClick("How It Works", "/#how-it-works")}
+                >
                   How It Works
                 </Link>
               </li>
               <li>
-                <Link href="/blog" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link
+                  href="/blog"
+                  className="text-muted-foreground hover:text-primary transition-colors"
+                  onClick={() => handleLinkClick("Spiritual Blog", "/blog")}
+                >
                   Spiritual Blog
                 </Link>
               </li>
@@ -76,6 +120,7 @@ export default function Footer() {
                 <Link
                   href="/community-guidelines"
                   className="text-muted-foreground hover:text-primary transition-colors"
+                  onClick={() => handleLinkClick("Community Guidelines", "/community-guidelines")}
                 >
                   Community Guidelines
                 </Link>
@@ -86,22 +131,38 @@ export default function Footer() {
             <h3 className="text-lg font-semibold text-foreground">Legal & Support</h3>
             <ul className="space-y-3 text-sm">
               <li>
-                <Link href="/privacy-policy" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link
+                  href="/privacy-policy"
+                  className="text-muted-foreground hover:text-primary transition-colors"
+                  onClick={() => handleLinkClick("Privacy Policy", "/privacy-policy")}
+                >
                   Privacy Policy
                 </Link>
               </li>
               <li>
-                <Link href="/terms-of-service" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link
+                  href="/terms-of-service"
+                  className="text-muted-foreground hover:text-primary transition-colors"
+                  onClick={() => handleLinkClick("Terms of Service", "/terms-of-service")}
+                >
                   Terms of Service
                 </Link>
               </li>
               <li>
-                <Link href="/cookie-policy" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link
+                  href="/cookie-policy"
+                  className="text-muted-foreground hover:text-primary transition-colors"
+                  onClick={() => handleLinkClick("Cookie Policy", "/cookie-policy")}
+                >
                   Cookie Policy
                 </Link>
               </li>
               <li>
-                <Link href="/contact" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link
+                  href="/contact"
+                  className="text-muted-foreground hover:text-primary transition-colors"
+                  onClick={() => handleLinkClick("Contact Support", "/contact")}
+                >
                   Contact Support
                 </Link>
               </li>
