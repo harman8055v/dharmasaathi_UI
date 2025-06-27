@@ -19,8 +19,6 @@ export default function Footer() {
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-6">
             <div className="flex items-center">
-              {" "}
-              {/* Removed space-x-3 */}
               <Image src="/logo.png" alt="DharmaSaathi Logo" width={120} height={40} className="rounded-lg" />
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed">
@@ -50,7 +48,7 @@ export default function Footer() {
             <h3 className="text-lg font-semibold text-foreground">Quick Links</h3>
             <ul className="space-y-3 text-sm">
               <li>
-                <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link href="/about" className="text-muted-foreground hover:text-primary transition-colors">
                   About Our Mission
                 </Link>
               </li>
@@ -60,17 +58,15 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="#testimonials" className="text-muted-foreground hover:text-primary transition-colors">
-                  Success Stories
-                </Link>
-              </li>
-              <li>
-                <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link href="/blog" className="text-muted-foreground hover:text-primary transition-colors">
                   Spiritual Blog
                 </Link>
               </li>
               <li>
-                <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link
+                  href="/community-guidelines"
+                  className="text-muted-foreground hover:text-primary transition-colors"
+                >
                   Community Guidelines
                 </Link>
               </li>
@@ -80,27 +76,22 @@ export default function Footer() {
             <h3 className="text-lg font-semibold text-foreground">Legal & Support</h3>
             <ul className="space-y-3 text-sm">
               <li>
-                <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link href="/privacy-policy" className="text-muted-foreground hover:text-primary transition-colors">
                   Privacy Policy
                 </Link>
               </li>
               <li>
-                <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link href="/terms-of-service" className="text-muted-foreground hover:text-primary transition-colors">
                   Terms of Service
                 </Link>
               </li>
               <li>
-                <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link href="/cookie-policy" className="text-muted-foreground hover:text-primary transition-colors">
                   Cookie Policy
                 </Link>
               </li>
               <li>
-                <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
-                  Help Center
-                </Link>
-              </li>
-              <li>
-                <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link href="/contact" className="text-muted-foreground hover:text-primary transition-colors">
                   Contact Support
                 </Link>
               </li>
