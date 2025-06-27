@@ -10,8 +10,8 @@ export default function Features() {
       {/* Background decoration */}
       <div className="absolute top-0 left-0 w-full h-full opacity-30">
         <Image
-          src="/images/Spiritual Union.jpeg"
-          alt="Spiritual Union Background"
+          src="/images/Spiritual Union Abstract.jpeg"
+          alt="Spiritual Union Abstract Background"
           width={800}
           height={400}
           className="w-full h-full object-cover"
