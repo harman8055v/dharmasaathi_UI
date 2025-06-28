@@ -122,24 +122,42 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
     setError(null) // Clear any previous errors
   }
 
-  // Submit user profile using upsert to avoid duplicate key errors
+  // Submit user profile using upsert to handle both insert and update cases
   async function submitUserProfile(profileData: Partial<OnboardingData>) {
     if (!user?.id) {
-      throw new Error("User ID is required for profile submission")
+      throw new Error("User authentication required. Please sign in again.")
     }
 
     try {
-      console.log("Submitting user profile for user ID:", user.id)
-      console.log("Profile data to submit:", profileData)
+      console.log("🔄 Submitting user profile for user ID:", user.id)
+      console.log("📝 Profile data to submit:", profileData)
+
+      // Get current authenticated user to ensure we have the latest session
+      const {
+        data: { user: currentUser },
+        error: authError,
+      } = await supabase.auth.getUser()
+
+      if (authError) {
+        console.error("❌ Auth error:", authError)
+        throw new Error("Authentication failed. Please sign in again.")
+      }
+
+      if (!currentUser || currentUser.id !== user.id) {
+        console.error("❌ User mismatch or no current user")
+        throw new Error("Authentication session expired. Please sign in again.")
+      }
 
       // Prepare the complete profile data for upsert
       const completeProfileData = {
-        id: user.id, // Always include the user ID for upsert
+        id: currentUser.id, // Always include the user ID for upsert
         ...profileData,
         updated_at: new Date().toISOString(),
       }
 
-      // Use upsert to either create or update the user profile
+      console.log("📤 Upserting data to users table:", completeProfileData)
+
+      // Use upsert to either create or update the user profile in the "users" table
       const { data, error: upsertError } = await supabase
         .from("users")
         .upsert(completeProfileData, {
@@ -150,48 +168,35 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
         .single()
 
       if (upsertError) {
-        console.error("Upsert error details:", {
+        console.error("❌ Upsert error details:", {
           message: upsertError.message,
           details: upsertError.details,
           hint: upsertError.hint,
           code: upsertError.code,
         })
+
+        // Handle specific RLS policy violations
+        if (upsertError.code === "42501" || upsertError.message?.includes("policy")) {
+          throw new Error("Permission denied. Please ensure you're signed in with the correct account.")
+        }
+
+        // Handle other common errors
+        if (upsertError.code === "23505") {
+          throw new Error("Profile already exists. Please refresh the page and try again.")
+        }
+
+        if (upsertError.code === "23502") {
+          throw new Error("Required field missing. Please fill in all required information.")
+        }
+
+        // Generic error fallback
         throw new Error(`Failed to save profile: ${upsertError.message}`)
       }
 
-      console.log("Profile upserted successfully:", data)
+      console.log("✅ Profile upserted successfully:", data)
       return data
     } catch (error) {
-      console.error("Error in submitUserProfile:", error)
-      throw error
-    }
-  }
-
-  // Fetch current user profile using user ID
-  async function fetchUserProfile() {
-    if (!user?.id) {
-      throw new Error("User ID is required to fetch profile")
-    }
-
-    try {
-      console.log("Fetching profile for user ID:", user.id)
-
-      const { data, error } = await supabase.from("users").select("*").eq("id", user.id).maybeSingle()
-
-      if (error) {
-        console.error("Error fetching user profile:", {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code,
-        })
-        throw new Error(`Failed to fetch profile: ${error.message}`)
-      }
-
-      console.log("Profile fetched successfully:", data)
-      return data
-    } catch (error) {
-      console.error("Error in fetchUserProfile:", error)
+      console.error("❌ Error in submitUserProfile:", error)
       throw error
     }
   }
@@ -216,7 +221,7 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
 
         // Only make the database call if we have data to save
         if (Object.keys(payload).length > 0) {
-          // Use the new submitUserProfile function
+          // Use the submitUserProfile function with proper upsert
           const updatedProfile = await submitUserProfile(payload)
 
           debugLog("Successfully saved data")
@@ -245,7 +250,8 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
       }
     } catch (err) {
       console.error("Error saving stage data:", err)
-      setError((err as Error).message)
+      const errorMessage = err instanceof Error ? err.message : "An unexpected error occurred. Please try again."
+      setError(errorMessage)
     } finally {
       setIsLoading(false)
     }
@@ -361,7 +367,8 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
       }
     } catch (error: any) {
       console.error("Error skipping stage:", error)
-      setError(error.message || "An unexpected error occurred. Please try again.")
+      const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred. Please try again."
+      setError(errorMessage)
     } finally {
       setIsLoading(false)
     }
@@ -383,6 +390,7 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
         subtitle="Your spiritual journey is ready to begin"
         messages={[
           "Finalizing your sacred profile...",
+          "Encrypting your personal data...",
           "Preparing your spiritual matches...",
           "Setting up your dashboard...",
           "Welcome to your dharma journey!",
@@ -403,7 +411,21 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
           {/* Error message */}
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg max-w-2xl mx-auto">
-              <p className="text-red-700 text-sm">{error}</p>
+              <div className="flex items-start">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <p className="text-red-700 text-sm font-medium">Error</p>
+                  <p className="text-red-600 text-sm">{error}</p>
+                </div>
+              </div>
             </div>
           )}
 

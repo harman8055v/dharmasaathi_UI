@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Loader2, Phone, CheckCircle, AlertCircle } from "lucide-react"
+import { Loader2, Phone, CheckCircle, AlertCircle, Shield } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -57,23 +57,26 @@ export default function SeedStage({ formData, onChange, onNext, isLoading, user,
       // Format the number for international format
       const formattedNumber = cleanNumber.startsWith("91") ? `+${cleanNumber}` : `+91${cleanNumber}`
 
+      console.log("📱 Sending OTP to:", formattedNumber)
+
       const { error } = await supabase.auth.signInWithOtp({
         phone: formattedNumber,
       })
 
       if (error) {
-        console.error("OTP send error:", error)
+        console.error("❌ OTP send error:", error)
         setLocalError(error.message || "Failed to send OTP. Please try again.")
         return
       }
 
+      console.log("✅ OTP sent successfully")
       setOtpSent(true)
       setCountdown(60) // 60 second countdown
 
       // Update form data with mobile number
       onChange({ mobile_number: formattedNumber })
     } catch (error) {
-      console.error("Error sending OTP:", error)
+      console.error("❌ Error sending OTP:", error)
       setLocalError("Failed to send OTP. Please try again.")
     } finally {
       setSendingOtp(false)
@@ -83,6 +86,11 @@ export default function SeedStage({ formData, onChange, onNext, isLoading, user,
   const handleVerifyOtp = async () => {
     if (!otp.trim()) {
       setLocalError("Please enter the OTP")
+      return
+    }
+
+    if (otp.length !== 6) {
+      setLocalError("OTP must be 6 digits")
       return
     }
 
@@ -98,6 +106,8 @@ export default function SeedStage({ formData, onChange, onNext, isLoading, user,
       const cleanNumber = mobileNumber.replace(/\D/g, "")
       const formattedNumber = cleanNumber.startsWith("91") ? `+${cleanNumber}` : `+91${cleanNumber}`
 
+      console.log("🔐 Verifying OTP for:", formattedNumber)
+
       const { error } = await supabase.auth.verifyOtp({
         phone: formattedNumber,
         token: otp,
@@ -105,10 +115,12 @@ export default function SeedStage({ formData, onChange, onNext, isLoading, user,
       })
 
       if (error) {
-        console.error("OTP verification error:", error)
+        console.error("❌ OTP verification error:", error)
         setLocalError(error.message || "Invalid OTP. Please try again.")
         return
       }
+
+      console.log("✅ OTP verified successfully")
 
       // OTP verified successfully
       const verificationData = {
@@ -120,7 +132,7 @@ export default function SeedStage({ formData, onChange, onNext, isLoading, user,
       onChange(verificationData)
       onNext(verificationData)
     } catch (error) {
-      console.error("Error verifying OTP:", error)
+      console.error("❌ Error verifying OTP:", error)
       setLocalError("Failed to verify OTP. Please try again.")
     } finally {
       setVerifying(false)
@@ -141,13 +153,15 @@ export default function SeedStage({ formData, onChange, onNext, isLoading, user,
     return (
       <div className="space-y-6">
         <div className="text-center mb-6">
-          <div className="text-4xl mb-4">✅</div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Mobile Already Verified!</h2>
+          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <CheckCircle className="w-8 h-8 text-green-600" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Mobile Already Verified! ✅</h2>
           <p className="text-gray-600">Your mobile number is already verified. Let's continue with your profile.</p>
         </div>
 
         <div className="flex items-center justify-center p-4 bg-green-50 border border-green-200 rounded-lg">
-          <CheckCircle className="w-5 h-5 text-green-600 mr-2" />
+          <Shield className="w-5 h-5 text-green-600 mr-2" />
           <span className="text-green-700 font-medium">Mobile verification complete</span>
         </div>
 
@@ -168,17 +182,21 @@ export default function SeedStage({ formData, onChange, onNext, isLoading, user,
   return (
     <div className="space-y-6">
       <div className="text-center mb-6">
-        <div className="text-4xl mb-4">🌱</div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Plant your seed of trust</h2>
-        <p className="text-gray-600">Verify your mobile number to ensure secure communication</p>
+        <div className="w-16 h-16 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4">
+          <Phone className="w-8 h-8 text-white" />
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Plant your seed of trust 🌱</h2>
+        <p className="text-gray-600">
+          Verify your mobile number to ensure secure communication on your spiritual journey
+        </p>
       </div>
 
       {!otpSent ? (
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="mobile" className="flex items-center gap-2">
+            <Label htmlFor="mobile" className="flex items-center gap-2 text-sm font-medium text-gray-700">
               <Phone className="w-4 h-4" />
-              Mobile Number
+              Mobile Number *
             </Label>
             <div className="flex">
               <span className="inline-flex items-center px-3 text-sm text-gray-500 bg-gray-50 border border-r-0 border-gray-300 rounded-l-md">
@@ -198,17 +216,22 @@ export default function SeedStage({ formData, onChange, onNext, isLoading, user,
                 maxLength={10}
               />
             </div>
+            <p className="text-xs text-gray-500">We'll send you a secure verification code via SMS</p>
           </div>
 
           {(localError || error) && (
             <div className="flex items-center p-3 bg-red-50 border border-red-200 rounded-lg">
-              <AlertCircle className="w-4 h-4 text-red-600 mr-2" />
+              <AlertCircle className="w-4 h-4 text-red-600 mr-2 flex-shrink-0" />
               <p className="text-red-700 text-sm">{localError || error}</p>
             </div>
           )}
 
           <div className="flex gap-3">
-            <Button onClick={handleSendOtp} disabled={sendingOtp || !mobileNumber.trim()} className="flex-1">
+            <Button
+              onClick={handleSendOtp}
+              disabled={sendingOtp || !mobileNumber.trim()}
+              className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+            >
               {sendingOtp ? (
                 <span className="flex items-center justify-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -227,11 +250,16 @@ export default function SeedStage({ formData, onChange, onNext, isLoading, user,
       ) : (
         <div className="space-y-4">
           <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-blue-700 text-sm">OTP sent to +91{mobileNumber.replace("+91", "")}</p>
+            <div className="flex items-center">
+              <CheckCircle className="w-5 h-5 text-blue-600 mr-2" />
+              <p className="text-blue-700 text-sm font-medium">OTP sent to +91{mobileNumber.replace("+91", "")}</p>
+            </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="otp">Enter OTP</Label>
+            <Label htmlFor="otp" className="text-sm font-medium text-gray-700">
+              Enter Verification Code
+            </Label>
             <Input
               id="otp"
               type="text"
@@ -245,24 +273,29 @@ export default function SeedStage({ formData, onChange, onNext, isLoading, user,
               maxLength={6}
               className="text-center text-lg tracking-widest"
             />
+            <p className="text-xs text-gray-500">Enter the 6-digit code sent to your mobile</p>
           </div>
 
           {(localError || error) && (
             <div className="flex items-center p-3 bg-red-50 border border-red-200 rounded-lg">
-              <AlertCircle className="w-4 h-4 text-red-600 mr-2" />
+              <AlertCircle className="w-4 h-4 text-red-600 mr-2 flex-shrink-0" />
               <p className="text-red-700 text-sm">{localError || error}</p>
             </div>
           )}
 
           <div className="flex gap-3">
-            <Button onClick={handleVerifyOtp} disabled={verifying || !otp.trim()} className="flex-1">
+            <Button
+              onClick={handleVerifyOtp}
+              disabled={verifying || otp.length !== 6}
+              className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+            >
               {verifying ? (
                 <span className="flex items-center justify-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
                   Verifying...
                 </span>
               ) : (
-                "Verify OTP"
+                "Verify & Continue"
               )}
             </Button>
 
@@ -297,6 +330,14 @@ export default function SeedStage({ formData, onChange, onNext, isLoading, user,
           </Button>
         </div>
       )}
+
+      {/* Security notice */}
+      <div className="mt-6 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+        <div className="flex items-center justify-center">
+          <Shield className="w-4 h-4 text-gray-500 mr-2" />
+          <p className="text-xs text-gray-600">Your mobile number is encrypted and secure</p>
+        </div>
+      </div>
     </div>
   )
 }

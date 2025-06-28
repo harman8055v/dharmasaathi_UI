@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Loader2, Shield, CheckCircle } from "lucide-react"
+import Image from "next/image"
 
 interface FullScreenLoadingProps {
   title: string
@@ -10,7 +11,7 @@ interface FullScreenLoadingProps {
   duration?: number
 }
 
-export default function FullScreenLoading({ title, subtitle, messages, duration = 4000 }: FullScreenLoadingProps) {
+export default function FullScreenLoading({ title, subtitle, messages, duration = 5000 }: FullScreenLoadingProps) {
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0)
   const [progress, setProgress] = useState(0)
 
@@ -52,11 +53,16 @@ export default function FullScreenLoading({ title, subtitle, messages, duration 
 
   return (
     <div className="fixed inset-0 z-[99999] bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 flex items-center justify-center">
-      {/* Backdrop overlay to prevent any background interactions */}
-      <div className="absolute inset-0 z-[99998] bg-black/10 backdrop-blur-sm" />
+      {/* Backdrop overlay to prevent any background interactions and block alerts */}
+      <div className="absolute inset-0 z-[99998] bg-white/20 backdrop-blur-sm" />
 
       {/* Main content */}
       <div className="relative z-[99999] text-center p-8 max-w-md mx-auto">
+        {/* Logo */}
+        <div className="mb-6">
+          <Image src="/logo.png" alt="DharmaSaathi" width={120} height={40} className="mx-auto animate-pulse" />
+        </div>
+
         {/* Main icon/animation */}
         <div className="mb-8">
           {isComplete ? (
@@ -66,7 +72,11 @@ export default function FullScreenLoading({ title, subtitle, messages, duration 
           ) : (
             <div className="relative w-20 h-20 mx-auto mb-4">
               <Loader2 className="w-full h-full text-orange-500 animate-spin" />
-              {isEncrypting && <Shield className="absolute inset-2 w-12 h-12 text-green-600 animate-pulse" />}
+              {isEncrypting && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Shield className="w-10 h-10 text-green-600 animate-pulse" />
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -78,55 +88,64 @@ export default function FullScreenLoading({ title, subtitle, messages, duration 
         <p className="text-lg text-gray-600 mb-8">{subtitle}</p>
 
         {/* Progress bar */}
-        <div className="w-full bg-gray-200 rounded-full h-2 mb-6 overflow-hidden">
+        <div className="w-full bg-gray-200 rounded-full h-3 mb-4 overflow-hidden shadow-inner">
           <div
-            className="bg-gradient-to-r from-orange-500 to-amber-500 h-2 rounded-full transition-all duration-300 ease-out"
+            className="bg-gradient-to-r from-orange-500 via-amber-500 to-green-500 h-3 rounded-full transition-all duration-300 ease-out relative"
             style={{ width: `${progress}%` }}
-          />
+          >
+            {/* Shimmer effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse" />
+          </div>
         </div>
 
         {/* Progress percentage */}
-        <div className="text-sm text-gray-500 mb-4">{Math.round(progress)}% Complete</div>
+        <div className="text-sm text-gray-500 mb-6">{Math.round(progress)}% Complete</div>
 
-        {/* Current message */}
-        <div className="min-h-[60px] flex items-center justify-center">
-          <p
-            className={`text-base transition-all duration-500 ${
+        {/* Current message with special styling for encryption */}
+        <div className="min-h-[80px] flex items-center justify-center mb-6">
+          <div
+            className={`transition-all duration-500 ${
               isEncrypting
-                ? "text-green-700 font-semibold bg-green-50 px-4 py-2 rounded-lg border border-green-200"
-                : "text-gray-700"
+                ? "bg-green-50 border border-green-200 rounded-lg p-4 shadow-sm"
+                : "bg-white/50 rounded-lg p-4"
             }`}
           >
-            {isEncrypting && <Shield className="inline w-4 h-4 mr-2 text-green-600" />}
-            {currentMessage}
-          </p>
+            <p
+              className={`text-base font-medium ${
+                isEncrypting ? "text-green-800 flex items-center justify-center" : "text-gray-700"
+              }`}
+            >
+              {isEncrypting && <Shield className="w-4 h-4 mr-2 text-green-600" />}
+              {currentMessage}
+            </p>
+            {isEncrypting && (
+              <p className="text-xs text-green-600 mt-2 flex items-center justify-center">
+                <span className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse" />
+                Your data is being securely encrypted
+              </p>
+            )}
+          </div>
         </div>
 
-        {/* Additional loading indicators */}
-        <div className="flex justify-center space-x-2 mt-6">
-          {[0, 1, 2].map((i) => (
+        {/* Loading dots indicator */}
+        <div className="flex justify-center space-x-2">
+          {messages.map((_, i) => (
             <div
               key={i}
               className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                i <= currentMessageIndex ? "bg-orange-500" : "bg-gray-300"
+                i <= currentMessageIndex ? "bg-orange-500 animate-pulse" : "bg-gray-300"
               }`}
-              style={{
-                animationDelay: `${i * 0.2}s`,
-                animation: i <= currentMessageIndex ? "pulse 1.5s infinite" : "none",
-              }}
             />
           ))}
         </div>
 
-        {/* Security notice for encryption */}
-        {isEncrypting && (
-          <div className="mt-6 p-3 bg-green-50 border border-green-200 rounded-lg">
-            <p className="text-xs text-green-700 flex items-center justify-center">
-              <Shield className="w-3 h-3 mr-1" />
-              Your data is being securely encrypted
-            </p>
-          </div>
-        )}
+        {/* Bottom security notice */}
+        <div className="mt-8 p-3 bg-white/70 rounded-lg border border-gray-200">
+          <p className="text-xs text-gray-600 flex items-center justify-center">
+            <Shield className="w-3 h-3 mr-1 text-gray-500" />
+            Secured by DharmaSaathi encryption
+          </p>
+        </div>
       </div>
     </div>
   )

@@ -20,14 +20,14 @@ export default function OnboardingPage() {
   useEffect(() => {
     async function getUser() {
       try {
-        // Get the current user session
+        // Get the current user session using supabase.auth.getUser()
         const {
           data: { user },
           error: userError,
         } = await supabase.auth.getUser()
 
         if (userError) {
-          console.error("Auth error:", userError)
+          console.error("❌ Auth error:", userError)
           setError("Authentication error. Please try signing in again.")
           setTimeout(() => router.push("/"), 3000)
           return
@@ -39,10 +39,11 @@ export default function OnboardingPage() {
           return
         }
 
-        debugLog("Authenticated user found:", user.id)
+        debugLog("✅ Authenticated user found:", user.id)
         setUser(user)
 
-        // Fetch user profile data using user ID (not email)
+        // Fetch user profile data using user ID with maybeSingle() to prevent crashes
+        console.log("🔍 Fetching profile for user ID:", user.id)
         const { data: profileData, error: profileError } = await supabase
           .from("users")
           .select("*")
@@ -50,20 +51,26 @@ export default function OnboardingPage() {
           .maybeSingle()
 
         if (profileError) {
-          console.error("Error fetching user profile:", {
+          console.error("❌ Error fetching user profile:", {
             message: profileError.message,
             details: profileError.details,
             hint: profileError.hint,
             code: profileError.code,
           })
-          setError("Error loading profile. Please try again.")
+
+          // Handle RLS policy violations
+          if (profileError.code === "42501" || profileError.message?.includes("policy")) {
+            setError("Permission denied. Please ensure you're signed in with the correct account.")
+          } else {
+            setError("Error loading profile. Please try again.")
+          }
           setTimeout(() => router.push("/"), 3000)
           return
         }
 
         if (!profileData) {
-          // No profile found, create a minimal one with required fields
-          debugLog("No profile found, creating new profile")
+          // No profile found, create a minimal one with required fields using upsert
+          debugLog("📝 No profile found, creating new profile")
           const newProfile: Partial<OnboardingProfile> = {
             id: user.id,
             onboarding_completed: false,
@@ -90,44 +97,49 @@ export default function OnboardingPage() {
             email_verified: !!user.email_confirmed_at,
             mobile_verified: !!user.phone_confirmed_at,
             mobile_number: user.user_metadata?.mobile_number || null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
           }
 
-          // Use upsert to create the profile
+          // Use upsert to create the profile in the "users" table
+          console.log("📤 Upserting new profile to users table")
           const { data: insertedProfile, error: insertError } = await supabase
             .from("users")
-            .upsert(
-              {
-                ...newProfile,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-              },
-              {
-                onConflict: "id",
-                ignoreDuplicates: false,
-              },
-            )
+            .upsert(newProfile, {
+              onConflict: "id",
+              ignoreDuplicates: false,
+            })
             .select()
             .single()
 
           if (insertError) {
-            console.error("Error creating profile:", {
+            console.error("❌ Error creating profile:", {
               message: insertError.message,
               details: insertError.details,
               hint: insertError.hint,
               code: insertError.code,
             })
+
+            // Handle RLS policy violations
+            if (insertError.code === "42501" || insertError.message?.includes("policy")) {
+              setError("Permission denied. Please ensure you're signed in with the correct account.")
+            } else {
+              setError("Error creating profile. Please try again.")
+            }
+
             // Use the local profile if upsert fails
             setProfile(newProfile as OnboardingProfile)
           } else {
+            console.log("✅ Profile created successfully:", insertedProfile)
             setProfile(insertedProfile)
           }
         } else {
           // Profile found
-          debugLog("Profile found:", profileData)
+          debugLog("✅ Profile found:", profileData)
 
           // If user has completed onboarding, redirect to dashboard
           if (profileData?.onboarding_completed) {
-            debugLog("Onboarding already completed, redirecting to dashboard")
+            debugLog("🎯 Onboarding already completed, redirecting to dashboard")
             router.push("/dashboard")
             return
           }
@@ -146,7 +158,7 @@ export default function OnboardingPage() {
 
         setLoading(false)
       } catch (error) {
-        console.error("Error in auth check:", error)
+        console.error("❌ Error in auth check:", error)
         setError("An unexpected error occurred. Please try again.")
         setTimeout(() => router.push("/"), 3000)
       }
