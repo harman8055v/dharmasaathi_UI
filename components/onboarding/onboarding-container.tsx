@@ -142,14 +142,16 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
 
         // Only make the database call if we have data to save
         if (Object.keys(payload).length > 0) {
-          const { error: saveError } = await supabase.from("users").upsert(
-            {
-              id: user?.id,
-              email: user?.email || profile?.email, // Always include required fields
+          // Update the existing profile row. The profile is created when the
+          // onboarding page loads if it doesn't already exist, so an upsert is
+          // unnecessary here and can trigger RLS insert checks.
+          const { error: saveError } = await supabase
+            .from("users")
+            .update({
               ...payload,
-            },
-            { onConflict: "id", returning: "minimal" },
-          )
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", user?.id)
 
           if (saveError) {
             console.error("Error saving stage data:", saveError)
