@@ -17,7 +17,7 @@ export interface OnboardingProfile {
   annual_income?: string | null
   diet?: "Vegetarian" | "Vegan" | "Eggetarian" | "Non-Vegetarian" | null
   temple_visit_freq?: "Daily" | "Weekly" | "Monthly" | "Rarely" | "Never" | null
-  vanaprastha_interest?: "yes" | "no" | "open" | null
+  vanaprastha_interest?: "Yes" | "No" | "Maybe" | null
   artha_vs_moksha?: "Artha-focused" | "Moksha-focused" | "Balance" | null
   spiritual_org?: string[] | null
   daily_practices?: string[] | null
@@ -32,11 +32,10 @@ export interface OnboardingProfile {
 
 export type OnboardingData = Partial<OnboardingProfile>
 
-// THIS WAS THE MISSING EXPORT
+// THIS IS THE CRITICAL FIX: The missing export is now included.
 export const VALID_VALUES = {
-  gender: [null, "Male", "Female", "Other"] as const,
-  diet: [null, "Vegetarian", "Vegan", "Eggetarian", "Non-Vegetarian"] as const,
-  temple_visit_freq: [null, "Daily", "Weekly", "Monthly", "Rarely", "Never"] as const,
-  vanaprastha_interest: [null, "yes", "no", "open"] as const,
-  artha_vs_moksha: [null, "Artha-focused", "Moksha-focused", "Balance"] as const,
+  diet: ["Vegetarian", "Vegan", "Eggetarian", "Non-Vegetarian"] as const,
+  temple_visit_freq: ["Daily", "Weekly", "Monthly", "Rarely", "Never"] as const,
+  vanaprastha_interest: ["Yes", "No", "Maybe"] as const,
+  artha_vs_moksha: ["Artha-focused", "Moksha-focused", "Balance"] as const,
 } as const

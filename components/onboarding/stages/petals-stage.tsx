@@ -19,13 +19,11 @@ interface PetalsStageProps {
 }
 
 export default function PetalsStage({ profile, updateProfile, onNext, onBack }: PetalsStageProps) {
-  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [error, setError] = useState<string | null>(null)
 
   const handleSelectChange = (name: keyof OnboardingProfile) => (value: string) => {
-    updateProfile({ [name]: value || null })
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }))
-    }
+    updateProfile({ [name]: value })
+    if (error) setError(null)
   }
 
   const handleMultiSelect = (
@@ -39,23 +37,15 @@ export default function PetalsStage({ profile, updateProfile, onNext, onBack }: 
     updateProfile({ [name]: newValues })
   }
 
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {}
-    if (!profile.diet) {
-      newErrors.diet = "Please select your diet preference."
-    }
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (validateForm()) {
-      onNext()
+    if (!profile.diet) {
+      setError("Diet preference is required to proceed.")
+      return
     }
+    setError(null)
+    onNext()
   }
-
-  const canProceed = !!profile.diet
 
   return (
     <Card className="w-full max-w-2xl mx-auto">
@@ -67,28 +57,26 @@ export default function PetalsStage({ profile, updateProfile, onNext, onBack }: 
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Diet */}
           <div className="space-y-2">
             <Label htmlFor="diet">Diet Preference *</Label>
             <Select name="diet" value={profile.diet || ""} onValueChange={handleSelectChange("diet")}>
-              <SelectTrigger id="diet" className={errors.diet ? "border-red-500" : ""}>
+              <SelectTrigger id="diet" className={error ? "border-red-500" : ""}>
                 <SelectValue placeholder="Select your diet" />
               </SelectTrigger>
               <SelectContent>
-                {VALID_VALUES.diet.filter(Boolean).map((option) => (
-                  <SelectItem key={option} value={option!}>
+                {VALID_VALUES.diet.map((option) => (
+                  <SelectItem key={option} value={option}>
                     {option}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            {errors.diet && <p className="text-sm text-red-500">{errors.diet}</p>}
+            {error && <p className="text-sm text-red-500">{error}</p>}
           </div>
 
-          {/* Spiritual Organizations */}
           <div className="space-y-2">
-            <Label>Spiritual Organizations (Select all that apply)</Label>
-            <div className="flex flex-wrap gap-2 p-2 border rounded-md">
+            <Label>Spiritual Organizations (Optional)</Label>
+            <div className="flex flex-wrap gap-2 p-2 border rounded-md bg-muted/50">
               {SPIRITUAL_ORGS.map((org) => (
                 <button
                   key={org}
@@ -96,8 +84,8 @@ export default function PetalsStage({ profile, updateProfile, onNext, onBack }: 
                   onClick={() => handleMultiSelect("spiritual_org", org)}
                   className={`px-3 py-1 text-sm rounded-full transition-colors ${
                     profile.spiritual_org?.includes(org)
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted hover:bg-muted/80"
+                      ? "bg-primary text-primary-foreground shadow"
+                      : "bg-background hover:bg-primary/10"
                   }`}
                 >
                   {org}
@@ -106,10 +94,9 @@ export default function PetalsStage({ profile, updateProfile, onNext, onBack }: 
             </div>
           </div>
 
-          {/* Daily Practices */}
           <div className="space-y-2">
-            <Label>Daily Spiritual Practices (Select all that apply)</Label>
-            <div className="flex flex-wrap gap-2 p-2 border rounded-md">
+            <Label>Daily Spiritual Practices (Optional)</Label>
+            <div className="flex flex-wrap gap-2 p-2 border rounded-md bg-muted/50">
               {DAILY_PRACTICES.map((practice) => (
                 <button
                   key={practice}
@@ -117,8 +104,8 @@ export default function PetalsStage({ profile, updateProfile, onNext, onBack }: 
                   onClick={() => handleMultiSelect("daily_practices", practice)}
                   className={`px-3 py-1 text-sm rounded-full transition-colors ${
                     profile.daily_practices?.includes(practice)
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted hover:bg-muted/80"
+                      ? "bg-primary text-primary-foreground shadow"
+                      : "bg-background hover:bg-primary/10"
                   }`}
                 >
                   {practice}
@@ -127,76 +114,11 @@ export default function PetalsStage({ profile, updateProfile, onNext, onBack }: 
             </div>
           </div>
 
-          {/* Temple Visit Frequency */}
-          <div className="space-y-2">
-            <Label htmlFor="temple_visit_freq">Temple Visit Frequency</Label>
-            <Select
-              name="temple_visit_freq"
-              value={profile.temple_visit_freq || ""}
-              onValueChange={handleSelectChange("temple_visit_freq")}
-            >
-              <SelectTrigger id="temple_visit_freq">
-                <SelectValue placeholder="Select frequency" />
-              </SelectTrigger>
-              <SelectContent>
-                {VALID_VALUES.temple_visit_freq.filter(Boolean).map((option) => (
-                  <SelectItem key={option} value={option!}>
-                    {option}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Vanaprastha Interest */}
-          <div className="space-y-2">
-            <Label htmlFor="vanaprastha_interest">Interest in Vanaprastha (Spiritual Retirement)</Label>
-            <Select
-              name="vanaprastha_interest"
-              value={profile.vanaprastha_interest || ""}
-              onValueChange={handleSelectChange("vanaprastha_interest")}
-            >
-              <SelectTrigger id="vanaprastha_interest">
-                <SelectValue placeholder="Select interest level" />
-              </SelectTrigger>
-              <SelectContent>
-                {VALID_VALUES.vanaprastha_interest.filter(Boolean).map((option) => (
-                  <SelectItem key={option} value={option!}>
-                    {option}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Artha vs Moksha */}
-          <div className="space-y-2">
-            <Label htmlFor="artha_vs_moksha">Balance between Artha (Prosperity) and Moksha (Liberation)</Label>
-            <Select
-              name="artha_vs_moksha"
-              value={profile.artha_vs_moksha || ""}
-              onValueChange={handleSelectChange("artha_vs_moksha")}
-            >
-              <SelectTrigger id="artha_vs_moksha">
-                <SelectValue placeholder="Select your preference" />
-              </SelectTrigger>
-              <SelectContent>
-                {VALID_VALUES.artha_vs_moksha.filter(Boolean).map((option) => (
-                  <SelectItem key={option} value={option!}>
-                    {option}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
           <div className="flex justify-between pt-4">
             <Button variant="outline" onClick={onBack} type="button">
               Back
             </Button>
-            <Button type="submit" disabled={!canProceed}>
-              Next
-            </Button>
+            <Button type="submit">Next</Button>
           </div>
         </form>
       </CardContent>
