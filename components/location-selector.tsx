@@ -1,246 +1,115 @@
 "use client"
-import { useState, useEffect, useMemo, useCallback } from "react"
-import { Label } from "@/components/ui/label"
+
+import { useState, useEffect } from "react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Input } from "@/components/ui/input"
-import { Loader2, MapPin, Search } from "lucide-react"
-import { useCountries, useStates, useCities } from "@/lib/hooks/useLocationData"
+import { Label } from "@/components/ui/label"
 import type { LocationFormState } from "@/lib/types/onboarding"
 
+// Import the location data
+import statesData from "@/lib/data/india_states.json"
+import citiesData from "@/lib/data/india_cities.json"
+
 interface LocationSelectorProps {
-  value?: LocationFormState
-  onChange: (location: LocationFormState) => void
-  disabled?: boolean
-  required?: boolean
-  showLabels?: boolean
-  className?: string
-  defaultToIndia?: boolean
+  value: LocationFormState
+  onChange: (value: LocationFormState) => void
 }
 
-export default function LocationSelector({
+export function LocationSelector({
   value = { country_id: null, state_id: null, city_id: null },
   onChange,
-  disabled = false,
-  required = false,
-  showLabels = true,
-  className = "",
-  defaultToIndia = true,
 }: LocationSelectorProps) {
-  const { countries, loading: countriesLoading } = useCountries()
-  const { states, loading: statesLoading } = useStates(value.country_id)
-  const { cities, loading: citiesLoading } = useCities(value.state_id)
+  const [states, setStates] = useState<any[]>([])
+  const [cities, setCities] = useState<any[]>([])
 
-  const [countrySearch, setCountrySearch] = useState("")
-  const [stateSearch, setStateSearch] = useState("")
-  const [citySearch, setCitySearch] = useState("")
-
-  const [hasSetDefault, setHasSetDefault] = useState(false)
+  // For now, we'll assume India (country_id: 1) since we have Indian states/cities data
+  const INDIA_COUNTRY_ID = 1
 
   useEffect(() => {
-    if (defaultToIndia && !value.country_id && countries.length > 0 && !hasSetDefault) {
-      const india = countries.find((country) => country.name === "India")
-      if (india) {
-        setHasSetDefault(true)
-        onChange({
-          country_id: india.id,
-          state_id: null,
-          city_id: null,
-        })
-      }
+    // Set India as default country and load states
+    if (!value.country_id) {
+      onChange({
+        ...value,
+        country_id: INDIA_COUNTRY_ID,
+      })
     }
-  }, [countries, value.country_id, defaultToIndia, onChange, hasSetDefault])
+    setStates(statesData)
+  }, [])
 
-  const filteredCountries = useMemo(() => {
-    return countries.filter((country) => country.name.toLowerCase().includes(countrySearch.toLowerCase()))
-  }, [countries, countrySearch])
+  useEffect(() => {
+    if (value.state_id) {
+      // Filter cities by selected state
+      const stateCities = citiesData.filter((city: any) => city.state_id === value.state_id)
+      setCities(stateCities)
+    } else {
+      setCities([])
+    }
+  }, [value.state_id])
 
-  const filteredStates = useMemo(() => {
-    return states.filter((state) => state.name.toLowerCase().includes(stateSearch.toLowerCase()))
-  }, [states, stateSearch])
-
-  const filteredCities = useMemo(() => {
-    return cities.filter((city) => city.name.toLowerCase().includes(citySearch.toLowerCase()))
-  }, [cities, citySearch])
-
-  const handleCountryChange = useCallback(
-    (countryId: string) => {
-      setCountrySearch("")
-      onChange({
-        country_id: Number.parseInt(countryId),
-        state_id: null,
-        city_id: null,
-      })
-    },
-    [onChange],
-  )
-
-  const handleStateChange = useCallback(
-    (stateId: string) => {
-      setStateSearch("")
-      onChange({
-        ...value,
-        state_id: Number.parseInt(stateId),
-        city_id: null,
-      })
-    },
-    [onChange, value],
-  )
-
-  const handleCityChange = useCallback(
-    (cityId: string) => {
-      setCitySearch("")
-      onChange({
-        ...value,
-        city_id: Number.parseInt(cityId),
-      })
-    },
-    [onChange, value],
-  )
-
-  const getSelectedCountryName = () => {
-    const country = countries.find((c) => c.id === value.country_id)
-    return country?.name || ""
+  const handleStateChange = (stateId: string) => {
+    const newStateId = Number.parseInt(stateId)
+    onChange({
+      ...value,
+      state_id: newStateId,
+      city_id: null, // Reset city when state changes
+    })
   }
 
-  const getSelectedStateName = () => {
-    const state = states.find((s) => s.id === value.state_id)
-    return state?.name || ""
-  }
-
-  const getSelectedCityName = () => {
-    const city = cities.find((c) => c.id === value.city_id)
-    return city?.name || ""
+  const handleCityChange = (cityId: string) => {
+    const newCityId = Number.parseInt(cityId)
+    onChange({
+      ...value,
+      city_id: newCityId,
+    })
   }
 
   return (
-    <div className={`space-y-4 ${className}`}>
-      {showLabels && (
-        <div className="flex items-center gap-2 mb-4">
-          <MapPin className="w-5 h-5 text-orange-500" />
-          <h3 className="text-lg font-semibold text-gray-900">Location</h3>
-          {required && <span className="text-red-500">*</span>}
-        </div>
-      )}
-
+    <div className="space-y-4">
+      {/* Country (Fixed to India for now) */}
       <div className="space-y-2">
-        <Label htmlFor="country" className="text-gray-700 font-medium">
-          Country {required && <span className="text-red-500">*</span>}
-        </Label>
-        <Select
-          value={value.country_id?.toString() || ""}
-          onValueChange={handleCountryChange}
-          disabled={disabled || countriesLoading}
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder={countriesLoading ? "Loading countries..." : "Select Country"}>
-              {getSelectedCountryName()}
-            </SelectValue>
+        <Label>Country</Label>
+        <Select value="1" disabled>
+          <SelectTrigger>
+            <SelectValue placeholder="India" />
           </SelectTrigger>
           <SelectContent>
-            <div className="flex items-center px-3 pb-2">
-              <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-              <Input
-                placeholder="Search countries..."
-                value={countrySearch}
-                onChange={(e) => setCountrySearch(e.target.value)}
-                className="h-8 w-full border-0 p-0 focus:ring-0"
-              />
-            </div>
-            {filteredCountries.map((country) => (
-              <SelectItem key={country.id} value={country.id.toString()}>
-                {country.name}
-              </SelectItem>
-            ))}
-            {filteredCountries.length === 0 && countrySearch && (
-              <div className="px-3 py-2 text-sm text-gray-500">No countries found</div>
-            )}
+            <SelectItem value="1">India</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
+      {/* State */}
       <div className="space-y-2">
-        <Label htmlFor="state" className="text-gray-700 font-medium">
-          State {required && <span className="text-red-500">*</span>}
-        </Label>
-        <Select
-          value={value.state_id?.toString() || ""}
-          onValueChange={handleStateChange}
-          disabled={disabled || !value.country_id || statesLoading}
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue
-              placeholder={
-                !value.country_id ? "Select Country first" : statesLoading ? "Loading states..." : "Select State"
-              }
-            >
-              {getSelectedStateName()}
-            </SelectValue>
-            {statesLoading && <Loader2 className="w-4 h-4 animate-spin ml-2" />}
+        <Label>State</Label>
+        <Select value={value.state_id?.toString() || ""} onValueChange={handleStateChange}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select a state" />
           </SelectTrigger>
           <SelectContent>
-            <div className="flex items-center px-3 pb-2">
-              <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-              <Input
-                placeholder="Search states..."
-                value={stateSearch}
-                onChange={(e) => setStateSearch(e.target.value)}
-                className="h-8 w-full border-0 p-0 focus:ring-0"
-              />
-            </div>
-            {filteredStates.map((state) => (
+            {states.map((state: any) => (
               <SelectItem key={state.id} value={state.id.toString()}>
                 {state.name}
               </SelectItem>
             ))}
-            {filteredStates.length === 0 && stateSearch && (
-              <div className="px-3 py-2 text-sm text-gray-500">No states found</div>
-            )}
           </SelectContent>
         </Select>
       </div>
 
+      {/* City */}
       <div className="space-y-2">
-        <Label htmlFor="city" className="text-gray-700 font-medium">
-          City {required && <span className="text-red-500">*</span>}
-        </Label>
-        <Select
-          value={value.city_id?.toString() || ""}
-          onValueChange={handleCityChange}
-          disabled={disabled || !value.state_id || citiesLoading}
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue
-              placeholder={!value.state_id ? "Select State first" : citiesLoading ? "Loading cities..." : "Select City"}
-            >
-              {getSelectedCityName()}
-            </SelectValue>
-            {citiesLoading && <Loader2 className="w-4 h-4 animate-spin ml-2" />}
+        <Label>City</Label>
+        <Select value={value.city_id?.toString() || ""} onValueChange={handleCityChange} disabled={!value.state_id}>
+          <SelectTrigger>
+            <SelectValue placeholder={value.state_id ? "Select a city" : "Select a state first"} />
           </SelectTrigger>
           <SelectContent>
-            <div className="flex items-center px-3 pb-2">
-              <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-              <Input
-                placeholder="Search cities..."
-                value={citySearch}
-                onChange={(e) => setCitySearch(e.target.value)}
-                className="h-8 w-full border-0 p-0 focus:ring-0"
-              />
-            </div>
-            {filteredCities.map((city) => (
+            {cities.map((city: any) => (
               <SelectItem key={city.id} value={city.id.toString()}>
                 {city.name}
               </SelectItem>
             ))}
-            {filteredCities.length === 0 && citySearch && (
-              <div className="px-3 py-2 text-sm text-gray-500">No cities found</div>
-            )}
           </SelectContent>
         </Select>
       </div>
-
-      {required && (!value.country_id || !value.state_id || !value.city_id) && (
-        <p className="text-sm text-gray-500 mt-2">Please select your complete location (Country, State, and City)</p>
-      )}
     </div>
   )
 }
