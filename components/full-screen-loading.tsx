@@ -57,7 +57,7 @@ export default function FullScreenLoading({
 
       <div className="relative z-10 text-center max-w-md mx-auto px-6">
         {/* Logo */}
-        <div className="mb-8 animate-bounce">
+        <div className="mb-8 animate-fade-in">
           <Image src="/logo.png" alt="DharmaSaathi Logo" width={120} height={40} className="mx-auto mb-4" />
           <div className="flex justify-center items-center gap-2">
             <Heart className="w-8 h-8 text-orange-500 animate-pulse" />
@@ -67,10 +67,10 @@ export default function FullScreenLoading({
         </div>
 
         {/* Title */}
-        <h1 className="text-3xl font-bold text-gray-900 mb-4 animate-fade-in">{title}</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-4 animate-fade-in delay-300">{title}</h1>
 
         {/* Subtitle */}
-        <p className="text-lg text-gray-600 mb-8 animate-fade-in delay-300">{subtitle}</p>
+        <p className="text-lg text-gray-600 mb-8 animate-fade-in delay-500">{subtitle}</p>
 
         {/* Progress Bar */}
         <div className="mb-6">
@@ -117,6 +117,10 @@ export default function FullScreenLoading({
         
         .delay-300 {
           animation-delay: 300ms;
+        }
+        
+        .delay-500 {
+          animation-delay: 500ms;
         }
       `}</style>
     </div>
