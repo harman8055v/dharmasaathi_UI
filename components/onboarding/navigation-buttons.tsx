@@ -20,20 +20,26 @@ export default function NavigationButtons({
   isLoading,
   canProceed,
 }: NavigationButtonsProps) {
+  const isFirstStage = currentStage === 0
+  const isLastStage = currentStage === totalStages - 1
+
   return (
-    <div className="flex justify-between mt-8">
-      <Button variant="outline" onClick={onPrevious} disabled={currentStage === 0 || isLoading}>
-        Back
-      </Button>
-      <Button onClick={onNext} disabled={isLoading || !canProceed}>
-        {isLoading ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : currentStage === totalStages - 1 ? (
-          "Finish"
-        ) : (
-          "Next"
+    <div className="flex items-center justify-between mt-8">
+      <div>
+        {!isFirstStage && (
+          <Button variant="outline" onClick={onPrevious} disabled={isLoading}>
+            Back
+          </Button>
         )}
-      </Button>
+      </div>
+      <div>
+        {!isLastStage && (
+          <Button onClick={onNext} disabled={isLoading || !canProceed}>
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Next
+          </Button>
+        )}
+      </div>
     </div>
   )
 }
