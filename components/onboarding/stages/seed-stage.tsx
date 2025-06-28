@@ -1,268 +1,282 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Loader2, Phone, CheckCircle } from "lucide-react"
+import { useState, useCallback } from "react"
+import { User, Mail, Phone, Eye, EyeOff, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp"
-import { supabase } from "@/lib/supabase"
-import type { User } from "@supabase/supabase-js"
+import { Label } from "@/components/ui/label"
+import { Card, CardContent } from "@/components/ui/card"
 import type { OnboardingData } from "@/lib/types/onboarding"
 
 interface SeedStageProps {
-  formData: OnboardingData
-  onChange: (updates: Partial<OnboardingData>) => void
-  onNext: (updates: Partial<OnboardingData>) => void
-  isLoading: boolean
-  user: User | null
-  error?: string | null
+  data: OnboardingData
+  onChange: (data: Partial<OnboardingData>) => void
+  onNext: () => void
 }
 
-export default function SeedStage({ formData, onChange, onNext, isLoading, user, error }: SeedStageProps) {
-  const [mobileNumber, setMobileNumber] = useState(formData.mobile_number || "")
-  const [otp, setOtp] = useState("")
-  const [step, setStep] = useState<"phone" | "otp">("phone")
-  const [otpSent, setOtpSent] = useState(false)
-  const [countdown, setCountdown] = useState(0)
-  const [localError, setLocalError] = useState<string | null>(null)
-  const [sendingOtp, setSendingOtp] = useState(false)
-  const [verifyingOtp, setVerifyingOtp] = useState(false)
+export default function SeedStage({ data, onChange, onNext }: SeedStageProps) {
+  const [localData, setLocalData] = useState({
+    firstName: data.firstName || "",
+    lastName: data.lastName || "",
+    email: data.email || "",
+    mobileNumber: data.mobileNumber || "",
+    password: data.password || "",
+    confirmPassword: "",
+  })
 
-  // Check if mobile is already verified
-  useEffect(() => {
-    if (user?.phone_confirmed_at || formData.mobile_verified) {
-      // Mobile already verified, proceed to next stage
-      onNext({ mobile_verified: true, mobile_number: formData.mobile_number })
-    }
-  }, [user, formData.mobile_verified, formData.mobile_number, onNext])
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
-  // Countdown timer for resend OTP
-  useEffect(() => {
-    if (countdown > 0) {
-      const timer = setTimeout(() => setCountdown(countdown - 1), 1000)
-      return () => clearTimeout(timer)
-    }
-  }, [countdown])
+  const updateField = useCallback(
+    (field: string, value: string) => {
+      setLocalData((prev) => ({ ...prev, [field]: value }))
 
-  const handleSendOtp = async () => {
-    if (!mobileNumber || mobileNumber.length < 10) {
-      setLocalError("Please enter a valid mobile number")
-      return
-    }
-
-    setSendingOtp(true)
-    setLocalError(null)
-
-    try {
-      // Format mobile number for India (+91)
-      const formattedNumber = mobileNumber.startsWith("+91") ? mobileNumber : `+91${mobileNumber.replace(/^0+/, "")}`
-
-      const { error } = await supabase.auth.signInWithOtp({
-        phone: formattedNumber,
-      })
-
-      if (error) {
-        throw error
+      // Only update parent for actual form fields (not confirmPassword)
+      if (field !== "confirmPassword") {
+        onChange({ [field]: value })
       }
 
-      setOtpSent(true)
-      setStep("otp")
-      setCountdown(60) // 60 second countdown
-      onChange({ mobile_number: formattedNumber })
-    } catch (err: any) {
-      console.error("Error sending OTP:", err)
-      setLocalError(err.message || "Failed to send OTP. Please try again.")
-    } finally {
-      setSendingOtp(false)
+      // Clear error when user starts typing
+      if (errors[field]) {
+        setErrors((prev) => ({ ...prev, [field]: "" }))
+      }
+    },
+    [onChange, errors],
+  )
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {}
+
+    // Name validation
+    if (!localData.firstName.trim()) {
+      newErrors.firstName = "First name is required"
+    } else if (localData.firstName.trim().length < 2) {
+      newErrors.firstName = "First name must be at least 2 characters"
+    }
+
+    if (!localData.lastName.trim()) {
+      newErrors.lastName = "Last name is required"
+    } else if (localData.lastName.trim().length < 2) {
+      newErrors.lastName = "Last name must be at least 2 characters"
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!localData.email.trim()) {
+      newErrors.email = "Email is required"
+    } else if (!emailRegex.test(localData.email)) {
+      newErrors.email = "Please enter a valid email address"
+    }
+
+    // Mobile validation
+    const mobileRegex = /^[+]?[1-9]\d{9,14}$/
+    if (!localData.mobileNumber.trim()) {
+      newErrors.mobileNumber = "Mobile number is required"
+    } else if (!mobileRegex.test(localData.mobileNumber.replace(/\s/g, ""))) {
+      newErrors.mobileNumber = "Please enter a valid mobile number"
+    }
+
+    // Password validation
+    if (!localData.password) {
+      newErrors.password = "Password is required"
+    } else if (localData.password.length < 8) {
+      newErrors.password = "Password must be at least 8 characters"
+    } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(localData.password)) {
+      newErrors.password = "Password must contain uppercase, lowercase, and number"
+    }
+
+    // Confirm password validation
+    if (!localData.confirmPassword) {
+      newErrors.confirmPassword = "Please confirm your password"
+    } else if (localData.password !== localData.confirmPassword) {
+      newErrors.confirmPassword = "Passwords do not match"
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
+  const handleNext = () => {
+    if (validateForm()) {
+      onNext()
     }
   }
 
-  const handleVerifyOtp = async () => {
-    if (!otp || otp.length !== 6) {
-      setLocalError("Please enter the complete 6-digit OTP")
-      return
+  const formatMobileNumber = (value: string) => {
+    // Remove all non-digit characters except +
+    let cleaned = value.replace(/[^\d+]/g, "")
+
+    // If it doesn't start with +, and it's an Indian number (10 digits), add +91
+    if (!cleaned.startsWith("+") && cleaned.length === 10 && cleaned.match(/^[6-9]/)) {
+      cleaned = "+91" + cleaned
     }
 
-    setVerifyingOtp(true)
-    setLocalError(null)
-
-    try {
-      const formattedNumber = mobileNumber.startsWith("+91") ? mobileNumber : `+91${mobileNumber.replace(/^0+/, "")}`
-
-      const { error } = await supabase.auth.verifyOtp({
-        phone: formattedNumber,
-        token: otp,
-        type: "sms",
-      })
-
-      if (error) {
-        throw error
-      }
-
-      // OTP verified successfully
-      const dataToSave = {
-        mobile_verified: true,
-        mobile_number: formattedNumber,
-      }
-
-      onChange(dataToSave)
-      onNext(dataToSave)
-    } catch (err: any) {
-      console.error("Error verifying OTP:", err)
-      setLocalError(err.message || "Invalid OTP. Please try again.")
-    } finally {
-      setVerifyingOtp(false)
-    }
-  }
-
-  const handleResendOtp = () => {
-    if (countdown === 0) {
-      setOtp("")
-      handleSendOtp()
-    }
-  }
-
-  const handleSkip = () => {
-    const dataToSave = {
-      mobile_verified: false,
-      mobile_number: null,
-    }
-    onChange(dataToSave)
-    onNext(dataToSave)
+    return cleaned
   }
 
   return (
     <div className="space-y-6">
-      <div className="text-center mb-6">
-        <div className="text-4xl mb-4">🌱</div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Plant your seed</h2>
-        <p className="text-gray-600">Verify your mobile number to secure your spiritual journey</p>
+      <div className="text-center mb-8">
+        <div className="flex justify-center mb-4">
+          <div className="w-16 h-16 bg-gradient-to-r from-orange-500 to-pink-500 rounded-full flex items-center justify-center">
+            <Sparkles className="w-8 h-8 text-white" />
+          </div>
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Plant Your Seed</h2>
+        <p className="text-gray-600">Begin your spiritual journey by creating your account</p>
       </div>
 
-      {step === "phone" && (
-        <div className="space-y-6">
-          <div className="space-y-2">
-            <label htmlFor="mobile" className="block text-sm font-semibold text-gray-700">
-              Mobile Number *
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Phone className="h-5 w-5 text-gray-400" />
-              </div>
+      <Card>
+        <CardContent className="p-6 space-y-6">
+          {/* Name Fields */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="firstName" className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                <User className="w-4 h-4" />
+                First Name *
+              </Label>
               <Input
-                id="mobile"
-                type="tel"
-                value={mobileNumber}
-                onChange={(e) => setMobileNumber(e.target.value)}
-                placeholder="Enter your mobile number"
-                className="pl-10 py-3 text-lg"
-                maxLength={10}
+                id="firstName"
+                type="text"
+                value={localData.firstName}
+                onChange={(e) => updateField("firstName", e.target.value)}
+                className={`mt-1 ${errors.firstName ? "border-red-500" : ""}`}
+                placeholder="Enter your first name"
               />
+              {errors.firstName && <p className="mt-1 text-xs text-red-600">{errors.firstName}</p>}
             </div>
-            <p className="text-xs text-gray-500">We'll send you a verification code via SMS</p>
-          </div>
 
-          {(localError || error) && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-700 text-sm">{localError || error}</p>
+            <div>
+              <Label htmlFor="lastName" className="text-sm font-medium text-gray-700">
+                Last Name *
+              </Label>
+              <Input
+                id="lastName"
+                type="text"
+                value={localData.lastName}
+                onChange={(e) => updateField("lastName", e.target.value)}
+                className={`mt-1 ${errors.lastName ? "border-red-500" : ""}`}
+                placeholder="Enter your last name"
+              />
+              {errors.lastName && <p className="mt-1 text-xs text-red-600">{errors.lastName}</p>}
             </div>
-          )}
-
-          <div className="flex gap-4">
-            <Button
-              onClick={handleSendOtp}
-              disabled={sendingOtp || !mobileNumber}
-              className="flex-1 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold py-4 px-6 rounded-lg"
-            >
-              {sendingOtp ? (
-                <span className="flex items-center justify-center gap-2">
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  Sending OTP...
-                </span>
-              ) : (
-                "Send OTP"
-              )}
-            </Button>
-
-            <Button
-              type="button"
-              onClick={handleSkip}
-              variant="ghost"
-              className="px-6 py-4 text-gray-600 hover:text-gray-800 font-medium"
-            >
-              Skip
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {step === "otp" && (
-        <div className="space-y-6">
-          <div className="text-center">
-            <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">OTP Sent Successfully</h3>
-            <p className="text-gray-600">We've sent a 6-digit code to {mobileNumber}</p>
           </div>
 
+          {/* Contact Information */}
           <div className="space-y-4">
-            <label className="block text-sm font-semibold text-gray-700 text-center">Enter Verification Code</label>
-            <div className="flex justify-center">
-              <InputOTP maxLength={6} value={otp} onChange={(value) => setOtp(value)}>
-                <InputOTPGroup>
-                  <InputOTPSlot index={0} />
-                  <InputOTPSlot index={1} />
-                  <InputOTPSlot index={2} />
-                  <InputOTPSlot index={3} />
-                  <InputOTPSlot index={4} />
-                  <InputOTPSlot index={5} />
-                </InputOTPGroup>
-              </InputOTP>
+            <div>
+              <Label htmlFor="email" className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                <Mail className="w-4 h-4" />
+                Email Address *
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                value={localData.email}
+                onChange={(e) => updateField("email", e.target.value)}
+                className={`mt-1 ${errors.email ? "border-red-500" : ""}`}
+                placeholder="your@email.com"
+              />
+              {errors.email && <p className="mt-1 text-xs text-red-600">{errors.email}</p>}
+            </div>
+
+            <div>
+              <Label htmlFor="mobileNumber" className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                <Phone className="w-4 h-4" />
+                Mobile Number *
+              </Label>
+              <Input
+                id="mobileNumber"
+                type="tel"
+                value={localData.mobileNumber}
+                onChange={(e) => updateField("mobileNumber", formatMobileNumber(e.target.value))}
+                className={`mt-1 ${errors.mobileNumber ? "border-red-500" : ""}`}
+                placeholder="+91 98765 43210"
+              />
+              {errors.mobileNumber && <p className="mt-1 text-xs text-red-600">{errors.mobileNumber}</p>}
+              <p className="mt-1 text-xs text-gray-500">Include country code (e.g., +91 for India)</p>
             </div>
           </div>
 
-          {(localError || error) && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-700 text-sm">{localError || error}</p>
+          {/* Password Fields */}
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="password" className="text-sm font-medium text-gray-700">
+                Password *
+              </Label>
+              <div className="relative mt-1">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={localData.password}
+                  onChange={(e) => updateField("password", e.target.value)}
+                  className={`pr-10 ${errors.password ? "border-red-500" : ""}`}
+                  placeholder="Create a strong password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              {errors.password && <p className="mt-1 text-xs text-red-600">{errors.password}</p>}
+              <p className="mt-1 text-xs text-gray-500">8+ characters with uppercase, lowercase, and number</p>
             </div>
-          )}
 
-          <div className="text-center">
-            <button
-              onClick={handleResendOtp}
-              disabled={countdown > 0}
-              className="text-sm text-orange-600 hover:text-orange-700 disabled:text-gray-400 disabled:cursor-not-allowed"
-            >
-              {countdown > 0 ? `Resend OTP in ${countdown}s` : "Resend OTP"}
-            </button>
+            <div>
+              <Label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700">
+                Confirm Password *
+              </Label>
+              <div className="relative mt-1">
+                <Input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={localData.confirmPassword}
+                  onChange={(e) => updateField("confirmPassword", e.target.value)}
+                  className={`pr-10 ${errors.confirmPassword ? "border-red-500" : ""}`}
+                  placeholder="Confirm your password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              {errors.confirmPassword && <p className="mt-1 text-xs text-red-600">{errors.confirmPassword}</p>}
+            </div>
           </div>
 
-          <div className="flex gap-4">
-            <Button
-              onClick={handleVerifyOtp}
-              disabled={verifyingOtp || otp.length !== 6}
-              className="flex-1 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold py-4 px-6 rounded-lg"
-            >
-              {verifyingOtp ? (
-                <span className="flex items-center justify-center gap-2">
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  Verifying...
-                </span>
-              ) : (
-                "Verify & Continue"
-              )}
-            </Button>
-
-            <Button
-              type="button"
-              onClick={() => setStep("phone")}
-              variant="ghost"
-              className="px-6 py-4 text-gray-600 hover:text-gray-800 font-medium"
-            >
-              Back
-            </Button>
+          {/* Terms and Privacy */}
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <p className="text-xs text-gray-600 leading-relaxed">
+              By creating an account, you agree to our{" "}
+              <a href="/terms-of-service" className="text-orange-600 hover:text-orange-700 font-medium">
+                Terms of Service
+              </a>{" "}
+              and{" "}
+              <a href="/privacy-policy" className="text-orange-600 hover:text-orange-700 font-medium">
+                Privacy Policy
+              </a>
+              . Your data is encrypted and secure.
+            </p>
           </div>
-        </div>
-      )}
+        </CardContent>
+      </Card>
+
+      {/* Navigation */}
+      <div className="flex justify-end pt-6">
+        <Button
+          onClick={handleNext}
+          className="px-8 bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600"
+        >
+          Continue
+        </Button>
+      </div>
     </div>
   )
 }
