@@ -1,15 +1,11 @@
 "use client"
-
-import type React from "react"
-
-import { useState } from "react"
+import { Loader2, Quote } from "lucide-react"
 import type { OnboardingProfile } from "@/lib/types/onboarding"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Loader2 } from "lucide-react"
-import PhotoUploader from "../photo-uploader" // Assuming this component exists and works
+import PhotoUploader from "@/components/onboarding/photo-uploader"
 
 interface FullBloomStageProps {
   profile: OnboardingProfile
@@ -26,27 +22,6 @@ export default function FullBloomStage({
   onBack,
   isSubmitting,
 }: FullBloomStageProps) {
-  const [errors, setErrors] = useState<Record<string, string>>({})
-
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {}
-    if (!profile.about_me || profile.about_me.length < 50) {
-      newErrors.about_me = "Please write at least 50 characters about yourself."
-    }
-    if (!profile.user_photos || profile.user_photos.length === 0) {
-      newErrors.user_photos = "Please upload at least one photo."
-    }
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (validateForm()) {
-      onSubmit()
-    }
-  }
-
   const canProceed = profile.about_me && (profile.user_photos?.length ?? 0) > 0
 
   return (
@@ -55,55 +30,62 @@ export default function FullBloomStage({
         <CardTitle>Your Profile</CardTitle>
         <CardDescription>This is what other members will see. Make it count!</CardDescription>
       </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Photo Uploader */}
-          <div className="space-y-2">
-            <Label>Your Photos *</Label>
-            <PhotoUploader
-              userId={profile.id}
-              initialPhotos={profile.user_photos || []}
-              onUploadComplete={(newPhotoUrls) => updateProfile({ user_photos: newPhotoUrls })}
-            />
-            {errors.user_photos && <p className="text-sm text-red-500">{errors.user_photos}</p>}
-          </div>
+      <CardContent className="space-y-6">
+        <div className="space-y-2">
+          <Label>Your Photos *</Label>
+          <PhotoUploader
+            userId={profile.id}
+            initialPhotos={profile.user_photos || []}
+            onUploadComplete={(newPhotoUrls) => updateProfile({ user_photos: newPhotoUrls })}
+          />
+          <p className="text-xs text-muted-foreground">Please upload at least one photo.</p>
+        </div>
 
-          {/* About Me */}
-          <div className="space-y-2">
-            <Label htmlFor="about_me">About Me *</Label>
-            <Textarea
-              id="about_me"
-              placeholder="Tell us about your values, passions, and what you're looking for in a partner..."
-              value={profile.about_me || ""}
-              onChange={(e) => updateProfile({ about_me: e.target.value })}
-              className={`min-h-[120px] ${errors.about_me ? "border-red-500" : ""}`}
-            />
-            <p className="text-sm text-muted-foreground">{profile.about_me?.length || 0} / 50 characters minimum</p>
-            {errors.about_me && <p className="text-sm text-red-500">{errors.about_me}</p>}
-          </div>
+        <div className="space-y-2">
+          <Label htmlFor="about_me">About Me *</Label>
+          <Textarea
+            id="about_me"
+            placeholder="Tell us about your values, passions, and what you're looking for in a partner..."
+            value={profile.about_me || ""}
+            onChange={(e) => updateProfile({ about_me: e.target.value })}
+            className="min-h-[120px]"
+          />
+        </div>
 
-          {/* Partner Expectations */}
-          <div className="space-y-2">
-            <Label htmlFor="partner_expectations">Partner Expectations (Optional)</Label>
-            <Textarea
-              id="partner_expectations"
-              placeholder="Describe the qualities you're seeking in a partner..."
-              value={profile.partner_expectations || ""}
-              onChange={(e) => updateProfile({ partner_expectations: e.target.value })}
-              className="min-h-[100px]"
-            />
-          </div>
+        <div className="space-y-2">
+          <Label htmlFor="favorite_spiritual_quote" className="flex items-center gap-2">
+            <Quote className="w-4 h-4 text-orange-500" />
+            Favorite Spiritual Quote (Optional)
+          </Label>
+          <Textarea
+            id="favorite_spiritual_quote"
+            value={profile.favorite_spiritual_quote || ""}
+            onChange={(e) => updateProfile({ favorite_spiritual_quote: e.target.value })}
+            rows={3}
+            placeholder="Share a spiritual quote that inspires you..."
+            className="bg-gradient-to-r from-orange-50 to-amber-50"
+          />
+        </div>
 
-          <div className="flex justify-between pt-4">
-            <Button variant="outline" onClick={onBack} type="button" disabled={isSubmitting}>
-              Back
-            </Button>
-            <Button type="submit" disabled={!canProceed || isSubmitting}>
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Finish & Submit Profile
-            </Button>
-          </div>
-        </form>
+        <div className="space-y-2">
+          <Label htmlFor="partner_expectations">Partner Expectations (Optional)</Label>
+          <Textarea
+            id="partner_expectations"
+            value={profile.partner_expectations || ""}
+            onChange={(e) => updateProfile({ partner_expectations: e.target.value })}
+            rows={4}
+            placeholder="Describe what you're looking for in a spiritual partner..."
+          />
+        </div>
+
+        <div className="flex justify-between pt-4">
+          <Button variant="outline" onClick={onBack} disabled={isSubmitting}>
+            Back
+          </Button>
+          <Button onClick={onSubmit} disabled={!canProceed || isSubmitting}>
+            {isSubmitting ? <Loader2 className="animate-spin" /> : "Complete Profile"}
+          </Button>
+        </div>
       </CardContent>
     </Card>
   )

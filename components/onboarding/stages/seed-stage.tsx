@@ -7,134 +7,151 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Loader2 } from "lucide-react"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { AlertCircle, Loader2 } from "lucide-react"
 import type { User } from "@supabase/supabase-js"
 import type { OnboardingProfile } from "@/lib/types/onboarding"
 
 interface SeedStageProps {
-  user: User
   profile: OnboardingProfile
   updateProfile: (data: Partial<OnboardingProfile>) => void
   onNext: () => void
+  user: User
 }
 
-export default function SeedStage({ user, profile, updateProfile, onNext }: SeedStageProps) {
-  const [mobileNumber, setMobileNumber] = useState(profile.mobile_number || "")
+export default function SeedStage({ profile, updateProfile, onNext, user }: SeedStageProps) {
+  const [mobileNumber, setMobileNumber] = useState(profile.mobile_number || "+91")
   const [otp, setOtp] = useState("")
+  const [isSendingOtp, setIsSendingOtp] = useState(false)
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false)
   const [otpSent, setOtpSent] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [isVerified, setIsVerified] = useState(profile.mobile_verified || false)
+  const [error, setError] = useState<string | null>(null)
+
+  // If already verified, allow user to proceed.
+  if (profile.mobile_verified) {
+    return (
+      <Card className="w-full max-w-lg mx-auto">
+        <CardHeader>
+          <CardTitle>Mobile Verified</CardTitle>
+          <CardDescription>Your mobile number is already verified.</CardDescription>
+        </CardHeader>
+        <CardContent className="text-center">
+          <p className="text-green-600 font-semibold">Your number {profile.mobile_number} is verified.</p>
+          <Button onClick={onNext} className="mt-4 w-full">
+            Continue
+          </Button>
+        </CardContent>
+      </Card>
+    )
+  }
 
   const handleSendOtp = async () => {
-    if (!/^\+[1-9]\d{1,14}$/.test(mobileNumber)) {
-      toast.error("Please enter a valid phone number with country code (e.g., +14155552671).")
+    setError(null)
+    if (!/^\+91[6-9]\d{9}$/.test(mobileNumber)) {
+      setError("Please enter a valid 10-digit Indian mobile number starting with +91.")
       return
     }
-    setIsLoading(true)
+    setIsSendingOtp(true)
     try {
-      // This is for an authenticated user changing their number
-      const { error } = await supabase.auth.updateUser({ phone: mobileNumber })
-      if (error) throw error
+      const { error: updateError } = await supabase.auth.updateUser({ phone: mobileNumber })
+      if (updateError) throw updateError
       setOtpSent(true)
-      toast.success("OTP sent to your phone!")
-    } catch (error: any) {
-      toast.error(error.message || "Failed to send OTP.")
+      toast.success("OTP sent successfully!")
+    } catch (err: any) {
+      console.error("Error sending OTP:", err)
+      setError(err.message || "Failed to send OTP.")
+      toast.error("Failed to send OTP.")
     } finally {
-      setIsLoading(false)
+      setIsSendingOtp(false)
     }
   }
 
   const handleVerifyOtp = async () => {
-    if (!otp) {
-      toast.error("Please enter the OTP.")
+    setError(null)
+    if (otp.length !== 6) {
+      setError("Please enter a 6-digit OTP.")
       return
     }
-    setIsLoading(true)
+    setIsVerifyingOtp(true)
     try {
-      // The correct type for verifying a phone number change for an existing user
-      const {
-        data: { session },
-        error,
-      } = await supabase.auth.verifyOtp({
+      const { error: verifyError } = await supabase.auth.verifyOtp({
         phone: mobileNumber,
         token: otp,
         type: "phone_change",
       })
 
-      if (error) throw error
+      if (verifyError) throw verifyError
 
-      // Manually refresh the session to get the updated user object with the new phone
       await supabase.auth.refreshSession()
-
-      toast.success("Phone number verified successfully!")
-      setIsVerified(true)
+      toast.success("Mobile number verified!")
       updateProfile({ mobile_number: mobileNumber, mobile_verified: true })
-    } catch (error: any) {
-      toast.error(error.message || "Invalid or expired OTP.")
+      onNext()
+    } catch (err: any) {
+      console.error("Error verifying OTP:", err)
+      const message = err.message.toLowerCase().includes("token has expired")
+        ? "The OTP has expired. Please request a new one."
+        : "The OTP is incorrect. Please check and try again."
+      setError(message)
+      toast.error(message)
     } finally {
-      setIsLoading(false)
+      setIsVerifyingOtp(false)
     }
   }
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
+    <Card className="w-full max-w-lg mx-auto">
       <CardHeader>
-        <CardTitle>Verify Your Phone Number</CardTitle>
-        <CardDescription>
-          A verified phone number is required for security and to ensure the authenticity of profiles.
-        </CardDescription>
+        <CardTitle>Verify Your Mobile Number</CardTitle>
+        <CardDescription>A verified number helps keep your account secure.</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {!isVerified ? (
-          <>
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
-              <Input
-                id="phone"
-                type="tel"
-                placeholder="+14155552671"
-                value={mobileNumber}
-                onChange={(e) => setMobileNumber(e.target.value)}
-                disabled={otpSent || isLoading}
-              />
-            </div>
-            {otpSent && (
-              <div className="space-y-2">
-                <Label htmlFor="otp">One-Time Password (OTP)</Label>
-                <Input
-                  id="otp"
-                  type="text"
-                  placeholder="123456"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
-                  disabled={isLoading}
-                />
-              </div>
-            )}
-            <div className="flex justify-end">
-              {!otpSent ? (
-                <Button onClick={handleSendOtp} disabled={isLoading || !mobileNumber}>
-                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Send OTP
-                </Button>
-              ) : (
-                <Button onClick={handleVerifyOtp} disabled={isLoading || !otp}>
-                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Verify OTP
-                </Button>
-              )}
-            </div>
-          </>
+      <CardContent className="space-y-6">
+        {error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        {!otpSent ? (
+          <div className="space-y-4">
+            <Label htmlFor="mobile">Mobile Number</Label>
+            <Input
+              id="mobile"
+              type="tel"
+              value={mobileNumber}
+              onChange={(e) => setMobileNumber(e.target.value)}
+              disabled={isSendingOtp}
+              placeholder="+91XXXXXXXXXX"
+            />
+            <Button onClick={handleSendOtp} disabled={isSendingOtp} className="w-full">
+              {isSendingOtp ? <Loader2 className="animate-spin" /> : "Send OTP"}
+            </Button>
+          </div>
         ) : (
-          <div className="text-center p-4 bg-green-50 border border-green-200 rounded-md">
-            <p className="text-green-700 font-medium">Your phone number is verified!</p>
+          <div className="space-y-4">
+            <p className="text-sm text-center text-muted-foreground">
+              Enter the 6-digit code sent to <strong>{mobileNumber}</strong>.
+            </p>
+            <Label htmlFor="otp">OTP Code</Label>
+            <Input id="otp" type="tel" value={otp} onChange={(e) => setOtp(e.target.value)} maxLength={6} />
+            <Button onClick={handleVerifyOtp} disabled={isVerifyingOtp} className="w-full">
+              {isVerifyingOtp ? <Loader2 className="animate-spin" /> : "Verify & Continue"}
+            </Button>
+            <Button
+              variant="link"
+              size="sm"
+              onClick={() => {
+                setOtpSent(false)
+                setError(null)
+                setOtp("")
+              }}
+              disabled={isVerifyingOtp}
+              className="w-full"
+            >
+              Change number or resend OTP
+            </Button>
           </div>
         )}
-        <div className="flex justify-end pt-4">
-          <Button onClick={onNext} disabled={!isVerified}>
-            Next
-          </Button>
-        </div>
       </CardContent>
     </Card>
   )

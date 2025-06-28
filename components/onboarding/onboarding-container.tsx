@@ -94,7 +94,7 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
       {isSubmitting && <FullScreenLoading message="Finalizing your profile..." />}
       {showCompletion && <CompletionOverlay />}
       <div className="flex flex-col min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 p-4">
-        <header className="w-full max-w-4xl mx-auto">
+        <header className="w-full max-w-4xl mx-auto py-4">
           <StageIndicator stages={STAGES} currentStageIndex={currentStageIndex} progress={progress} />
           <ProgressBar progress={progress} />
         </header>

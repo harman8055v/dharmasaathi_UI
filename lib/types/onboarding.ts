@@ -32,7 +32,6 @@ export interface OnboardingProfile {
 
 export type OnboardingData = Partial<OnboardingProfile>
 
-// THIS IS THE CRITICAL FIX: The missing export is now included.
 export const VALID_VALUES = {
   diet: ["Vegetarian", "Vegan", "Eggetarian", "Non-Vegetarian"] as const,
   temple_visit_freq: ["Daily", "Weekly", "Monthly", "Rarely", "Never"] as const,
