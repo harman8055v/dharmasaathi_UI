@@ -10,6 +10,7 @@ import { Heart, Sparkles, ArrowRight, Phone, Mail, User, Lock, Eye, EyeOff, Load
 import { supabase } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
 import AuthDialog from "./auth-dialog"
+import FullScreenLoading from "./full-screen-loading"
 
 interface FormData {
   firstName: string
@@ -144,7 +145,7 @@ export default function SignupSection() {
             full_name: `${formData.firstName} ${formData.lastName}`,
             mobile_number: formData.mobileNumber,
             email_verified: !!authData.user.email_confirmed_at,
-            verification_status: 'pending',
+            verification_status: "pending", // Default to unverified
             onboarding_completed: false,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
@@ -162,10 +163,11 @@ export default function SignupSection() {
         setIsSuccess(true)
         setTimeout(() => {
           router.push("/onboarding")
-        }, 2000)
+        }, 4000) // Increased duration for better UX
       }
     } catch (error: any) {
       console.error("Sign up error:", error)
+      setIsLoading(false) // Reset loading state on error
       if (error.message?.includes("already registered")) {
         setErrors({ email: "This email is already registered. Please try signing in instead." })
       } else if (error.message?.includes("mobile_number")) {
@@ -173,8 +175,6 @@ export default function SignupSection() {
       } else {
         setErrors({ general: error.message || "An error occurred during sign up. Please try again." })
       }
-    } finally {
-      setIsLoading(false)
     }
   }
 
@@ -182,26 +182,20 @@ export default function SignupSection() {
     setIsAuthOpen(true)
   }
 
+  // Show full-screen loading when successful
   if (isSuccess) {
     return (
-      <section id="signup" className="py-16 md:py-24 bg-gradient-to-b from-background to-brand-50/30">
-        <div className="container px-4 md:px-6">
-          <div className="max-w-2xl mx-auto text-center">
-            <div className="animate-bounce mb-6">
-              <Heart className="w-16 h-16 text-orange-500 mx-auto" />
-            </div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Welcome to DharmaSaathi! 🌸</h2>
-            <p className="text-gray-600 mb-6">
-              Your account has been created successfully.
-              <br />
-              Redirecting you to complete your profile...
-            </p>
-            <div className="flex justify-center">
-              <Loader2 className="w-6 h-6 animate-spin text-orange-500" />
-            </div>
-          </div>
-        </div>
-      </section>
+      <FullScreenLoading
+        title="Welcome to DharmaSaathi! 🌸"
+        subtitle="Your spiritual journey begins now"
+        messages={[
+          "Creating your sacred profile...",
+          "Connecting you with divine souls...",
+          "Preparing your spiritual dashboard...",
+          "Ready to find your dharma partner!",
+        ]}
+        duration={4000}
+      />
     )
   }
 

@@ -10,7 +10,8 @@ import { VALID_VALUES, validateEnumField } from "@/lib/types/onboarding"
 import ProgressBar from "./progress-bar"
 import NavigationButtons from "./navigation-buttons"
 import Image from "next/image"
-import { Card, CardContent } from "@/components/ui/card" // Import Card components
+import { Card, CardContent } from "@/components/ui/card"
+import FullScreenLoading from "@/components/full-screen-loading"
 
 // Dynamic imports for stages
 import SeedStage from "./stages/seed-stage"
@@ -49,7 +50,7 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
   const [formData, setFormData] = useState<OnboardingData>({
     email_verified: false,
     mobile_verified: false,
-    mobile_number: null, // Add this line
+    mobile_number: null,
     gender: null,
     birthdate: null,
     height: null,
@@ -69,7 +70,7 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
     user_photos: [],
     about_me: null,
     partner_expectations: null,
-    favorite_spiritual_quote: null, // Add this new field
+    favorite_spiritual_quote: null,
   })
 
   // Initialize form data from existing profile
@@ -78,7 +79,7 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
       setFormData({
         email_verified: !!user?.email_confirmed_at || profile.email_verified || false,
         mobile_verified: !!user?.phone_confirmed_at || profile.mobile_verified || false,
-        mobile_number: profile.mobile_number || null, // Add this line
+        mobile_number: profile.mobile_number || null,
         gender: profile.gender || null,
         birthdate: profile.birthdate || null,
         height: profile.height || null,
@@ -98,7 +99,7 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
         user_photos: profile.user_photos || [],
         about_me: profile.about_me || null,
         partner_expectations: profile.partner_expectations || null,
-        favorite_spiritual_quote: profile.favorite_spiritual_quote || null, // Add this new field
+        favorite_spiritual_quote: profile.favorite_spiritual_quote || null,
       })
 
       // Determine current stage based on completed data
@@ -169,10 +170,13 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
       if (stage < 5) {
         setStage(stage + 1)
       } else {
-        // Mark onboarding as complete
+        // Mark onboarding as complete and set verification status to pending (unverified)
         const { error: completeError } = await supabase
           .from("users")
-          .update({ onboarding_completed: true })
+          .update({
+            onboarding_completed: true,
+            verification_status: "pending", // Default to unverified
+          })
           .eq("id", user?.id)
 
         if (completeError) {
@@ -182,7 +186,7 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
         setShowCompletion(true)
         setTimeout(() => {
           router.push("/dashboard")
-        }, 3000)
+        }, 5000) // Increased duration for better UX
       }
     } catch (err) {
       console.error("Error saving stage data:", err)
@@ -284,14 +288,20 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
         // If skipping the final stage, still mark onboarding as complete
         const { error: completeError } = await supabase
           .from("users")
-          .update({ onboarding_completed: true })
+          .update({
+            onboarding_completed: true,
+            verification_status: "pending", // Default to unverified
+          })
           .eq("id", user?.id)
 
         if (completeError) {
           throw new Error(`Failed to complete onboarding: ${completeError.message}`)
         }
 
-        router.push("/dashboard")
+        setShowCompletion(true)
+        setTimeout(() => {
+          router.push("/dashboard")
+        }, 5000)
       }
     } catch (error: any) {
       console.error("Error skipping stage:", error)
@@ -308,6 +318,23 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
     "Spiritual Preferences",
     "About You & Photos",
   ]
+
+  // Show completion loading screen
+  if (showCompletion) {
+    return (
+      <FullScreenLoading
+        title="Profile Complete! 🎉"
+        subtitle="Your spiritual journey is ready to begin"
+        messages={[
+          "Finalizing your sacred profile...",
+          "Preparing your spiritual matches...",
+          "Setting up your dashboard...",
+          "Welcome to your dharma journey!",
+        ]}
+        duration={5000}
+      />
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 relative overflow-hidden">
