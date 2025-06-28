@@ -1,336 +1,198 @@
 "use client"
-
-import type React from "react"
 import { useState } from "react"
-import { Loader2 } from "lucide-react"
-import type { OnboardingData } from "@/lib/types/onboarding"
-import { VALID_VALUES } from "@/lib/types/onboarding"
-import { useStates, useCities } from "@/lib/hooks/useLocations"
-import { MOTHER_TONGUES } from "@/lib/constants/mother-tongues"
+import { User, Calendar, Ruler } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Button } from "@/components/ui/button"
+import LocationSelector, { type LocationData, validateLocation } from "@/components/location-selector"
+
+interface OnboardingData {
+  gender?: string | null
+  birthdate?: string | null
+  height?: string | null
+  country_id?: number | null
+  country?: string | null
+  state_id?: number | null
+  state?: string | null
+  city_id?: number | null
+  city?: string | null
+}
 
 interface StemStageProps {
-  formData: OnboardingData
-  onChange: (updates: Partial<OnboardingData>) => void
-  onNext: (updates: Partial<OnboardingData>) => void // Changed
+  formData: any
+  onChange: (updates: any) => void
+  onNext: (updates: Partial<OnboardingData>) => void
   isLoading: boolean
   error?: string | null
 }
 
 export default function StemStage({ formData, onChange, onNext, isLoading, error }: StemStageProps) {
-  // Destructure with null defaults, but set India as default for country
-  const {
-    gender = null,
-    birthdate = null,
-    height = null,
-    city = null,
-    state = null,
-    country = "India", // Default to India
-    mother_tongue = null,
-  } = formData
+  const [localError, setLocalError] = useState<string | null>(null)
 
-  const [errors, setErrors] = useState<Record<string, string>>({})
+  // Initialize location data from formData
+  const [locationData, setLocationData] = useState<LocationData>({
+    country_id: formData?.country_id || null,
+    country_name: formData?.country || null,
+    state_id: formData?.state_id || null,
+    state_name: formData?.state || null,
+    city_id: formData?.city_id || null,
+    city_name: formData?.city || null,
+  })
 
-  const statesList = useStates()
-  const selectedState = statesList.find((s) => s.name === state)
-  const citiesList = useCities(selectedState?.state_code || null)
-
-  const validGenderOptions = VALID_VALUES.gender.filter((g) => g !== null) as Array<"Male" | "Female" | "Other">
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target
-
-    // Special handling for gender to ensure it matches valid values
-    if (name === "gender") {
-      const genderValue = value as OnboardingData["gender"]
-      onChange({ ...formData, [name]: genderValue || null })
-    } else {
-      onChange({ ...formData, [name]: value || null })
-    }
-
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }))
-    }
+  const handleLocationChange = (newLocation: LocationData) => {
+    setLocationData(newLocation)
+    onChange({
+      country_id: newLocation.country_id,
+      country: newLocation.country_name,
+      state_id: newLocation.state_id,
+      state: newLocation.state_name,
+      city_id: newLocation.city_id,
+      city: newLocation.city_name,
+    })
   }
 
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {}
+  const handleNext = () => {
+    setLocalError(null)
 
-    if (!gender) {
-      newErrors.gender = "Please select your gender"
+    // Validate required fields
+    if (!formData?.gender) {
+      setLocalError("Please select your gender")
+      return
     }
 
-    if (!birthdate) {
-      newErrors.birthdate = "Please enter your birthdate"
-    } else {
-      const birthDate = new Date(birthdate)
-      const today = new Date()
-      const age = today.getFullYear() - birthDate.getFullYear()
-      if (age < 18) {
-        newErrors.birthdate = "You must be at least 18 years old"
-      }
-      if (age > 100) {
-        newErrors.birthdate = "Please enter a valid birthdate"
-      }
+    if (!formData?.birthdate) {
+      setLocalError("Please enter your birth date")
+      return
     }
 
-    if (!height) {
-      newErrors.height = "Please enter your height"
+    if (!formData?.height) {
+      setLocalError("Please enter your height")
+      return
     }
 
-    if (!city?.trim()) {
-      newErrors.city = "Please enter your city"
+    if (!validateLocation(locationData, true)) {
+      setLocalError("Please select your complete location (Country, State, and City)")
+      return
     }
 
-    if (!state?.trim()) {
-      newErrors.state = "Please enter your state"
-    }
-
-    if (!country?.trim()) {
-      newErrors.country = "Please enter your country"
-    }
-
-    if (!mother_tongue?.trim()) {
-      newErrors.mother_tongue = "Please enter your mother tongue"
-    }
-
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
+    // Proceed to next stage
+    onNext({
+      gender: formData.gender,
+      birthdate: formData.birthdate,
+      height: formData.height,
+      country_id: locationData.country_id,
+      country: locationData.country_name,
+      state_id: locationData.state_id,
+      state: locationData.state_name,
+      city_id: locationData.city_id,
+      city: locationData.city_name,
+    })
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (validateForm()) {
-      const dataToSave: Partial<OnboardingData> = {
-        gender,
-        birthdate,
-        height,
-        city,
-        state,
-        country,
-        mother_tongue,
-      }
-      onNext(dataToSave) // Pass data to parent for saving and next stage
-    }
-  }
-
-  const handleSkip = () => {
-    const dataToSave: Partial<OnboardingData> = {
-      gender: null,
-      birthdate: null,
-      height: null,
-      city: null,
-      state: null,
-      country: "India",
-      mother_tongue: null,
-    }
-    onChange(dataToSave) // Update local form data
-    onNext(dataToSave) // Trigger save and next stage
-  }
+  const currentYear = new Date().getFullYear()
+  const minDate = `${currentYear - 60}-01-01`
+  const maxDate = `${currentYear - 18}-12-31`
 
   return (
     <div className="space-y-6">
-      <div className="text-center mb-6">
-        <div className="text-4xl mb-4">🌱</div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Let's sprout your profile</h2>
-        <p className="text-gray-600">Tell us about yourself to help us find your perfect match</p>
+      <div className="text-center mb-8">
+        <div className="w-20 h-20 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center mx-auto mb-4">
+          <User className="w-10 h-10 text-white" />
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Growing Your Stem 🌱</h2>
+        <p className="text-gray-600">Let's add your basic information to help you find your perfect match</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Gender Selection */}
-        <div className="space-y-3">
-          <label className="block text-sm font-semibold text-gray-700">Gender *</label>
-          <div className="grid grid-cols-3 gap-3">
-            {validGenderOptions.map((option) => (
-              <label
-                key={option}
-                className={`flex items-center justify-center p-3 border-2 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors ${
-                  gender === option ? "border-orange-500 bg-orange-50" : "border-gray-200"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="gender"
-                  value={option}
-                  checked={gender === option}
-                  onChange={handleChange}
-                  className="sr-only"
-                />
-                <span className={`text-sm font-medium ${gender === option ? "text-orange-600" : "text-gray-700"}`}>
-                  {option}
-                </span>
-                {gender === option && <div className="ml-2 w-2 h-2 bg-orange-600 rounded-full"></div>}
-              </label>
-            ))}
+      <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 space-y-6">
+        {(localError || error) && (
+          <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-700 text-sm">{localError || error}</p>
           </div>
-          {errors.gender && <p className="text-red-500 text-sm">{errors.gender}</p>}
+        )}
+
+        {/* Gender */}
+        <div className="space-y-2">
+          <Label htmlFor="gender" className="text-gray-700 font-medium flex items-center gap-2">
+            <User className="w-4 h-4" />
+            Gender *
+          </Label>
+          <Select value={formData?.gender || ""} onValueChange={(value) => onChange({ gender: value })}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select your gender" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="male">Male</SelectItem>
+              <SelectItem value="female">Female</SelectItem>
+              <SelectItem value="other">Other</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
-        {/* Birthdate */}
+        {/* Birth Date */}
         <div className="space-y-2">
-          <label htmlFor="birthdate" className="block text-sm font-semibold text-gray-700">
+          <Label htmlFor="birthdate" className="text-gray-700 font-medium flex items-center gap-2">
+            <Calendar className="w-4 h-4" />
             Date of Birth *
-          </label>
-          <input
-            type="date"
+          </Label>
+          <Input
             id="birthdate"
-            name="birthdate"
-            value={birthdate || ""}
-            onChange={handleChange}
-            max={new Date(new Date().setFullYear(new Date().getFullYear() - 18)).toISOString().split("T")[0]}
-            className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors ${
-              errors.birthdate ? "border-red-300" : "border-gray-200"
-            }`}
+            type="date"
+            value={formData?.birthdate || ""}
+            onChange={(e) => onChange({ birthdate: e.target.value })}
+            min={minDate}
+            max={maxDate}
+            className="w-full"
           />
-          {errors.birthdate && <p className="text-red-500 text-sm">{errors.birthdate}</p>}
+          <p className="text-xs text-gray-500">You must be between 18 and 60 years old</p>
         </div>
 
         {/* Height */}
         <div className="space-y-2">
-          <label htmlFor="height" className="block text-sm font-semibold text-gray-700">
-            Height (cm) *
-          </label>
-          <input
-            type="number"
+          <Label htmlFor="height" className="text-gray-700 font-medium flex items-center gap-2">
+            <Ruler className="w-4 h-4" />
+            Height *
+          </Label>
+          <Input
             id="height"
-            name="height"
-            value={height || ""}
-            onChange={handleChange}
-            placeholder="Enter your height"
-            className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors ${
-              errors.height ? "border-red-300" : "border-gray-200"
-            }`}
-          />
-          {errors.height && <p className="text-red-500 text-sm">{errors.height}</p>}
-        </div>
-
-        {/* City */}
-        <div className="space-y-2">
-          <label htmlFor="city" className="block text-sm font-semibold text-gray-700">
-            City *
-          </label>
-          <input
             type="text"
-            id="city"
-            name="city"
-            value={city || ""}
-            onChange={handleChange}
-            placeholder="Select your city"
-            list="city-list"
-            className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors ${
-              errors.city ? "border-red-300" : "border-gray-200"
-            }`}
+            value={formData?.height || ""}
+            onChange={(e) => onChange({ height: e.target.value })}
+            placeholder="e.g., 5'8&quot; or 173 cm"
+            className="w-full"
           />
-          <datalist id="city-list">
-            {citiesList.map((c) => (
-              <option key={c.id} value={c.name} />
-            ))}
-          </datalist>
-          {errors.city && <p className="text-red-500 text-sm">{errors.city}</p>}
+          <p className="text-xs text-gray-500">Enter your height in feet/inches or centimeters</p>
         </div>
 
-        {/* State */}
+        {/* Location Selector */}
         <div className="space-y-2">
-          <label htmlFor="state" className="block text-sm font-semibold text-gray-700">
-            State/Province *
-          </label>
-          <input
-            type="text"
-            id="state"
-            name="state"
-            value={state || ""}
-            onChange={handleChange}
-            placeholder="Select your state"
-            list="state-list"
-            className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors ${
-              errors.state ? "border-red-300" : "border-gray-200"
-            }`}
-          />
-          <datalist id="state-list">
-            {statesList.map((s) => (
-              <option key={s.id} value={s.name} />
-            ))}
-          </datalist>
-          {errors.state && <p className="text-red-500 text-sm">{errors.state}</p>}
+          <LocationSelector value={locationData} onChange={handleLocationChange} required={true} showLabels={true} />
         </div>
+      </div>
 
-        {/* Country */}
-        <div className="space-y-2">
-          <label htmlFor="country" className="block text-sm font-semibold text-gray-700">
-            Country *
-          </label>
-          <input
-            type="text"
-            id="country"
-            name="country"
-            value={country || "India"}
-            onChange={handleChange}
-            placeholder="Enter your country"
-            className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors ${
-              errors.country ? "border-red-300" : "border-gray-200"
-            }`}
-          />
-          {errors.country && <p className="text-red-500 text-sm">{errors.country}</p>}
-        </div>
+      {/* Navigation */}
+      <div className="flex justify-center">
+        <Button
+          onClick={handleNext}
+          disabled={isLoading}
+          className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-semibold py-3 px-8 rounded-lg transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+        >
+          {isLoading ? (
+            <span className="flex items-center justify-center gap-2">
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              Growing your stem...
+            </span>
+          ) : (
+            "Continue to Leaves Stage 🍃"
+          )}
+        </Button>
+      </div>
 
-        {/* Mother Tongue */}
-        <div className="space-y-2">
-          <label htmlFor="mother_tongue" className="block text-sm font-semibold text-gray-700">
-            Mother Tongue *
-          </label>
-          <input
-            type="text"
-            id="mother_tongue"
-            name="mother_tongue"
-            value={mother_tongue || ""}
-            onChange={handleChange}
-            placeholder="Select mother tongue"
-            list="mother-tongue-list"
-            className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors ${
-              errors.mother_tongue ? "border-red-300" : "border-gray-200"
-            }`}
-          />
-          <datalist id="mother-tongue-list">
-            {MOTHER_TONGUES.map((lang) => (
-              <option key={lang} value={lang} />
-            ))}
-          </datalist>
-          {errors.mother_tongue && <p className="text-red-500 text-sm">{errors.mother_tongue}</p>}
-        </div>
-
-        {/* Display any server errors */}
-        {error && (
-          <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-700 text-sm">{error}</p>
-          </div>
-        )}
-
-        <div className="flex gap-4">
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="flex-1 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold py-4 px-6 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl"
-          >
-            {isLoading ? (
-              <span className="flex items-center justify-center gap-2">
-                <Loader2 className="h-5 w-5 animate-spin" />
-                Saving...
-              </span>
-            ) : (
-              "Continue to Next Stage"
-            )}
-          </button>
-
-          <button
-            type="button"
-            onClick={handleSkip}
-            disabled={isLoading}
-            className="px-6 py-4 text-gray-600 hover:text-gray-800 font-medium transition-colors"
-          >
-            Skip
-          </button>
-        </div>
-      </form>
+      <div className="text-center">
+        <p className="text-xs text-gray-500">
+          Your information is secure and will only be used to find compatible matches.
+        </p>
+      </div>
     </div>
   )
 }

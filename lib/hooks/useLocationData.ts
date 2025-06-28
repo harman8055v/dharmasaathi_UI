@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState, useEffect } from "react"
 import { supabase } from "@/lib/supabase"
 
 export interface Country {
@@ -12,7 +12,6 @@ export interface Country {
 export interface State {
   id: number
   name: string
-  state_code: string
   country_id: number
 }
 
@@ -36,11 +35,13 @@ export function useCountries() {
         if (error) throw error
         setCountries(data || [])
       } catch (err: any) {
+        console.error("Error fetching countries:", err)
         setError(err.message)
       } finally {
         setLoading(false)
       }
     }
+
     fetchCountries()
   }, [])
 
@@ -63,18 +64,20 @@ export function useStates(countryId: number | null) {
         setLoading(true)
         const { data, error } = await supabase
           .from("states")
-          .select("id, name, state_code, country_id")
+          .select("id, name, country_id")
           .eq("country_id", countryId)
           .order("name")
 
         if (error) throw error
         setStates(data || [])
       } catch (err: any) {
+        console.error("Error fetching states:", err)
         setError(err.message)
       } finally {
         setLoading(false)
       }
     }
+
     fetchStates()
   }, [countryId])
 
@@ -104,11 +107,13 @@ export function useCities(stateId: number | null) {
         if (error) throw error
         setCities(data || [])
       } catch (err: any) {
+        console.error("Error fetching cities:", err)
         setError(err.message)
       } finally {
         setLoading(false)
       }
     }
+
     fetchCities()
   }, [stateId])
 
