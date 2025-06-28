@@ -1,42 +1,28 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 import { debugLog } from "@/lib/logger"
 import type { User } from "@supabase/supabase-js"
 import type { OnboardingData, OnboardingProfile } from "@/lib/types/onboarding"
-import { VALID_VALUES, validateEnumField } from "@/lib/types/onboarding"
 import ProgressBar from "./progress-bar"
 import NavigationButtons from "./navigation-buttons"
-import Image from "next/image"
-import { Card, CardContent } from "@/components/ui/card"
 import FullScreenLoading from "@/components/full-screen-loading"
-
-// Dynamic imports for stages
 import SeedStage from "./stages/seed-stage"
 import StemStage from "./stages/stem-stage"
 import LeavesStage from "./stages/leaves-stage"
 import PetalsStage from "./stages/petals-stage"
 import FullBloomStage from "./stages/full-bloom-stage"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { AlertCircle } from "lucide-react"
 
 interface OnboardingContainerProps {
-  user: User | null
+  user: User
   profile: OnboardingProfile
   setProfile: (profile: OnboardingProfile) => void
-}
-
-// Removes keys with null/undefined or blank-string values
-function sanitizePayload<T extends Record<string, any>>(data: T): Partial<T> {
-  return Object.entries(data).reduce(
-    (acc, [key, val]) => {
-      if (val === null || val === undefined) return acc
-      if (typeof val === "string" && val.trim() === "") return acc
-      acc[key as keyof T] = val
-      return acc
-    },
-    {} as Partial<T>,
-  )
 }
 
 export default function OnboardingContainer({ user, profile, setProfile }: OnboardingContainerProps) {
@@ -46,465 +32,149 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
 
-  // Initialize form state with null for all enum/text fields and [] for arrays
-  const [formData, setFormData] = useState<OnboardingData>({
-    email_verified: false,
-    mobile_verified: false,
-    mobile_number: null,
-    gender: null,
-    birthdate: null,
-    height: null,
-    country_id: null,
-    state_id: null,
-    city_id: null,
-    mother_tongue: null,
-    education: null,
-    profession: null,
-    annual_income: null,
-    diet: null,
-    temple_visit_freq: null,
-    vanaprastha_interest: null,
-    artha_vs_moksha: null,
-    spiritual_org: [],
-    daily_practices: [],
-    user_photos: [],
-    about_me: null,
-    partner_expectations: null,
-    favorite_spiritual_quote: null,
-  })
+  const [formData, setFormData] = useState<OnboardingData>(() => ({
+    ...profile,
+    email_verified: !!user?.email_confirmed_at || profile.email_verified || false,
+    mobile_verified: !!user?.phone_confirmed_at || profile.mobile_verified || false,
+  }))
 
-  // Initialize form data from existing profile
   useEffect(() => {
-    if (profile) {
-      setFormData({
-        email_verified: !!user?.email_confirmed_at || profile.email_verified || false,
-        mobile_verified: !!user?.phone_confirmed_at || profile.mobile_verified || false,
-        mobile_number: profile.mobile_number || null,
-        gender: profile.gender || null,
-        birthdate: profile.birthdate || null,
-        height: profile.height || null,
-        country_id: profile.country_id || null,
-        state_id: profile.state_id || null,
-        city_id: profile.city_id || null,
-        mother_tongue: profile.mother_tongue || null,
-        education: profile.education || null,
-        profession: profile.profession || null,
-        annual_income: profile.annual_income || null,
-        diet: profile.diet || null,
-        temple_visit_freq: profile.temple_visit_freq || null,
-        vanaprastha_interest: profile.vanaprastha_interest || null,
-        artha_vs_moksha: profile.artha_vs_moksha || null,
-        spiritual_org: profile.spiritual_org || [],
-        daily_practices: profile.daily_practices || [],
-        user_photos: profile.user_photos || [],
-        about_me: profile.about_me || null,
-        partner_expectations: profile.partner_expectations || null,
-        favorite_spiritual_quote: profile.favorite_spiritual_quote || null,
-      })
-
-      // Determine current stage based on completed data
-      if (!user?.phone_confirmed_at && !profile.mobile_verified) {
-        setStage(1)
-      } else if (!profile.gender || !profile.birthdate || !profile.height) {
-        setStage(2)
-      } else if (!profile.education || !profile.profession) {
-        setStage(3)
-      } else if (!profile.diet) {
-        setStage(4)
-      } else if (!profile.about_me) {
-        setStage(5)
-      }
-    }
-  }, [profile, user])
+    // Determine starting stage based on profile completeness
+    if (!formData.mobile_verified) setStage(1)
+    else if (!formData.gender || !formData.birthdate || !formData.height) setStage(2)
+    else if (!formData.education || !formData.profession) setStage(3)
+    else if (!formData.diet) setStage(4)
+    else if (!formData.about_me || (formData.user_photos || []).length === 0) setStage(5)
+    else setStage(5) // Default to last stage if everything else is filled
+  }, [formData])
 
   const handleFormChange = (updates: Partial<OnboardingData>) => {
     setFormData((prev) => ({ ...prev, ...updates }))
-    setError(null) // Clear any previous errors
+    setError(null)
   }
 
-  // Submit user profile using upsert to handle both insert and update cases
+  // This is the definitive, RLS-safe upsert function.
   async function submitUserProfile(profileData: Partial<OnboardingData>) {
+    // Always use the user ID from the authenticated session.
     if (!user?.id) {
-      throw new Error("User authentication required. Please sign in again.")
+      throw new Error("Authentication session expired. Please log in again.")
     }
 
-    try {
-      console.log("🔄 Submitting user profile for user ID:", user.id)
-      console.log("📝 Profile data to submit:", profileData)
-
-      // Get current authenticated user to ensure we have the latest session
-      const {
-        data: { user: currentUser },
-        error: authError,
-      } = await supabase.auth.getUser()
-
-      if (authError) {
-        console.error("❌ Auth error:", authError)
-        throw new Error("Authentication failed. Please sign in again.")
-      }
-
-      if (!currentUser || currentUser.id !== user.id) {
-        console.error("❌ User mismatch or no current user")
-        throw new Error("Authentication session expired. Please sign in again.")
-      }
-
-      // Prepare the complete profile data for upsert
-      const completeProfileData = {
-        id: currentUser.id, // Always include the user ID for upsert
-        ...profileData,
-        updated_at: new Date().toISOString(),
-      }
-
-      console.log("📤 Upserting data to users table:", completeProfileData)
-
-      // Use upsert to either create or update the user profile in the "users" table
-      const { data, error: upsertError } = await supabase
-        .from("users")
-        .upsert(completeProfileData, {
-          onConflict: "id", // Specify the conflict column
-          ignoreDuplicates: false, // We want to update if exists
-        })
-        .select()
-        .single()
-
-      if (upsertError) {
-        console.error("❌ Upsert error details:", {
-          message: upsertError.message,
-          details: upsertError.details,
-          hint: upsertError.hint,
-          code: upsertError.code,
-        })
-
-        // Handle specific RLS policy violations
-        if (upsertError.code === "42501" || upsertError.message?.includes("policy")) {
-          throw new Error("Permission denied. Please ensure you're signed in with the correct account.")
-        }
-
-        // Handle other common errors
-        if (upsertError.code === "23505") {
-          throw new Error("Profile already exists. Please refresh the page and try again.")
-        }
-
-        if (upsertError.code === "23502") {
-          throw new Error("Required field missing. Please fill in all required information.")
-        }
-
-        // Generic error fallback
-        throw new Error(`Failed to save profile: ${upsertError.message}`)
-      }
-
-      console.log("✅ Profile upserted successfully:", data)
-      return data
-    } catch (error) {
-      console.error("❌ Error in submitUserProfile:", error)
-      throw error
+    // Prepare the data for upsert. The `id` is crucial for RLS.
+    const dataToUpsert = {
+      ...profileData,
+      id: user.id, // This ensures the RLS policy `auth.uid() = id` passes.
+      updated_at: new Date().toISOString(),
     }
+
+    debugLog("Upserting data to 'users' table:", dataToUpsert)
+
+    const { data, error: upsertError } = await supabase.from("users").upsert(dataToUpsert).select().single()
+
+    if (upsertError) {
+      console.error("FATAL: Supabase upsert error:", upsertError)
+      // Provide a clear, user-friendly error for RLS violations.
+      if (upsertError.code === "42501") {
+        throw new Error(
+          "Security policy violation. You do not have permission to edit this profile. Please re-authenticate and try again.",
+        )
+      }
+      // Provide a generic but helpful error for other database issues.
+      throw new Error(`A database error occurred: ${upsertError.message}. Please try again.`)
+    }
+
+    debugLog("Upsert successful:", data)
+    return data as OnboardingProfile
   }
 
-  // Save and next handler
-  async function handleSaveAndNext(stagePayload: Partial<OnboardingData>) {
+  const handleSaveAndNext = async (stagePayload: Partial<OnboardingData>) => {
     setIsLoading(true)
     setError(null)
 
     try {
-      const stageData = stagePayload
+      // Submit the data from the current stage.
+      const updatedProfile = await submitUserProfile(stagePayload)
+      // Update the local profile state with the confirmed data from the database.
+      setProfile(updatedProfile)
+      setFormData(updatedProfile)
 
-      // Validate stage data before saving
-      if (Object.keys(stageData).length > 0) {
-        validateStageData(stageData, stage)
-
-        // Sanitize the payload - removes null/undefined/empty string values
-        const payload = sanitizePayload(stageData)
-
-        debugLog("Original stage data:", stageData)
-        debugLog("Sanitized payload:", payload)
-
-        // Only make the database call if we have data to save
-        if (Object.keys(payload).length > 0) {
-          // Use the submitUserProfile function with proper upsert
-          const updatedProfile = await submitUserProfile(payload)
-
-          debugLog("Successfully saved data")
-
-          // Update local profile state with the returned data
-          setProfile((prev) => ({ ...prev, ...updatedProfile }))
-        }
-      }
-
-      // Move to next stage or complete
       if (stage < 5) {
         setStage(stage + 1)
       } else {
-        // Mark onboarding as complete and set verification status to pending
-        const completionData = {
-          onboarding_completed: true,
-          verification_status: "pending" as const,
-        }
-
-        await submitUserProfile(completionData)
-
+        // Final submission on the last stage.
+        await submitUserProfile({ onboarding_completed: true, verification_status: "pending" })
         setShowCompletion(true)
-        setTimeout(() => {
-          router.push("/dashboard")
-        }, 5000)
+        setTimeout(() => router.push("/dashboard"), 4000)
       }
-    } catch (err) {
-      console.error("Error saving stage data:", err)
-      const errorMessage = err instanceof Error ? err.message : "An unexpected error occurred. Please try again."
-      setError(errorMessage)
+    } catch (err: any) {
+      setError(err.message)
     } finally {
       setIsLoading(false)
     }
-  }
-
-  const validateStageData = (stageData: Partial<OnboardingData>, currentStage: number) => {
-    switch (currentStage) {
-      case 1: // Mobile Verification Stage
-        if (!stageData.mobile_verified) {
-          throw new Error("Please verify your mobile number before proceeding.")
-        }
-        break
-      case 2:
-        // Validate gender
-        if (stageData.gender !== undefined && !validateEnumField("gender", stageData.gender)) {
-          throw new Error(
-            `Invalid gender value. Must be one of: ${VALID_VALUES.gender.filter((v) => v !== null).join(", ")}`,
-          )
-        }
-
-        // Required fields validation
-        if (!stageData.gender) {
-          throw new Error("Please select your gender before proceeding.")
-        }
-        if (
-          !stageData.birthdate ||
-          !stageData.height ||
-          !stageData.country_id ||
-          !stageData.state_id ||
-          !stageData.city_id
-        ) {
-          throw new Error("Please fill in all required fields before proceeding.")
-        }
-        break
-      case 3:
-        if (!stageData.education || !stageData.profession) {
-          throw new Error("Please fill in all required fields before proceeding.")
-        }
-        break
-      case 4:
-        // Validate enum fields
-        if (stageData.diet !== undefined && !validateEnumField("diet", stageData.diet)) {
-          throw new Error(
-            `Invalid diet value. Must be one of: ${VALID_VALUES.diet.filter((v) => v !== null).join(", ")}`,
-          )
-        }
-        if (
-          stageData.temple_visit_freq !== undefined &&
-          !validateEnumField("temple_visit_freq", stageData.temple_visit_freq)
-        ) {
-          throw new Error(
-            `Invalid temple visit frequency. Must be one of: ${VALID_VALUES.temple_visit_freq.filter((v) => v !== null).join(", ")}`,
-          )
-        }
-        if (
-          stageData.vanaprastha_interest !== undefined &&
-          !validateEnumField("vanaprastha_interest", stageData.vanaprastha_interest)
-        ) {
-          throw new Error(
-            `Invalid vanaprastha interest. Must be one of: ${VALID_VALUES.vanaprastha_interest.filter((v) => v !== null).join(", ")}`,
-          )
-        }
-        if (
-          stageData.artha_vs_moksha !== undefined &&
-          !validateEnumField("artha_vs_moksha", stageData.artha_vs_moksha)
-        ) {
-          throw new Error(
-            `Invalid artha vs moksha preference. Must be one of: ${VALID_VALUES.artha_vs_moksha.filter((v) => v !== null).join(", ")}`,
-          )
-        }
-
-        if (!stageData.diet) {
-          throw new Error("Please select your diet preference before proceeding.")
-        }
-        break
-      case 5:
-        if (!stageData.about_me) {
-          throw new Error("Please fill in the 'About Me' section before proceeding.")
-        }
-        break
-    }
-    return true
   }
 
   const handleBack = () => {
-    if (stage > 1) {
-      setStage(stage - 1)
-    }
-    setError(null)
+    if (stage > 1) setStage(stage - 1)
   }
 
-  const handleSkip = async () => {
-    setIsLoading(true)
-    setError(null)
-
-    try {
-      // For skip, we don't save any data, just move to the next stage
-      if (stage < 5) {
-        setStage(stage + 1)
-      } else {
-        // If skipping the final stage, still mark onboarding as complete
-        const completionData = {
-          onboarding_completed: true,
-          verification_status: "pending" as const,
-        }
-
-        await submitUserProfile(completionData)
-
-        setShowCompletion(true)
-        setTimeout(() => {
-          router.push("/dashboard")
-        }, 5000)
-      }
-    } catch (error: any) {
-      console.error("Error skipping stage:", error)
-      const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred. Please try again."
-      setError(errorMessage)
-    } finally {
-      setIsLoading(false)
-    }
+  const stageComponents: { [key: number]: React.ComponentType<any> } = {
+    1: SeedStage,
+    2: StemStage,
+    3: LeavesStage,
+    4: PetalsStage,
+    5: FullBloomStage,
   }
+  const CurrentStageComponent = stageComponents[stage]
 
-  const stageNames = [
-    "Mobile Verification",
-    "Personal Info",
-    "Professional Info",
-    "Spiritual Preferences",
-    "About You & Photos",
-  ]
-
-  // Show completion loading screen
   if (showCompletion) {
     return (
       <FullScreenLoading
-        title="Profile Complete! 🎉"
-        subtitle="Your spiritual journey is ready to begin"
+        title="Profile Complete!"
+        subtitle="Your spiritual journey is ready to begin."
         messages={[
           "Finalizing your sacred profile...",
           "Encrypting your personal data...",
           "Preparing your spiritual matches...",
-          "Setting up your dashboard...",
           "Welcome to your dharma journey!",
         ]}
-        duration={5000}
       />
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 relative overflow-hidden">
-      {/* Main content */}
-      <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
-        <div className="w-full max-w-4xl">
-          {/* Progress bar */}
-          <ProgressBar currentStage={stage} totalStages={5} stageName={stageNames[stage - 1]} />
+    <div className="min-h-screen bg-orange-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-2xl">
+        <ProgressBar currentStage={stage} totalStages={5} />
 
-          {/* Error message */}
-          {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg max-w-2xl mx-auto">
-              <div className="flex items-start">
-                <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <p className="text-red-700 text-sm font-medium">Error</p>
-                  <p className="text-red-600 text-sm">{error}</p>
-                </div>
-              </div>
-            </div>
-          )}
+        {error && (
+          <Alert variant="destructive" className="my-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
-          {/* Stage content */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-2xl p-8 border border-white/20 max-w-2xl mx-auto">
-            {/* Render current stage based on state */}
-            {stage === 1 && (
-              <SeedStage
-                formData={formData}
-                onChange={handleFormChange}
-                onNext={handleSaveAndNext}
-                isLoading={isLoading}
-                user={user}
-                error={error}
-              />
-            )}
-            {stage === 2 && (
-              <StemStage
-                formData={formData}
-                onChange={handleFormChange}
-                onNext={handleSaveAndNext}
-                isLoading={isLoading}
-                error={error}
-              />
-            )}
-            {stage === 3 && (
-              <LeavesStage
-                formData={formData}
-                onChange={handleFormChange}
-                onNext={handleSaveAndNext}
-                isLoading={isLoading}
-                error={error}
-              />
-            )}
-            {stage === 4 && (
-              <PetalsStage
-                formData={formData}
-                onChange={handleFormChange}
-                onNext={handleSaveAndNext}
-                isLoading={isLoading}
-                error={error}
-              />
-            )}
-            {stage === 5 && (
-              <FullBloomStage
-                formData={formData}
-                onChange={handleFormChange}
-                onNext={handleSaveAndNext}
-                isLoading={isLoading}
-                error={error}
-              />
-            )}
-          </div>
-
-          {/* Navigation */}
-          <div className="max-w-2xl mx-auto">
-            <NavigationButtons
-              currentStage={stage}
-              totalStages={5}
-              onBack={handleBack}
-              onNext={handleSaveAndNext}
-              onSkip={handleSkip}
-              isLoading={isLoading}
-              canProceed={true}
-            />
-          </div>
-
-          {/* Trust Section at the bottom */}
-          <Card className="mt-8 max-w-2xl mx-auto bg-white/80 backdrop-blur-sm border border-white/20 shadow-lg">
-            <CardContent className="flex flex-col items-center justify-center p-6 text-center">
-              <Image src="/logo.png" alt="DharmaSaathi Logo" width={120} height={40} className="mb-4" />
-              <p className="text-sm text-gray-600">
-                Your data is safe with DharmaSaathi. We are committed to protecting your privacy and ensuring a secure
-                experience.
-              </p>
-              <p className="text-xs text-gray-500 mt-2">Learn more about our privacy policy.</p>
-            </CardContent>
-          </Card>
+        <div className="bg-white rounded-2xl shadow-lg p-8 mt-4">
+          <CurrentStageComponent
+            formData={formData}
+            onChange={handleFormChange}
+            onNext={handleSaveAndNext}
+            isLoading={isLoading}
+            user={user}
+            error={error}
+          />
         </div>
+
+        <NavigationButtons
+          currentStage={stage}
+          totalStages={5}
+          onBack={handleBack}
+          // The 'onNext' for the button is a no-op because each stage's primary button now triggers its own submission.
+          // This is a placeholder to satisfy the component's prop requirements.
+          onNext={() => {}}
+          isLoading={isLoading}
+          canProceed={true} // Logic for this can be handled within each stage if needed.
+        />
       </div>
     </div>
   )

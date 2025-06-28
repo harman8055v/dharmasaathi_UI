@@ -6,6 +6,8 @@ import { supabase } from "@/lib/supabase"
 import { debugLog } from "@/lib/logger"
 import OnboardingContainer from "@/components/onboarding/onboarding-container"
 import LoadingScreen from "@/components/onboarding/loading-screen"
+import AlertCircle from "@/components/icons/alert-circle" // Import AlertCircle
+import Button from "@/components/ui/button" // Import Button
 import type { User } from "@supabase/supabase-js"
 import type { OnboardingProfile } from "@/lib/types/onboarding"
 import "./onboarding.css"
@@ -18,153 +20,74 @@ export default function OnboardingPage() {
   const router = useRouter()
 
   useEffect(() => {
-    async function getUser() {
+    const initializeOnboarding = async () => {
       try {
-        // Get the current user session using supabase.auth.getUser()
         const {
           data: { user },
-          error: userError,
+          error: authError,
         } = await supabase.auth.getUser()
 
-        if (userError) {
-          console.error("❌ Auth error:", userError)
-          setError("Authentication error. Please try signing in again.")
-          setTimeout(() => router.push("/"), 3000)
-          return
-        }
-
-        if (!user) {
-          debugLog("No authenticated user found, redirecting to homepage")
+        if (authError || !user) {
+          debugLog("Authentication failed or no user found, redirecting.", authError)
           router.push("/")
           return
         }
 
-        debugLog("✅ Authenticated user found:", user.id)
+        debugLog("Authenticated user found:", user.id)
         setUser(user)
 
-        // Fetch user profile data using user ID with maybeSingle() to prevent crashes
-        console.log("🔍 Fetching profile for user ID:", user.id)
-        const { data: profileData, error: profileError } = await supabase
+        // Attempt to fetch the user's profile.
+        const { data: existingProfile, error: profileError } = await supabase
           .from("users")
           .select("*")
           .eq("id", user.id)
-          .maybeSingle()
+          .single()
 
-        if (profileError) {
-          console.error("❌ Error fetching user profile:", {
-            message: profileError.message,
-            details: profileError.details,
-            hint: profileError.hint,
-            code: profileError.code,
-          })
-
-          // Handle RLS policy violations
-          if (profileError.code === "42501" || profileError.message?.includes("policy")) {
-            setError("Permission denied. Please ensure you're signed in with the correct account.")
-          } else {
-            setError("Error loading profile. Please try again.")
-          }
-          setTimeout(() => router.push("/"), 3000)
-          return
+        if (profileError && profileError.code !== "PGRST116") {
+          // 'PGRST116' is "exact one row not found"
+          console.error("Error fetching profile:", profileError)
+          throw new Error("Could not load your profile. Please try again.")
         }
 
-        if (!profileData) {
-          // No profile found, create a minimal one with required fields using upsert
-          debugLog("📝 No profile found, creating new profile")
-          const newProfile: Partial<OnboardingProfile> = {
-            id: user.id,
-            onboarding_completed: false,
-            // Initialize all enum fields as null
-            gender: null,
-            birthdate: null,
-            country_id: null,
-            state_id: null,
-            city_id: null,
-            mother_tongue: null,
-            education: null,
-            profession: null,
-            annual_income: null,
-            diet: null,
-            temple_visit_freq: null,
-            vanaprastha_interest: null,
-            artha_vs_moksha: null,
-            spiritual_org: [],
-            daily_practices: [],
-            user_photos: [],
-            about_me: null,
-            partner_expectations: null,
-            favorite_spiritual_quote: null,
-            email_verified: !!user.email_confirmed_at,
-            mobile_verified: !!user.phone_confirmed_at,
-            mobile_number: user.user_metadata?.mobile_number || null,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          }
-
-          // Use upsert to create the profile in the "users" table
-          console.log("📤 Upserting new profile to users table")
-          const { data: insertedProfile, error: insertError } = await supabase
-            .from("users")
-            .upsert(newProfile, {
-              onConflict: "id",
-              ignoreDuplicates: false,
-            })
-            .select()
-            .single()
-
-          if (insertError) {
-            console.error("❌ Error creating profile:", {
-              message: insertError.message,
-              details: insertError.details,
-              hint: insertError.hint,
-              code: insertError.code,
-            })
-
-            // Handle RLS policy violations
-            if (insertError.code === "42501" || insertError.message?.includes("policy")) {
-              setError("Permission denied. Please ensure you're signed in with the correct account.")
-            } else {
-              setError("Error creating profile. Please try again.")
-            }
-
-            // Use the local profile if upsert fails
-            setProfile(newProfile as OnboardingProfile)
-          } else {
-            console.log("✅ Profile created successfully:", insertedProfile)
-            setProfile(insertedProfile)
-          }
-        } else {
-          // Profile found
-          debugLog("✅ Profile found:", profileData)
-
-          // If user has completed onboarding, redirect to dashboard
-          if (profileData?.onboarding_completed) {
-            debugLog("🎯 Onboarding already completed, redirecting to dashboard")
+        if (existingProfile) {
+          if (existingProfile.onboarding_completed) {
+            debugLog("Onboarding already complete. Redirecting to dashboard.")
             router.push("/dashboard")
             return
           }
-
-          // Ensure verification status is set based on auth status if not already set
-          if (profileData.email_verified === null || profileData.email_verified === undefined) {
-            profileData.email_verified = !!user.email_confirmed_at
+          debugLog("Existing profile found.", existingProfile)
+          setProfile(existingProfile)
+        } else {
+          // CRITICAL FIX: If no profile exists, create one immediately.
+          // This prevents errors in later stages that assume a profile row exists.
+          debugLog("No profile found. Creating a new one to prevent errors.")
+          const newProfileData = {
+            id: user.id, // Essential for RLS
+            email: user.email, // Pre-fill email
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
           }
+          const { data: newProfile, error: createError } = await supabase
+            .from("users")
+            .upsert(newProfileData)
+            .select()
+            .single()
 
-          if (profileData.mobile_verified === null || profileData.mobile_verified === undefined) {
-            profileData.mobile_verified = !!user.phone_confirmed_at
+          if (createError) {
+            console.error("Failed to create initial profile:", createError)
+            throw new Error("Could not initialize your profile. Please try again.")
           }
-
-          setProfile(profileData)
+          debugLog("New profile created successfully.", newProfile)
+          setProfile(newProfile)
         }
-
+      } catch (err: any) {
+        setError(err.message)
+      } finally {
         setLoading(false)
-      } catch (error) {
-        console.error("❌ Error in auth check:", error)
-        setError("An unexpected error occurred. Please try again.")
-        setTimeout(() => router.push("/"), 3000)
       }
     }
 
-    getUser()
+    initializeOnboarding()
   }, [router])
 
   if (loading) {
@@ -173,27 +96,22 @@ export default function OnboardingPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50">
-        <div className="text-center p-8">
-          <div className="text-red-500 text-6xl mb-4">⚠️</div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Oops! Something went wrong</h1>
-          <p className="text-gray-600 mb-6">{error}</p>
-          <p className="text-sm text-gray-500">Redirecting you back to the homepage...</p>
+      <div className="min-h-screen flex items-center justify-center bg-red-50">
+        <div className="text-center p-8 max-w-md">
+          <AlertCircle className="mx-auto h-12 w-12 text-red-400" />
+          <h1 className="mt-4 text-2xl font-bold text-gray-900">An Error Occurred</h1>
+          <p className="mt-2 text-gray-600">{error}</p>
+          <Button onClick={() => router.push("/")} className="mt-6">
+            Go to Homepage
+          </Button>
         </div>
       </div>
     )
   }
 
   if (!user || !profile) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50">
-        <div className="text-center p-8">
-          <div className="text-orange-500 text-6xl mb-4">🔄</div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Setting up your profile...</h1>
-          <p className="text-gray-600">Please wait while we prepare your onboarding experience.</p>
-        </div>
-      </div>
-    )
+    // This state should ideally not be reached due to the logic above, but it's a safe fallback.
+    return <LoadingScreen />
   }
 
   return <OnboardingContainer user={user} profile={profile} setProfile={setProfile} />

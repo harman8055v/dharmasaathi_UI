@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Loader2, Phone, CheckCircle, AlertCircle, Shield } from "lucide-react"
+import { Loader2, CheckCircle, AlertCircle, Shield } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -19,7 +19,7 @@ interface SeedStageProps {
 }
 
 export default function SeedStage({ formData, onChange, onNext, isLoading, user, error }: SeedStageProps) {
-  const [mobileNumber, setMobileNumber] = useState(formData.mobile_number || "")
+  const [mobileNumber, setMobileNumber] = useState(formData.mobile_number?.replace("+91", "") || "")
   const [otp, setOtp] = useState("")
   const [otpSent, setOtpSent] = useState(false)
   const [verifying, setVerifying] = useState(false)
@@ -27,7 +27,7 @@ export default function SeedStage({ formData, onChange, onNext, isLoading, user,
   const [localError, setLocalError] = useState<string | null>(null)
   const [countdown, setCountdown] = useState(0)
 
-  // Check if mobile is already verified
+  // This is the single source of truth for verification status.
   const isAlreadyVerified = formData.mobile_verified || !!user?.phone_confirmed_at
 
   useEffect(() => {
@@ -38,150 +38,96 @@ export default function SeedStage({ formData, onChange, onNext, isLoading, user,
   }, [countdown])
 
   const handleSendOtp = async () => {
-    if (!mobileNumber.trim()) {
-      setLocalError("Please enter your mobile number")
-      return
-    }
-
-    // Basic mobile number validation
-    const cleanNumber = mobileNumber.replace(/\D/g, "")
-    if (cleanNumber.length < 10) {
-      setLocalError("Please enter a valid mobile number")
+    setLocalError(null)
+    if (!mobileNumber.trim() || !/^\d{10}$/.test(mobileNumber)) {
+      setLocalError("Please enter a valid 10-digit mobile number.")
       return
     }
 
     setSendingOtp(true)
-    setLocalError(null)
+    const formattedNumber = `+91${mobileNumber}`
 
     try {
-      // Format number in E.164 (+91XXXXXXXXXX) format
-      const formattedNumber = cleanNumber.startsWith("91") ? `+${cleanNumber}` : `+91${cleanNumber}`
-
-      console.log("📱 Sending OTP to:", formattedNumber)
-
       if (!user) {
-        throw new Error("User authentication required to verify phone number")
+        throw new Error("Authentication session has expired. Please sign in again.")
       }
 
-      // Use updateUser to attach phone to the existing account and trigger OTP
-      const { error } = await supabase.auth.updateUser({
+      console.log(`Attempting to send OTP to ${formattedNumber} for user ${user.id}`)
+      // CORRECT METHOD: Use `updateUser` to associate a phone with an existing user and send OTP.
+      // `signInWithOtp` is for signing IN, not for verifying a phone on an existing session.
+      const { error: updateError } = await supabase.auth.updateUser({
         phone: formattedNumber,
       })
 
-      if (error) {
-        console.error("❌ OTP send error:", error)
-        setLocalError(error.message || "Failed to send OTP. Please try again.")
-        return
+      if (updateError) {
+        console.error("Supabase updateUser error:", updateError)
+        throw updateError
       }
 
-      console.log("✅ OTP sent successfully")
+      console.log("OTP sent successfully.")
       setOtpSent(true)
-      setCountdown(60) // 60 second countdown
-
-      // Update form data with mobile number
+      setCountdown(60)
       onChange({ mobile_number: formattedNumber })
-    } catch (error) {
-      console.error("❌ Error sending OTP:", error)
-      setLocalError("Failed to send OTP. Please try again.")
+    } catch (err: any) {
+      console.error("Error sending OTP:", err)
+      setLocalError(err.message || "An unexpected error occurred while sending OTP.")
     } finally {
       setSendingOtp(false)
     }
   }
 
   const handleVerifyOtp = async () => {
-    if (!otp.trim()) {
-      setLocalError("Please enter the OTP")
-      return
-    }
-
-    if (otp.length !== 6) {
-      setLocalError("OTP must be 6 digits")
-      return
-    }
-
-    if (!mobileNumber.trim()) {
-      setLocalError("Mobile number is required")
+    setLocalError(null)
+    if (!otp.trim() || !/^\d{6}$/.test(otp)) {
+      setLocalError("Please enter the 6-digit OTP.")
       return
     }
 
     setVerifying(true)
-    setLocalError(null)
+    const formattedNumber = `+91${mobileNumber}`
 
     try {
-      const cleanNumber = mobileNumber.replace(/\D/g, "")
-      const formattedNumber = cleanNumber.startsWith("91") ? `+${cleanNumber}` : `+91${cleanNumber}`
-
-      console.log("🔐 Verifying OTP for:", formattedNumber)
-
-      const { error } = await supabase.auth.verifyOtp({
+      console.log(`Verifying OTP ${otp} for number ${formattedNumber}`)
+      // CORRECT METHOD: Use `verifyOtp` with type 'sms' to confirm the phone number change.
+      const { error: verifyError } = await supabase.auth.verifyOtp({
         phone: formattedNumber,
         token: otp,
-        type: "sms",
+        type: "sms", // This is crucial for phone verification
       })
 
-      if (error) {
-        console.error("❌ OTP verification error:", error)
-        setLocalError(error.message || "Invalid OTP. Please try again.")
-        return
+      if (verifyError) {
+        console.error("Supabase verifyOtp error:", verifyError)
+        throw verifyError
       }
 
-      console.log("✅ OTP verified successfully")
+      console.log("OTP verification successful.")
+      // CRITICAL STEP: Refresh the user session to get the `phone_confirmed_at` update.
+      await supabase.auth.refreshSession()
 
-      // Refresh auth user to ensure session cookies are updated
-      await supabase.auth.getUser()
-
-      // OTP verified successfully
       const verificationData = {
         mobile_number: formattedNumber,
         mobile_verified: true,
       }
-
-      // Update form data and proceed to next stage
       onChange(verificationData)
-      onNext(verificationData)
-    } catch (error) {
-      console.error("❌ Error verifying OTP:", error)
-      setLocalError("Failed to verify OTP. Please try again.")
+      onNext(verificationData) // Proceed to the next stage
+    } catch (err: any) {
+      console.error("Error verifying OTP:", err)
+      setLocalError(err.message || "Invalid OTP or an unexpected error occurred.")
     } finally {
       setVerifying(false)
     }
   }
 
-  const handleSkipVerification = () => {
-    // Allow skipping but mark as not verified
-    const skipData = {
-      mobile_number: null,
-      mobile_verified: false,
-    }
-    onChange(skipData)
-    onNext(skipData)
-  }
-
   if (isAlreadyVerified) {
     return (
-      <div className="space-y-6">
-        <div className="text-center mb-6">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <CheckCircle className="w-8 h-8 text-green-600" />
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Mobile Already Verified! ✅</h2>
-          <p className="text-gray-600">Your mobile number is already verified. Let's continue with your profile.</p>
+      <div className="space-y-6 text-center">
+        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <CheckCircle className="w-8 h-8 text-green-600" />
         </div>
-
-        <div className="flex items-center justify-center p-4 bg-green-50 border border-green-200 rounded-lg">
-          <Shield className="w-5 h-5 text-green-600 mr-2" />
-          <span className="text-green-700 font-medium">Mobile verification complete</span>
-        </div>
-
+        <h2 className="text-2xl font-bold text-gray-900">Mobile Already Verified!</h2>
+        <p className="text-gray-600">Your phone number is secure. Let's continue building your profile.</p>
         <Button onClick={() => onNext({ mobile_verified: true })} disabled={isLoading} className="w-full">
-          {isLoading ? (
-            <span className="flex items-center justify-center gap-2">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Processing...
-            </span>
-          ) : (
-            "Continue to Next Step"
-          )}
+          {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Continue"}
         </Button>
       </div>
     )
@@ -189,162 +135,78 @@ export default function SeedStage({ formData, onChange, onNext, isLoading, user,
 
   return (
     <div className="space-y-6">
-      <div className="text-center mb-6">
-        <div className="w-16 h-16 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4">
-          <Phone className="w-8 h-8 text-white" />
-        </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Plant your seed of trust 🌱</h2>
-        <p className="text-gray-600">
-          Verify your mobile number to ensure secure communication on your spiritual journey
-        </p>
+      <div className="text-center">
+        <h2 className="text-2xl font-bold text-gray-900">Verify Your Mobile Number</h2>
+        <p className="text-gray-600">A verified number helps keep your account secure.</p>
       </div>
 
       {!otpSent ? (
         <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="mobile" className="flex items-center gap-2 text-sm font-medium text-gray-700">
-              <Phone className="w-4 h-4" />
-              Mobile Number *
+          <div>
+            <Label htmlFor="mobile" className="font-medium">
+              Mobile Number
             </Label>
-            <div className="flex">
-              <span className="inline-flex items-center px-3 text-sm text-gray-500 bg-gray-50 border border-r-0 border-gray-300 rounded-l-md">
+            <div className="flex items-center mt-1">
+              <span className="inline-flex items-center px-3 text-gray-500 bg-gray-100 border border-r-0 rounded-l-md">
                 +91
               </span>
               <Input
                 id="mobile"
                 type="tel"
-                value={mobileNumber.replace("+91", "")}
-                onChange={(e) => {
-                  const value = e.target.value.replace(/\D/g, "").slice(0, 10)
-                  setMobileNumber(value)
-                  setLocalError(null)
-                }}
-                placeholder="Enter your mobile number"
+                value={mobileNumber}
+                onChange={(e) => setMobileNumber(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                placeholder="Your 10-digit number"
                 className="rounded-l-none"
-                maxLength={10}
               />
             </div>
-            <p className="text-xs text-gray-500">We'll send you a secure verification code via SMS</p>
           </div>
-
-          {(localError || error) && (
-            <div className="flex items-center p-3 bg-red-50 border border-red-200 rounded-lg">
-              <AlertCircle className="w-4 h-4 text-red-600 mr-2 flex-shrink-0" />
-              <p className="text-red-700 text-sm">{localError || error}</p>
-            </div>
-          )}
-
-          <div className="flex gap-3">
-            <Button
-              onClick={handleSendOtp}
-              disabled={sendingOtp || !mobileNumber.trim()}
-              className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
-            >
-              {sendingOtp ? (
-                <span className="flex items-center justify-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Sending OTP...
-                </span>
-              ) : (
-                "Send OTP"
-              )}
-            </Button>
-
-            <Button variant="outline" onClick={handleSkipVerification} disabled={sendingOtp}>
-              Skip for now
-            </Button>
-          </div>
+          <Button onClick={handleSendOtp} disabled={sendingOtp || isLoading} className="w-full">
+            {sendingOtp ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send OTP"}
+          </Button>
         </div>
       ) : (
         <div className="space-y-4">
-          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <div className="flex items-center">
-              <CheckCircle className="w-5 h-5 text-blue-600 mr-2" />
-              <p className="text-blue-700 text-sm font-medium">OTP sent to +91{mobileNumber.replace("+91", "")}</p>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="otp" className="text-sm font-medium text-gray-700">
-              Enter Verification Code
+          <p className="text-center text-sm text-green-700 bg-green-50 p-3 rounded-md">
+            An OTP has been sent to +91{mobileNumber}.
+          </p>
+          <div>
+            <Label htmlFor="otp" className="font-medium">
+              Enter OTP
             </Label>
             <Input
               id="otp"
-              type="text"
+              type="tel"
               value={otp}
-              onChange={(e) => {
-                const value = e.target.value.replace(/\D/g, "").slice(0, 6)
-                setOtp(value)
-                setLocalError(null)
-              }}
-              placeholder="Enter 6-digit OTP"
-              maxLength={6}
-              className="text-center text-lg tracking-widest"
+              onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              placeholder="6-digit code"
+              className="mt-1 text-center tracking-widest"
             />
-            <p className="text-xs text-gray-500">Enter the 6-digit code sent to your mobile</p>
           </div>
-
-          {(localError || error) && (
-            <div className="flex items-center p-3 bg-red-50 border border-red-200 rounded-lg">
-              <AlertCircle className="w-4 h-4 text-red-600 mr-2 flex-shrink-0" />
-              <p className="text-red-700 text-sm">{localError || error}</p>
-            </div>
-          )}
-
-          <div className="flex gap-3">
-            <Button
-              onClick={handleVerifyOtp}
-              disabled={verifying || otp.length !== 6}
-              className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
-            >
-              {verifying ? (
-                <span className="flex items-center justify-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Verifying...
-                </span>
-              ) : (
-                "Verify & Continue"
-              )}
-            </Button>
-
-            <Button
-              variant="outline"
-              onClick={() => {
-                setOtpSent(false)
-                setOtp("")
-                setLocalError(null)
-              }}
-              disabled={verifying}
-            >
-              Change Number
-            </Button>
-          </div>
-
-          {countdown > 0 ? (
-            <p className="text-center text-sm text-gray-500">Resend OTP in {countdown} seconds</p>
-          ) : (
-            <Button variant="link" onClick={handleSendOtp} disabled={sendingOtp} className="w-full">
-              Resend OTP
-            </Button>
-          )}
-
-          <Button
-            variant="ghost"
-            onClick={handleSkipVerification}
-            disabled={verifying}
-            className="w-full text-gray-500"
-          >
-            Skip verification for now
+          <Button onClick={handleVerifyOtp} disabled={verifying || isLoading} className="w-full">
+            {verifying ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verify & Continue"}
           </Button>
+          <div className="text-center">
+            {countdown > 0 ? (
+              <p className="text-sm text-gray-500">Resend OTP in {countdown}s</p>
+            ) : (
+              <Button variant="link" onClick={handleSendOtp} disabled={sendingOtp} className="p-0 h-auto">
+                Resend OTP
+              </Button>
+            )}
+          </div>
         </div>
       )}
 
-      {/* Security notice */}
-      <div className="mt-6 p-3 bg-gray-50 border border-gray-200 rounded-lg">
-        <div className="flex items-center justify-center">
-          <Shield className="w-4 h-4 text-gray-500 mr-2" />
-          <p className="text-xs text-gray-600">Your mobile number is encrypted and secure</p>
+      {(localError || error) && (
+        <div className="flex items-center p-3 bg-red-50 border border-red-200 rounded-lg mt-4">
+          <AlertCircle className="w-4 h-4 text-red-600 mr-2 flex-shrink-0" />
+          <p className="text-red-700 text-sm">{localError || error}</p>
         </div>
+      )}
+
+      <div className="mt-4 p-3 bg-gray-50 border rounded-lg flex items-center justify-center text-xs text-gray-600">
+        <Shield className="w-4 h-4 mr-2 text-gray-500" />
+        Your number is kept private and secure.
       </div>
     </div>
   )
