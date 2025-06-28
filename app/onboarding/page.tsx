@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase"
 import { debugLog } from "@/lib/logger"
 import OnboardingContainer from "@/components/onboarding/onboarding-container"
 import LoadingScreen from "@/components/onboarding/loading-screen"
-import { AlertCircle } from "lucide-react" // CORRECTED IMPORT
+import { AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { User } from "@supabase/supabase-js"
 import type { OnboardingProfile } from "@/lib/types/onboarding"
@@ -41,10 +41,9 @@ export default function OnboardingPage() {
           .from("users")
           .select("*")
           .eq("id", user.id)
-          .single()
+          .maybeSingle()
 
-        if (profileError && profileError.code !== "PGRST116") {
-          // 'PGRST116' is "exact one row not found"
+        if (profileError) {
           console.error("Error fetching profile:", profileError)
           throw new Error("Could not load your profile. Please try again.")
         }
@@ -58,18 +57,22 @@ export default function OnboardingPage() {
           debugLog("Existing profile found.", existingProfile)
           setProfile(existingProfile)
         } else {
-          // CRITICAL FIX: If no profile exists, create one immediately.
-          // This prevents errors in later stages that assume a profile row exists.
-          debugLog("No profile found. Creating a new one to prevent errors.")
+          // Create initial profile
+          debugLog("No profile found. Creating a new one.")
           const newProfileData = {
-            id: user.id, // Essential for RLS
-            email: user.email, // Pre-fill email
+            id: user.id,
+            email: user.email,
+            onboarding_completed: false,
+            email_verified: !!user.email_confirmed_at,
+            mobile_verified: !!user.phone_confirmed_at,
+            mobile_number: user.phone || null,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           }
+
           const { data: newProfile, error: createError } = await supabase
             .from("users")
-            .upsert(newProfileData)
+            .upsert(newProfileData, { onConflict: "id" })
             .select()
             .single()
 
@@ -110,7 +113,6 @@ export default function OnboardingPage() {
   }
 
   if (!user || !profile) {
-    // This state should ideally not be reached due to the logic above, but it's a safe fallback.
     return <LoadingScreen />
   }
 
