@@ -6,7 +6,6 @@ import { supabase } from "@/lib/supabase"
 export interface Country {
   id: number
   name: string
-  code: string
 }
 
 export interface State {
@@ -30,7 +29,7 @@ export function useCountries() {
     async function fetchCountries() {
       try {
         setLoading(true)
-        const { data, error } = await supabase.from("countries").select("id, name, code").order("name")
+        const { data, error } = await supabase.from("countries").select("id, name").order("name")
 
         if (error) throw error
         setCountries(data || [])

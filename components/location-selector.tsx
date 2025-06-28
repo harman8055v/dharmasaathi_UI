@@ -3,14 +3,12 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Loader2, MapPin } from "lucide-react"
 import { useCountries, useStates, useCities } from "@/lib/hooks/useLocationData"
+import { supabase } from "@/lib/supabase" // Declare the supabase variable
 
 export interface LocationData {
   country_id: number | null
-  country_name: string | null
   state_id: number | null
-  state_name: string | null
   city_id: number | null
-  city_name: string | null
 }
 
 interface LocationSelectorProps {
@@ -35,34 +33,27 @@ export default function LocationSelector({
   const { cities, loading: citiesLoading } = useCities(value.state_id)
 
   const handleCountryChange = (countryId: string) => {
-    const selectedCountry = countries.find((c) => c.id.toString() === countryId)
+    // Reset dependent dropdowns when country changes
     onChange({
       country_id: Number.parseInt(countryId),
-      country_name: selectedCountry?.name || null,
       state_id: null,
-      state_name: null,
       city_id: null,
-      city_name: null,
     })
   }
 
   const handleStateChange = (stateId: string) => {
-    const selectedState = states.find((s) => s.id.toString() === stateId)
+    // Reset city when state changes
     onChange({
       ...value,
       state_id: Number.parseInt(stateId),
-      state_name: selectedState?.name || null,
       city_id: null,
-      city_name: null,
     })
   }
 
   const handleCityChange = (cityId: string) => {
-    const selectedCity = cities.find((c) => c.id.toString() === cityId)
     onChange({
       ...value,
       city_id: Number.parseInt(cityId),
-      city_name: selectedCity?.name || null,
     })
   }
 
@@ -70,7 +61,7 @@ export default function LocationSelector({
     <div className={`space-y-4 ${className}`}>
       {showLabels && (
         <div className="flex items-center gap-2 mb-4">
-          <MapPin className="w-5 h-5 text-primary" />
+          <MapPin className="w-5 h-5 text-orange-500" />
           <h3 className="text-lg font-semibold text-gray-900">Location</h3>
           {required && <span className="text-red-500">*</span>}
         </div>
@@ -87,7 +78,7 @@ export default function LocationSelector({
           disabled={disabled || countriesLoading}
         >
           <SelectTrigger className="w-full">
-            <SelectValue placeholder={countriesLoading ? "Loading countries..." : "Select Country"} />
+            <SelectValue placeholder={countriesLoading ? "Loading countries..." : "Select a country"} />
           </SelectTrigger>
           <SelectContent>
             {countries.map((country) => (
@@ -112,7 +103,7 @@ export default function LocationSelector({
           <SelectTrigger className="w-full">
             <SelectValue
               placeholder={
-                !value.country_id ? "Select country first" : statesLoading ? "Loading states..." : "Select State"
+                !value.country_id ? "Select a country first" : statesLoading ? "Loading states..." : "Select a state"
               }
             />
             {statesLoading && <Loader2 className="w-4 h-4 animate-spin ml-2" />}
@@ -139,7 +130,9 @@ export default function LocationSelector({
         >
           <SelectTrigger className="w-full">
             <SelectValue
-              placeholder={!value.state_id ? "Select state first" : citiesLoading ? "Loading cities..." : "Select City"}
+              placeholder={
+                !value.state_id ? "Select a state first" : citiesLoading ? "Loading cities..." : "Select a city"
+              }
             />
             {citiesLoading && <Loader2 className="w-4 h-4 animate-spin ml-2" />}
           </SelectTrigger>
@@ -167,11 +160,28 @@ export function validateLocation(location: LocationData, required = false): bool
   return !!(location.country_id && location.state_id && location.city_id)
 }
 
-// Helper function to get location display string
-export function getLocationDisplayString(location: LocationData): string {
-  const parts = []
-  if (location.city_name) parts.push(location.city_name)
-  if (location.state_name) parts.push(location.state_name)
-  if (location.country_name) parts.push(location.country_name)
-  return parts.join(", ") || "Location not set"
+// Helper function to get location names for display
+export async function getLocationNames(location: LocationData) {
+  const names = { country: "", state: "", city: "" }
+
+  try {
+    if (location.country_id) {
+      const { data: country } = await supabase.from("countries").select("name").eq("id", location.country_id).single()
+      names.country = country?.name || ""
+    }
+
+    if (location.state_id) {
+      const { data: state } = await supabase.from("states").select("name").eq("id", location.state_id).single()
+      names.state = state?.name || ""
+    }
+
+    if (location.city_id) {
+      const { data: city } = await supabase.from("cities").select("name").eq("id", location.city_id).single()
+      names.city = city?.name || ""
+    }
+  } catch (error) {
+    console.error("Error fetching location names:", error)
+  }
+
+  return names
 }

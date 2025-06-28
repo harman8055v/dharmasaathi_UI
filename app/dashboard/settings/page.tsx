@@ -1,30 +1,19 @@
 "use client"
 
-import { SelectItem } from "@/components/ui/select"
-
-import { SelectContent } from "@/components/ui/select"
-
-import { SelectValue } from "@/components/ui/select"
-
-import { SelectTrigger } from "@/components/ui/select"
-
-import { Select } from "@/components/ui/select"
-
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Switch } from "@/components/ui/switch"
-import { toast } from "sonner"
-import { User, Bell, Shield, Heart, Trash2 } from "lucide-react"
-import LocationSelector, { type LocationData, getLocationDisplayString } from "@/components/location-selector"
-import { cn } from "@/lib/utils"
+import { ArrowLeft, Save, User, Heart, Briefcase, Users, Activity, Target, Check } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import MobileNav from "@/components/dashboard/mobile-nav"
+import { cn } from "@/lib/utils"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import LocationSelector, { type LocationData } from "@/components/location-selector"
 
 const SPIRITUAL_ORGANIZATIONS = [
   "ISKCON",
@@ -175,7 +164,7 @@ const MultiSelectCard = ({
         >
           <div className="flex items-center justify-between">
             <span className="truncate">{option}</span>
-            {values.includes(option) && <Trash2 className="w-3 h-3 text-orange-600 ml-1 flex-shrink-0" />}
+            {values.includes(option) && <Check className="w-3 h-3 text-orange-600 ml-1 flex-shrink-0" />}
           </div>
         </div>
       ))}
@@ -185,40 +174,14 @@ const MultiSelectCard = ({
 
 export default function SettingsPage() {
   const [profile, setProfile] = useState<any>(null)
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const router = useRouter()
 
-  const [userLocation, setUserLocation] = useState<LocationData>({
+  const [location, setLocation] = useState<LocationData>({
     country_id: null,
-    country_name: null,
     state_id: null,
-    state_name: null,
     city_id: null,
-    city_name: null,
-  })
-
-  const [formData, setFormData] = useState({
-    fullName: "",
-    email: "",
-    bio: "",
-    height: "",
-    occupation: "",
-    education: "",
-    // Add other fields as needed
-  })
-
-  const [notifications, setNotifications] = useState({
-    matches: true,
-    messages: true,
-    likes: true,
-    marketing: false,
-  })
-
-  const [privacy, setPrivacy] = useState({
-    showOnline: true,
-    showDistance: true,
-    showAge: true,
   })
 
   useEffect(() => {
@@ -240,33 +203,14 @@ export default function SettingsPage() {
         }
 
         setProfile(profileData)
-        setFormData({
-          fullName: profileData.first_name + " " + profileData.last_name,
-          email: profileData.email,
-          bio: profileData.about_me,
-          height: profileData.height,
-          occupation: profileData.profession,
-          education: profileData.education,
+
+        // Set location data from profile
+        setLocation({
+          country_id: profileData.country_id || null,
+          state_id: profileData.state_id || null,
+          city_id: profileData.city_id || null,
         })
-        setUserLocation({
-          country_id: profileData.country_id,
-          country_name: profileData.country,
-          state_id: profileData.state_id,
-          state_name: profileData.state,
-          city_id: profileData.city_id,
-          city_name: profileData.city,
-        })
-        setNotifications({
-          matches: profileData.matches_notifications,
-          messages: profileData.messages_notifications,
-          likes: profileData.likes_notifications,
-          marketing: profileData.marketing_notifications,
-        })
-        setPrivacy({
-          showOnline: profileData.show_online,
-          showDistance: profileData.show_distance,
-          showAge: profileData.show_age,
-        })
+
         setLoading(false)
       } catch (error) {
         console.error("Error:", error)
@@ -277,96 +221,30 @@ export default function SettingsPage() {
     getProfile()
   }, [router])
 
-  const handleSavePersonal = async () => {
+  const handleSave = async () => {
     if (!profile) return
 
     setSaving(true)
     try {
-      const { error } = await supabase
-        .from("users")
-        .update({
-          first_name: formData.fullName.split(" ")[0],
-          last_name: formData.fullName.split(" ")[1],
-          email: formData.email,
-          about_me: formData.bio,
-          height: formData.height,
-          profession: formData.occupation,
-          education: formData.education,
-          country_id: userLocation.country_id,
-          country: userLocation.country_name,
-          state_id: userLocation.state_id,
-          state: userLocation.state_name,
-          city_id: userLocation.city_id,
-          city: userLocation.city_name,
-        })
-        .eq("id", profile.id)
+      const updateData = {
+        ...profile,
+        country_id: location.country_id,
+        state_id: location.state_id,
+        city_id: location.city_id,
+      }
+
+      const { error } = await supabase.from("users").update(updateData).eq("id", profile.id)
 
       if (error) {
         console.error("Error updating profile:", error)
-        toast.error("Failed to update personal information")
+        alert("Error updating profile. Please try again.")
       } else {
-        toast.success("Personal information updated successfully!")
+        alert("Profile updated successfully!")
+        router.push("/dashboard/profile")
       }
     } catch (error) {
       console.error("Error:", error)
-      toast.error("Failed to update personal information")
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const handleSaveNotifications = async () => {
-    if (!profile) return
-
-    setSaving(true)
-    try {
-      const { error } = await supabase
-        .from("users")
-        .update({
-          matches_notifications: notifications.matches,
-          messages_notifications: notifications.messages,
-          likes_notifications: notifications.likes,
-          marketing_notifications: notifications.marketing,
-        })
-        .eq("id", profile.id)
-
-      if (error) {
-        console.error("Error updating notifications:", error)
-        toast.error("Failed to update notification preferences")
-      } else {
-        toast.success("Notification preferences updated!")
-      }
-    } catch (error) {
-      console.error("Error:", error)
-      toast.error("Failed to update notification preferences")
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const handleSavePrivacy = async () => {
-    if (!profile) return
-
-    setSaving(true)
-    try {
-      const { error } = await supabase
-        .from("users")
-        .update({
-          show_online: privacy.showOnline,
-          show_distance: privacy.showDistance,
-          show_age: privacy.showAge,
-        })
-        .eq("id", profile.id)
-
-      if (error) {
-        console.error("Error updating privacy:", error)
-        toast.error("Failed to update privacy settings")
-      } else {
-        toast.success("Privacy settings updated!")
-      }
-    } catch (error) {
-      console.error("Error:", error)
-      toast.error("Failed to update privacy settings")
+      alert("Error updating profile. Please try again.")
     } finally {
       setSaving(false)
     }
@@ -376,17 +254,8 @@ export default function SettingsPage() {
     setProfile((prev: any) => ({ ...prev, [field]: value }))
   }
 
-  const handleLocationChange = (location: LocationData) => {
-    setProfile((prev: any) => ({
-      ...prev,
-      country_id: location.country_id,
-      country: location.country_name,
-      state_id: location.state_id,
-      state: location.state_name,
-      city_id: location.city_id,
-      city: location.city_name,
-    }))
-    setUserLocation(location)
+  const handleLocationChange = (newLocation: LocationData) => {
+    setLocation(newLocation)
   }
 
   if (loading) {
@@ -410,41 +279,26 @@ export default function SettingsPage() {
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <Button variant="ghost" size="sm" onClick={() => router.back()} className="p-2">
-                <Trash2 className="w-5 h-5" />
+                <ArrowLeft className="w-5 h-5" />
               </Button>
               <div>
                 <h1 className="text-xl font-semibold text-gray-900">Edit Profile</h1>
                 <p className="text-sm text-gray-600">Update your profile information</p>
               </div>
             </div>
-            <Button
-              onClick={handleSavePersonal}
-              disabled={saving}
-              className="bg-gradient-to-r from-orange-500 to-pink-500"
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
+            <Button onClick={handleSave} disabled={saving} className="bg-gradient-to-r from-orange-500 to-pink-500">
+              <Save className="w-4 h-4 mr-2" />
               {saving ? "Saving..." : "Save Changes"}
             </Button>
           </div>
 
           <Tabs defaultValue="personal" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="personal" className="flex items-center gap-2">
-                <User className="w-4 h-4" />
-                Personal
-              </TabsTrigger>
-              <TabsTrigger value="notifications" className="flex items-center gap-2">
-                <Bell className="w-4 h-4" />
-                Notifications
-              </TabsTrigger>
-              <TabsTrigger value="privacy" className="flex items-center gap-2">
-                <Shield className="w-4 h-4" />
-                Privacy
-              </TabsTrigger>
-              <TabsTrigger value="preferences" className="flex items-center gap-2">
-                <Heart className="w-4 h-4" />
-                Preferences
-              </TabsTrigger>
+            <TabsList className="grid w-full grid-cols-5">
+              <TabsTrigger value="personal">Personal</TabsTrigger>
+              <TabsTrigger value="spiritual">Spiritual</TabsTrigger>
+              <TabsTrigger value="lifestyle">Lifestyle</TabsTrigger>
+              <TabsTrigger value="interests">Interests</TabsTrigger>
+              <TabsTrigger value="preferences">Preferences</TabsTrigger>
             </TabsList>
 
             {/* Personal Information */}
@@ -455,7 +309,6 @@ export default function SettingsPage() {
                     <User className="w-5 h-5" />
                     Personal Information
                   </CardTitle>
-                  <CardDescription>Update your personal details and profile information</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="grid grid-cols-2 gap-4">
@@ -463,20 +316,16 @@ export default function SettingsPage() {
                       <Label htmlFor="first_name">First Name</Label>
                       <Input
                         id="first_name"
-                        value={formData.fullName.split(" ")[0] || ""}
-                        onChange={(e) =>
-                          setFormData({ ...formData, fullName: e.target.value + " " + formData.fullName.split(" ")[1] })
-                        }
+                        value={profile?.first_name || ""}
+                        onChange={(e) => updateProfile("first_name", e.target.value)}
                       />
                     </div>
                     <div>
                       <Label htmlFor="last_name">Last Name</Label>
                       <Input
                         id="last_name"
-                        value={formData.fullName.split(" ")[1] || ""}
-                        onChange={(e) =>
-                          setFormData({ ...formData, fullName: formData.fullName.split(" ")[0] + " " + e.target.value })
-                        }
+                        value={profile?.last_name || ""}
+                        onChange={(e) => updateProfile("last_name", e.target.value)}
                       />
                     </div>
                   </div>
@@ -512,8 +361,8 @@ export default function SettingsPage() {
                       <Input
                         id="height"
                         placeholder="e.g., 5'8&quot;"
-                        value={formData.height || ""}
-                        onChange={(e) => setFormData({ ...formData, height: e.target.value })}
+                        value={profile?.height || ""}
+                        onChange={(e) => updateProfile("height", e.target.value)}
                       />
                     </div>
                     <div>
@@ -528,16 +377,13 @@ export default function SettingsPage() {
 
                   {/* Location Section */}
                   <div className="pt-4 border-t">
-                    <LocationSelector value={userLocation} onChange={handleLocationChange} required={false} />
-                    <div className="text-sm text-gray-500">
-                      Current location: {getLocationDisplayString(userLocation)}
-                    </div>
+                    <LocationSelector value={location} onChange={handleLocationChange} required={false} />
                   </div>
 
                   {/* Family & Background */}
                   <div className="space-y-4 pt-4 border-t">
                     <h3 className="text-lg font-semibold flex items-center gap-2">
-                      <Trash2 className="w-5 h-5" />
+                      <Users className="w-5 h-5" />
                       Family & Background
                     </h3>
 
@@ -618,7 +464,7 @@ export default function SettingsPage() {
                   {/* Professional Information */}
                   <div className="space-y-4 pt-4 border-t">
                     <h3 className="text-lg font-semibold flex items-center gap-2">
-                      <Trash2 className="w-5 h-5" />
+                      <Briefcase className="w-5 h-5" />
                       Professional Information
                     </h3>
 
@@ -627,16 +473,16 @@ export default function SettingsPage() {
                         <Label htmlFor="education">Education</Label>
                         <Input
                           id="education"
-                          value={formData.education || ""}
-                          onChange={(e) => setFormData({ ...formData, education: e.target.value })}
+                          value={profile?.education || ""}
+                          onChange={(e) => updateProfile("education", e.target.value)}
                         />
                       </div>
                       <div>
                         <Label htmlFor="profession">Profession</Label>
                         <Input
                           id="profession"
-                          value={formData.occupation || ""}
-                          onChange={(e) => setFormData({ ...formData, occupation: e.target.value })}
+                          value={profile?.profession || ""}
+                          onChange={(e) => updateProfile("profession", e.target.value)}
                         />
                       </div>
                     </div>
@@ -668,129 +514,11 @@ export default function SettingsPage() {
                     <Textarea
                       id="about_me"
                       rows={4}
-                      value={formData.bio || ""}
-                      onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                      value={profile?.about_me || ""}
+                      onChange={(e) => updateProfile("about_me", e.target.value)}
                       placeholder="Tell us about yourself..."
                     />
                   </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* Notifications Tab */}
-            <TabsContent value="notifications">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Notification Preferences</CardTitle>
-                  <CardDescription>Choose what notifications you want to receive</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label htmlFor="matches">New Matches</Label>
-                        <p className="text-sm text-gray-500">Get notified when you have new matches</p>
-                      </div>
-                      <Switch
-                        id="matches"
-                        checked={notifications.matches}
-                        onCheckedChange={(checked) => setNotifications({ ...notifications, matches: checked })}
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label htmlFor="messages">Messages</Label>
-                        <p className="text-sm text-gray-500">Get notified when you receive new messages</p>
-                      </div>
-                      <Switch
-                        id="messages"
-                        checked={notifications.messages}
-                        onCheckedChange={(checked) => setNotifications({ ...notifications, messages: checked })}
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label htmlFor="likes">Likes</Label>
-                        <p className="text-sm text-gray-500">Get notified when someone likes your profile</p>
-                      </div>
-                      <Switch
-                        id="likes"
-                        checked={notifications.likes}
-                        onCheckedChange={(checked) => setNotifications({ ...notifications, likes: checked })}
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label htmlFor="marketing">Marketing</Label>
-                        <p className="text-sm text-gray-500">Receive updates about new features and promotions</p>
-                      </div>
-                      <Switch
-                        id="marketing"
-                        checked={notifications.marketing}
-                        onCheckedChange={(checked) => setNotifications({ ...notifications, marketing: checked })}
-                      />
-                    </div>
-                  </div>
-
-                  <Button onClick={handleSaveNotifications} disabled={saving}>
-                    {saving ? "Saving..." : "Save Preferences"}
-                  </Button>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* Privacy Tab */}
-            <TabsContent value="privacy">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Privacy Settings</CardTitle>
-                  <CardDescription>Control what information is visible to other users</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label htmlFor="showOnline">Show Online Status</Label>
-                        <p className="text-sm text-gray-500">Let others see when you're online</p>
-                      </div>
-                      <Switch
-                        id="showOnline"
-                        checked={privacy.showOnline}
-                        onCheckedChange={(checked) => setPrivacy({ ...privacy, showOnline: checked })}
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label htmlFor="showDistance">Show Distance</Label>
-                        <p className="text-sm text-gray-500">Display your distance from other users</p>
-                      </div>
-                      <Switch
-                        id="showDistance"
-                        checked={privacy.showDistance}
-                        onCheckedChange={(checked) => setPrivacy({ ...privacy, showDistance: checked })}
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label htmlFor="showAge">Show Age</Label>
-                        <p className="text-sm text-gray-500">Display your age on your profile</p>
-                      </div>
-                      <Switch
-                        id="showAge"
-                        checked={privacy.showAge}
-                        onCheckedChange={(checked) => setPrivacy({ ...privacy, showAge: checked })}
-                      />
-                    </div>
-                  </div>
-
-                  <Button onClick={handleSavePrivacy} disabled={saving}>
-                    {saving ? "Saving..." : "Save Settings"}
-                  </Button>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -841,120 +569,6 @@ export default function SettingsPage() {
                     </div>
                   </div>
 
-                  {/* Advanced Spiritual Practices */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <Label>Meditation Practice</Label>
-                      <Select
-                        value={profile?.meditation_frequency || ""}
-                        onValueChange={(value) => updateProfile("meditation_frequency", value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select frequency" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Daily">Daily</SelectItem>
-                          <SelectItem value="Weekly">Weekly</SelectItem>
-                          <SelectItem value="Monthly">Monthly</SelectItem>
-                          <SelectItem value="Rarely">Rarely</SelectItem>
-                          <SelectItem value="Never">Never</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label>Yoga Practice</Label>
-                      <Select
-                        value={profile?.yoga_frequency || ""}
-                        onValueChange={(value) => updateProfile("yoga_frequency", value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select frequency" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Daily">Daily</SelectItem>
-                          <SelectItem value="Weekly">Weekly</SelectItem>
-                          <SelectItem value="Monthly">Monthly</SelectItem>
-                          <SelectItem value="Rarely">Rarely</SelectItem>
-                          <SelectItem value="Never">Never</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <Label>Scripture Study</Label>
-                      <Select
-                        value={profile?.scripture_study || ""}
-                        onValueChange={(value) => updateProfile("scripture_study", value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select frequency" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Daily">Daily</SelectItem>
-                          <SelectItem value="Weekly">Weekly</SelectItem>
-                          <SelectItem value="Monthly">Monthly</SelectItem>
-                          <SelectItem value="Rarely">Rarely</SelectItem>
-                          <SelectItem value="Never">Never</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label>Pilgrimage Interest</Label>
-                      <Select
-                        value={profile?.pilgrimage_interest || ""}
-                        onValueChange={(value) => updateProfile("pilgrimage_interest", value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select interest level" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Very High">Very High</SelectItem>
-                          <SelectItem value="High">High</SelectItem>
-                          <SelectItem value="Moderate">Moderate</SelectItem>
-                          <SelectItem value="Low">Low</SelectItem>
-                          <SelectItem value="None">None</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <Label>Vanaprastha Interest</Label>
-                      <Select
-                        value={profile?.vanaprastha_interest || ""}
-                        onValueChange={(value) => updateProfile("vanaprastha_interest", value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select interest" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="yes">Yes</SelectItem>
-                          <SelectItem value="no">No</SelectItem>
-                          <SelectItem value="open">Open to Discussion</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label>Life Philosophy</Label>
-                      <Select
-                        value={profile?.artha_vs_moksha || ""}
-                        onValueChange={(value) => updateProfile("artha_vs_moksha", value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select philosophy" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Artha-focused">Artha-focused</SelectItem>
-                          <SelectItem value="Moksha-focused">Moksha-focused</SelectItem>
-                          <SelectItem value="Balance">Balanced Approach</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
                   {/* Multi-select sections */}
                   <div>
                     <Label>Spiritual Organizations</Label>
@@ -995,12 +609,59 @@ export default function SettingsPage() {
               </Card>
             </TabsContent>
 
+            {/* Lifestyle */}
+            <TabsContent value="lifestyle">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Activity className="w-5 h-5" />
+                    Lifestyle & Habits
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <Label>Smoking</Label>
+                      <Select value={profile?.smoking || ""} onValueChange={(value) => updateProfile("smoking", value)}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select smoking habit" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Never">Never</SelectItem>
+                          <SelectItem value="Occasionally">Occasionally</SelectItem>
+                          <SelectItem value="Regularly">Regularly</SelectItem>
+                          <SelectItem value="Trying to Quit">Trying to Quit</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>Drinking</Label>
+                      <Select
+                        value={profile?.drinking || ""}
+                        onValueChange={(value) => updateProfile("drinking", value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select drinking habit" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Never">Never</SelectItem>
+                          <SelectItem value="Socially">Socially</SelectItem>
+                          <SelectItem value="Occasionally">Occasionally</SelectItem>
+                          <SelectItem value="Regularly">Regularly</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
             {/* Interests & Hobbies */}
             <TabsContent value="interests">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Trash2 className="w-5 h-5" />
+                    <Target className="w-5 h-5" />
                     Interests & Hobbies
                   </CardTitle>
                 </CardHeader>
@@ -1026,15 +687,26 @@ export default function SettingsPage() {
               </Card>
             </TabsContent>
 
-            {/* Preferences Tab */}
+            {/* Partner Preferences */}
             <TabsContent value="preferences">
               <Card>
                 <CardHeader>
-                  <CardTitle>Match Preferences</CardTitle>
-                  <CardDescription>Set your preferences for potential matches</CardDescription>
+                  <CardTitle className="flex items-center gap-2">
+                    <Heart className="w-5 h-5" />
+                    Partner Preferences
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-500">Match preferences will be implemented here...</p>
+                  <div>
+                    <Label htmlFor="partner_expectations">What are you looking for in a partner?</Label>
+                    <Textarea
+                      id="partner_expectations"
+                      rows={6}
+                      value={profile?.partner_expectations || ""}
+                      onChange={(e) => updateProfile("partner_expectations", e.target.value)}
+                      placeholder="Describe your ideal partner and what you're looking for in a relationship..."
+                    />
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -1043,11 +715,11 @@ export default function SettingsPage() {
           {/* Bottom Save Button */}
           <div className="sticky bottom-0 bg-gradient-to-t from-white via-white to-transparent pt-6 pb-4">
             <Button
-              onClick={handleSavePersonal}
+              onClick={handleSave}
               disabled={saving}
               className="w-full bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 h-12 text-lg font-semibold"
             >
-              <Trash2 className="w-5 h-5 mr-2" />
+              <Save className="w-5 h-5 mr-2" />
               {saving ? "Saving Changes..." : "Save All Changes"}
             </Button>
           </div>
