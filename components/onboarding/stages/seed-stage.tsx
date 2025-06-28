@@ -54,12 +54,17 @@ export default function SeedStage({ formData, onChange, onNext, isLoading, user,
     setLocalError(null)
 
     try {
-      // Format the number for international format
+      // Format number in E.164 (+91XXXXXXXXXX) format
       const formattedNumber = cleanNumber.startsWith("91") ? `+${cleanNumber}` : `+91${cleanNumber}`
 
       console.log("📱 Sending OTP to:", formattedNumber)
 
-      const { error } = await supabase.auth.signInWithOtp({
+      if (!user) {
+        throw new Error("User authentication required to verify phone number")
+      }
+
+      // Use updateUser to attach phone to the existing account and trigger OTP
+      const { error } = await supabase.auth.updateUser({
         phone: formattedNumber,
       })
 
@@ -121,6 +126,9 @@ export default function SeedStage({ formData, onChange, onNext, isLoading, user,
       }
 
       console.log("✅ OTP verified successfully")
+
+      // Refresh auth user to ensure session cookies are updated
+      await supabase.auth.getUser()
 
       // OTP verified successfully
       const verificationData = {
