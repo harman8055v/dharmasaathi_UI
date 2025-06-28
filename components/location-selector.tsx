@@ -5,15 +5,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input"
 import { Loader2, MapPin, Search } from "lucide-react"
 import { useCountries, useStates, useCities } from "@/lib/hooks/useLocationData"
-
-export interface LocationFormState {
-  country_id: number | null
-  state_id: number | null
-  city_id: number | null
-}
+import type { LocationFormState } from "@/lib/types/onboarding"
 
 interface LocationSelectorProps {
-  value: LocationFormState
+  value?: LocationFormState
   onChange: (location: LocationFormState) => void
   disabled?: boolean
   required?: boolean
@@ -23,7 +18,7 @@ interface LocationSelectorProps {
 }
 
 export default function LocationSelector({
-  value,
+  value = { country_id: null, state_id: null, city_id: null },
   onChange,
   disabled = false,
   required = false,
@@ -35,15 +30,12 @@ export default function LocationSelector({
   const { states, loading: statesLoading } = useStates(value.country_id)
   const { cities, loading: citiesLoading } = useCities(value.state_id)
 
-  // Search states
   const [countrySearch, setCountrySearch] = useState("")
   const [stateSearch, setStateSearch] = useState("")
   const [citySearch, setCitySearch] = useState("")
 
-  // Track if we've already set India as default to prevent infinite loops
   const [hasSetDefault, setHasSetDefault] = useState(false)
 
-  // Set India as default country on mount if no country is selected
   useEffect(() => {
     if (defaultToIndia && !value.country_id && countries.length > 0 && !hasSetDefault) {
       const india = countries.find((country) => country.name === "India")
@@ -58,7 +50,6 @@ export default function LocationSelector({
     }
   }, [countries, value.country_id, defaultToIndia, onChange, hasSetDefault])
 
-  // Filtered options based on search
   const filteredCountries = useMemo(() => {
     return countries.filter((country) => country.name.toLowerCase().includes(countrySearch.toLowerCase()))
   }, [countries, countrySearch])
@@ -131,7 +122,6 @@ export default function LocationSelector({
         </div>
       )}
 
-      {/* Country Selection */}
       <div className="space-y-2">
         <Label htmlFor="country" className="text-gray-700 font-medium">
           Country {required && <span className="text-red-500">*</span>}
@@ -168,7 +158,6 @@ export default function LocationSelector({
         </Select>
       </div>
 
-      {/* State Selection */}
       <div className="space-y-2">
         <Label htmlFor="state" className="text-gray-700 font-medium">
           State {required && <span className="text-red-500">*</span>}
@@ -210,7 +199,6 @@ export default function LocationSelector({
         </Select>
       </div>
 
-      {/* City Selection */}
       <div className="space-y-2">
         <Label htmlFor="city" className="text-gray-700 font-medium">
           City {required && <span className="text-red-500">*</span>}
@@ -250,16 +238,9 @@ export default function LocationSelector({
         </Select>
       </div>
 
-      {/* Validation Message */}
       {required && (!value.country_id || !value.state_id || !value.city_id) && (
         <p className="text-sm text-gray-500 mt-2">Please select your complete location (Country, State, and City)</p>
       )}
     </div>
   )
-}
-
-// Helper function to validate location data
-export function validateLocation(location: LocationFormState, required = false): boolean {
-  if (!required) return true
-  return !!(location.country_id && location.state_id && location.city_id)
 }

@@ -38,3 +38,9 @@ export const VALID_VALUES = {
   vanaprastha_interest: ["Yes", "No", "Maybe"] as const,
   artha_vs_moksha: ["Artha-focused", "Moksha-focused", "Balance"] as const,
 } as const
+
+export interface LocationFormState {
+  country_id: number | null
+  state_id: number | null
+  city_id: number | null
+}

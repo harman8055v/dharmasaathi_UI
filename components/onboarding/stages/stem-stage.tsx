@@ -2,7 +2,7 @@
 import { format } from "date-fns"
 import { CalendarIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
-import type { OnboardingProfile } from "@/lib/types/onboarding"
+import type { OnboardingProfile, LocationFormState } from "@/lib/types/onboarding"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -91,10 +91,19 @@ export default function StemStage({ profile, updateProfile, onNext, onBack }: St
         <div className="space-y-2">
           <Label>Location *</Label>
           <LocationSelector
-            onLocationChange={(loc) =>
-              updateProfile({ country_id: loc.country, state_id: loc.state, city_id: loc.city })
-            }
-            initialLocation={{ country: profile.country_id, state: profile.state_id, city: profile.city_id }}
+            value={{
+              country_id: profile.country_id || null,
+              state_id: profile.state_id || null,
+              city_id: profile.city_id || null,
+            }}
+            onChange={(location: LocationFormState) => {
+              updateProfile({
+                country_id: location.country_id,
+                state_id: location.state_id,
+                city_id: location.city_id,
+              })
+            }}
+            required={true}
           />
         </div>
         <div className="flex justify-between pt-4">
