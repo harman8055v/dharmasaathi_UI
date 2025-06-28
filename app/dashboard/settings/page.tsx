@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import MobileNav from "@/components/dashboard/mobile-nav"
 import { cn } from "@/lib/utils"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import LocationSelector, { type LocationData } from "@/components/location-selector"
 
 const SPIRITUAL_ORGANIZATIONS = [
   "ISKCON",
@@ -232,6 +233,18 @@ export default function SettingsPage() {
     setProfile((prev: any) => ({ ...prev, [field]: value }))
   }
 
+  const handleLocationChange = (location: LocationData) => {
+    setProfile((prev: any) => ({
+      ...prev,
+      country_id: location.country_id,
+      country: location.country_name,
+      state_id: location.state_id,
+      state: location.state_name,
+      city_id: location.city_id,
+      city: location.city_name,
+    }))
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 flex items-center justify-center">
@@ -349,31 +362,20 @@ export default function SettingsPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-4">
-                    <div>
-                      <Label htmlFor="city">City</Label>
-                      <Input
-                        id="city"
-                        value={profile?.city || ""}
-                        onChange={(e) => updateProfile("city", e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="state">State</Label>
-                      <Input
-                        id="state"
-                        value={profile?.state || ""}
-                        onChange={(e) => updateProfile("state", e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="country">Country</Label>
-                      <Input
-                        id="country"
-                        value={profile?.country || ""}
-                        onChange={(e) => updateProfile("country", e.target.value)}
-                      />
-                    </div>
+                  {/* Location Section */}
+                  <div className="pt-4 border-t">
+                    <LocationSelector
+                      value={{
+                        country_id: profile?.country_id || null,
+                        country_name: profile?.country || null,
+                        state_id: profile?.state_id || null,
+                        state_name: profile?.state || null,
+                        city_id: profile?.city_id || null,
+                        city_name: profile?.city || null,
+                      }}
+                      onChange={handleLocationChange}
+                      required={false}
+                    />
                   </div>
 
                   {/* Family & Background */}

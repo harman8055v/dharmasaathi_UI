@@ -1,32 +1,25 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { Heart, Sparkles, Loader2 } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Heart, Sparkles } from "lucide-react"
 import Image from "next/image"
 
 interface FullScreenLoadingProps {
   title: string
   subtitle: string
-  messages?: string[]
+  messages: string[]
   duration?: number
 }
 
-export default function FullScreenLoading({
-  title,
-  subtitle,
-  messages = [
-    "Setting up your spiritual profile...",
-    "Connecting you with like-minded souls...",
-    "Preparing your sacred journey...",
-    "Almost ready...",
-  ],
-  duration = 3000,
-}: FullScreenLoadingProps) {
+export default function FullScreenLoading({ title, subtitle, messages, duration = 4000 }: FullScreenLoadingProps) {
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0)
   const [progress, setProgress] = useState(0)
 
   useEffect(() => {
-    // Progress animation
+    const messageInterval = setInterval(() => {
+      setCurrentMessageIndex((prev) => (prev + 1) % messages.length)
+    }, duration / messages.length)
+
     const progressInterval = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 100) return 100
@@ -34,68 +27,65 @@ export default function FullScreenLoading({
       })
     }, 100)
 
-    // Message rotation
-    const messageInterval = setInterval(() => {
-      setCurrentMessageIndex((prev) => (prev + 1) % messages.length)
-    }, duration / messages.length)
-
     return () => {
-      clearInterval(progressInterval)
       clearInterval(messageInterval)
+      clearInterval(progressInterval)
     }
-  }, [duration, messages.length])
+  }, [messages.length, duration])
 
   return (
-    <div className="fixed inset-0 z-50 bg-gradient-to-br from-orange-50 via-amber-50 to-pink-50 flex items-center justify-center">
-      {/* Background Pattern */}
-      <div className="absolute inset-0 opacity-10">
-        <div className="absolute top-20 left-20 w-32 h-32 bg-orange-200 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute top-40 right-32 w-24 h-24 bg-pink-200 rounded-full blur-2xl animate-pulse delay-1000"></div>
-        <div className="absolute bottom-32 left-1/3 w-40 h-40 bg-amber-200 rounded-full blur-3xl animate-pulse delay-2000"></div>
-        <div className="absolute bottom-20 right-20 w-28 h-28 bg-rose-200 rounded-full blur-2xl animate-pulse delay-500"></div>
+    <div className="fixed inset-0 bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 flex items-center justify-center z-50">
+      {/* Floating Background Elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-orange-200/30 rounded-full animate-pulse"></div>
+        <div className="absolute top-3/4 right-1/4 w-24 h-24 bg-pink-200/30 rounded-full animate-pulse delay-1000"></div>
+        <div className="absolute bottom-1/4 left-1/3 w-20 h-20 bg-amber-200/30 rounded-full animate-pulse delay-500"></div>
       </div>
 
       <div className="relative z-10 text-center max-w-md mx-auto px-6">
         {/* Logo */}
         <div className="mb-8 animate-fade-in">
-          <Image src="/logo.png" alt="DharmaSaathi Logo" width={120} height={40} className="mx-auto mb-4" />
-          <div className="flex justify-center items-center gap-2">
-            <Heart className="w-8 h-8 text-orange-500 animate-pulse" />
-            <Sparkles className="w-6 h-6 text-amber-500 animate-spin" />
-            <Heart className="w-8 h-8 text-pink-500 animate-pulse delay-500" />
+          <div className="w-20 h-20 mx-auto mb-4 relative">
+            <Image src="/logo.png" alt="DharmaSaathi" fill className="object-contain" />
           </div>
         </div>
 
-        {/* Title */}
-        <h1 className="text-3xl font-bold text-gray-900 mb-4 animate-fade-in delay-300">{title}</h1>
+        {/* Title and Subtitle */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2 animate-fade-in delay-300">{title}</h1>
+          <p className="text-gray-600 animate-fade-in delay-500">{subtitle}</p>
+        </div>
 
-        {/* Subtitle */}
-        <p className="text-lg text-gray-600 mb-8 animate-fade-in delay-500">{subtitle}</p>
+        {/* Animated Icons */}
+        <div className="flex justify-center gap-4 mb-8">
+          <Heart className="w-8 h-8 text-orange-500 animate-pulse" />
+          <Sparkles className="w-8 h-8 text-pink-500 animate-spin" style={{ animationDuration: "3s" }} />
+          <Heart className="w-8 h-8 text-orange-500 animate-pulse delay-500" />
+        </div>
 
         {/* Progress Bar */}
         <div className="mb-6">
-          <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+          <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
             <div
-              className="h-full bg-gradient-to-r from-orange-500 via-amber-500 to-pink-500 rounded-full transition-all duration-300 ease-out"
+              className="bg-gradient-to-r from-orange-500 to-pink-500 h-2 rounded-full transition-all duration-300 ease-out"
               style={{ width: `${progress}%` }}
             ></div>
           </div>
-          <p className="text-sm text-gray-500 mt-2">{Math.round(progress)}% Complete</p>
+          <p className="text-sm text-gray-500">{Math.round(progress)}% Complete</p>
         </div>
 
         {/* Loading Message */}
-        <div className="flex items-center justify-center gap-3 mb-8">
-          <Loader2 className="w-5 h-5 animate-spin text-orange-500" />
-          <p className="text-gray-700 font-medium animate-fade-in">{messages[currentMessageIndex]}</p>
+        <div className="mb-8">
+          <p className="text-lg text-gray-700 animate-fade-in">{messages[currentMessageIndex]}</p>
         </div>
 
         {/* Spiritual Quote */}
-        <div className="bg-white/60 backdrop-blur-sm rounded-lg p-4 border border-white/50">
-          <p className="text-sm text-gray-600 italic">
-            "The meeting of two personalities is like the contact of two chemical substances: if there is any reaction,
-            both are transformed."
+        <div className="text-center">
+          <p className="text-sm text-gray-500 italic">
+            "Your task is not to seek for love, but merely to seek and find all the barriers within yourself that you
+            have built against it."
           </p>
-          <p className="text-xs text-gray-500 mt-2">- Carl Jung</p>
+          <p className="text-xs text-gray-400 mt-1">- Rumi</p>
         </div>
       </div>
 
@@ -110,15 +100,12 @@ export default function FullScreenLoading({
             transform: translateY(0);
           }
         }
-        
         .animate-fade-in {
           animation: fade-in 0.6s ease-out forwards;
         }
-        
         .delay-300 {
           animation-delay: 300ms;
         }
-        
         .delay-500 {
           animation-delay: 500ms;
         }
