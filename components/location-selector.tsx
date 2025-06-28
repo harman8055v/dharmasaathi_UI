@@ -1,250 +1,265 @@
 "use client"
-
-import { useState, useEffect, useCallback } from "react"
-import { ChevronDown, MapPin } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { Label } from "@/components/ui/label"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
-import { useLocationData, type Country, type State, type City } from "@/lib/hooks/useLocationData"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Input } from "@/components/ui/input"
+import { Loader2, MapPin, Search } from "lucide-react"
+import { useCountries, useStates, useCities } from "@/lib/hooks/useLocationData"
+
+export interface LocationFormState {
+  country_id: number | null
+  state_id: number | null
+  city_id: number | null
+}
 
 interface LocationSelectorProps {
-  value: {
-    country_id?: string
-    state_id?: string
-    city_id?: string
-  }
-  onChange: (value: { country_id?: string; state_id?: string; city_id?: string }) => void
-  defaultToIndia?: boolean
+  value: LocationFormState
+  onChange: (location: LocationFormState) => void
+  disabled?: boolean
+  required?: boolean
+  showLabels?: boolean
   className?: string
+  defaultToIndia?: boolean
 }
 
 export default function LocationSelector({
   value,
   onChange,
-  defaultToIndia = true,
+  disabled = false,
+  required = false,
+  showLabels = true,
   className = "",
+  defaultToIndia = true,
 }: LocationSelectorProps) {
-  const { countries, states, cities, loading, loadStates, loadCities } = useLocationData()
+  const { countries, loading: countriesLoading } = useCountries()
+  const { states, loading: statesLoading } = useStates(value.country_id)
+  const { cities, loading: citiesLoading } = useCities(value.state_id)
 
-  const [selectedCountry, setSelectedCountry] = useState<Country | null>(null)
-  const [selectedState, setSelectedState] = useState<State | null>(null)
-  const [selectedCity, setSelectedCity] = useState<City | null>(null)
+  // Search states
+  const [countrySearch, setCountrySearch] = useState("")
+  const [stateSearch, setStateSearch] = useState("")
+  const [citySearch, setCitySearch] = useState("")
 
-  const [openCountry, setOpenCountry] = useState(false)
-  const [openState, setOpenState] = useState(false)
-  const [openCity, setOpenCity] = useState(false)
-
+  // Track if we've already set India as default to prevent infinite loops
   const [hasSetDefault, setHasSetDefault] = useState(false)
 
-  // Set India as default when countries load
+  // Set India as default country on mount if no country is selected
   useEffect(() => {
-    if (defaultToIndia && countries.length > 0 && !hasSetDefault && !value.country_id) {
-      const india = countries.find((c) => c.name === "India")
+    if (defaultToIndia && !value.country_id && countries.length > 0 && !hasSetDefault) {
+      const india = countries.find((country) => country.name === "India")
       if (india) {
-        setSelectedCountry(india)
-        loadStates(india.id)
-        onChange({ country_id: india.id, state_id: undefined, city_id: undefined })
         setHasSetDefault(true)
+        onChange({
+          country_id: india.id,
+          state_id: null,
+          city_id: null,
+        })
       }
     }
-  }, [countries, defaultToIndia, hasSetDefault, value.country_id, loadStates, onChange])
+  }, [countries, value.country_id, defaultToIndia, onChange, hasSetDefault])
 
-  // Initialize selected values from props
-  useEffect(() => {
-    if (value.country_id && countries.length > 0) {
-      const country = countries.find((c) => c.id === value.country_id)
-      if (country && country !== selectedCountry) {
-        setSelectedCountry(country)
-        if (!states.length) {
-          loadStates(country.id)
-        }
-      }
-    }
-  }, [value.country_id, countries, selectedCountry, states.length, loadStates])
+  // Filtered options based on search
+  const filteredCountries = useMemo(() => {
+    return countries.filter((country) => country.name.toLowerCase().includes(countrySearch.toLowerCase()))
+  }, [countries, countrySearch])
 
-  useEffect(() => {
-    if (value.state_id && states.length > 0) {
-      const state = states.find((s) => s.id === value.state_id)
-      if (state && state !== selectedState) {
-        setSelectedState(state)
-        if (!cities.length) {
-          loadCities(state.id)
-        }
-      }
-    }
-  }, [value.state_id, states, selectedState, cities.length, loadCities])
+  const filteredStates = useMemo(() => {
+    return states.filter((state) => state.name.toLowerCase().includes(stateSearch.toLowerCase()))
+  }, [states, stateSearch])
 
-  useEffect(() => {
-    if (value.city_id && cities.length > 0) {
-      const city = cities.find((c) => c.id === value.city_id)
-      if (city && city !== selectedCity) {
-        setSelectedCity(city)
-      }
-    }
-  }, [value.city_id, cities, selectedCity])
+  const filteredCities = useMemo(() => {
+    return cities.filter((city) => city.name.toLowerCase().includes(citySearch.toLowerCase()))
+  }, [cities, citySearch])
 
-  const handleCountrySelect = useCallback(
-    (country: Country) => {
-      setSelectedCountry(country)
-      setSelectedState(null)
-      setSelectedCity(null)
-      setOpenCountry(false)
-      loadStates(country.id)
-      onChange({ country_id: country.id, state_id: undefined, city_id: undefined })
-    },
-    [loadStates, onChange],
-  )
-
-  const handleStateSelect = useCallback(
-    (state: State) => {
-      setSelectedState(state)
-      setSelectedCity(null)
-      setOpenState(false)
-      loadCities(state.id)
+  const handleCountryChange = useCallback(
+    (countryId: string) => {
+      setCountrySearch("")
       onChange({
-        country_id: selectedCountry?.id,
-        state_id: state.id,
-        city_id: undefined,
+        country_id: Number.parseInt(countryId),
+        state_id: null,
+        city_id: null,
       })
     },
-    [selectedCountry?.id, loadCities, onChange],
+    [onChange],
   )
 
-  const handleCitySelect = useCallback(
-    (city: City) => {
-      setSelectedCity(city)
-      setOpenCity(false)
+  const handleStateChange = useCallback(
+    (stateId: string) => {
+      setStateSearch("")
       onChange({
-        country_id: selectedCountry?.id,
-        state_id: selectedState?.id,
-        city_id: city.id,
+        ...value,
+        state_id: Number.parseInt(stateId),
+        city_id: null,
       })
     },
-    [selectedCountry?.id, selectedState?.id, onChange],
+    [onChange, value],
   )
+
+  const handleCityChange = useCallback(
+    (cityId: string) => {
+      setCitySearch("")
+      onChange({
+        ...value,
+        city_id: Number.parseInt(cityId),
+      })
+    },
+    [onChange, value],
+  )
+
+  const getSelectedCountryName = () => {
+    const country = countries.find((c) => c.id === value.country_id)
+    return country?.name || ""
+  }
+
+  const getSelectedStateName = () => {
+    const state = states.find((s) => s.id === value.state_id)
+    return state?.name || ""
+  }
+
+  const getSelectedCityName = () => {
+    const city = cities.find((c) => c.id === value.city_id)
+    return city?.name || ""
+  }
 
   return (
     <div className={`space-y-4 ${className}`}>
-      {/* Country Selector */}
+      {showLabels && (
+        <div className="flex items-center gap-2 mb-4">
+          <MapPin className="w-5 h-5 text-orange-500" />
+          <h3 className="text-lg font-semibold text-gray-900">Location</h3>
+          {required && <span className="text-red-500">*</span>}
+        </div>
+      )}
+
+      {/* Country Selection */}
       <div className="space-y-2">
-        <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-          <MapPin className="w-4 h-4" />
-          Country *
+        <Label htmlFor="country" className="text-gray-700 font-medium">
+          Country {required && <span className="text-red-500">*</span>}
         </Label>
-        <Popover open={openCountry} onOpenChange={setOpenCountry}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              role="combobox"
-              aria-expanded={openCountry}
-              className="w-full justify-between h-11 bg-transparent"
-              disabled={loading.countries}
-            >
-              {selectedCountry ? selectedCountry.name : "Select country..."}
-              <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-full p-0" align="start">
-            <Command>
-              <CommandInput placeholder="Search countries..." className="h-9" />
-              <CommandList>
-                <CommandEmpty>No countries found.</CommandEmpty>
-                <CommandGroup>
-                  {countries.map((country) => (
-                    <CommandItem
-                      key={country.id}
-                      value={country.name}
-                      onSelect={() => handleCountrySelect(country)}
-                      className="cursor-pointer"
-                    >
-                      {country.name}
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
+        <Select
+          value={value.country_id?.toString() || ""}
+          onValueChange={handleCountryChange}
+          disabled={disabled || countriesLoading}
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder={countriesLoading ? "Loading countries..." : "Select Country"}>
+              {getSelectedCountryName()}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <div className="flex items-center px-3 pb-2">
+              <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+              <Input
+                placeholder="Search countries..."
+                value={countrySearch}
+                onChange={(e) => setCountrySearch(e.target.value)}
+                className="h-8 w-full border-0 p-0 focus:ring-0"
+              />
+            </div>
+            {filteredCountries.map((country) => (
+              <SelectItem key={country.id} value={country.id.toString()}>
+                {country.name}
+              </SelectItem>
+            ))}
+            {filteredCountries.length === 0 && countrySearch && (
+              <div className="px-3 py-2 text-sm text-gray-500">No countries found</div>
+            )}
+          </SelectContent>
+        </Select>
       </div>
 
-      {/* State Selector */}
+      {/* State Selection */}
       <div className="space-y-2">
-        <Label className="text-sm font-medium text-gray-700">State/Province *</Label>
-        <Popover open={openState} onOpenChange={setOpenState}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              role="combobox"
-              aria-expanded={openState}
-              className="w-full justify-between h-11 bg-transparent"
-              disabled={!selectedCountry || loading.states}
+        <Label htmlFor="state" className="text-gray-700 font-medium">
+          State {required && <span className="text-red-500">*</span>}
+        </Label>
+        <Select
+          value={value.state_id?.toString() || ""}
+          onValueChange={handleStateChange}
+          disabled={disabled || !value.country_id || statesLoading}
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue
+              placeholder={
+                !value.country_id ? "Select Country first" : statesLoading ? "Loading states..." : "Select State"
+              }
             >
-              {selectedState ? selectedState.name : "Select state..."}
-              <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-full p-0" align="start">
-            <Command>
-              <CommandInput placeholder="Search states..." className="h-9" />
-              <CommandList>
-                <CommandEmpty>No states found.</CommandEmpty>
-                <CommandGroup>
-                  {states.map((state) => (
-                    <CommandItem
-                      key={state.id}
-                      value={state.name}
-                      onSelect={() => handleStateSelect(state)}
-                      className="cursor-pointer"
-                    >
-                      {state.name}
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
+              {getSelectedStateName()}
+            </SelectValue>
+            {statesLoading && <Loader2 className="w-4 h-4 animate-spin ml-2" />}
+          </SelectTrigger>
+          <SelectContent>
+            <div className="flex items-center px-3 pb-2">
+              <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+              <Input
+                placeholder="Search states..."
+                value={stateSearch}
+                onChange={(e) => setStateSearch(e.target.value)}
+                className="h-8 w-full border-0 p-0 focus:ring-0"
+              />
+            </div>
+            {filteredStates.map((state) => (
+              <SelectItem key={state.id} value={state.id.toString()}>
+                {state.name}
+              </SelectItem>
+            ))}
+            {filteredStates.length === 0 && stateSearch && (
+              <div className="px-3 py-2 text-sm text-gray-500">No states found</div>
+            )}
+          </SelectContent>
+        </Select>
       </div>
 
-      {/* City Selector */}
+      {/* City Selection */}
       <div className="space-y-2">
-        <Label className="text-sm font-medium text-gray-700">City *</Label>
-        <Popover open={openCity} onOpenChange={setOpenCity}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              role="combobox"
-              aria-expanded={openCity}
-              className="w-full justify-between h-11 bg-transparent"
-              disabled={!selectedState || loading.cities}
+        <Label htmlFor="city" className="text-gray-700 font-medium">
+          City {required && <span className="text-red-500">*</span>}
+        </Label>
+        <Select
+          value={value.city_id?.toString() || ""}
+          onValueChange={handleCityChange}
+          disabled={disabled || !value.state_id || citiesLoading}
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue
+              placeholder={!value.state_id ? "Select State first" : citiesLoading ? "Loading cities..." : "Select City"}
             >
-              {selectedCity ? selectedCity.name : "Select city..."}
-              <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-full p-0" align="start">
-            <Command>
-              <CommandInput placeholder="Search cities..." className="h-9" />
-              <CommandList>
-                <CommandEmpty>No cities found.</CommandEmpty>
-                <CommandGroup>
-                  {cities.map((city) => (
-                    <CommandItem
-                      key={city.id}
-                      value={city.name}
-                      onSelect={() => handleCitySelect(city)}
-                      className="cursor-pointer"
-                    >
-                      {city.name}
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
+              {getSelectedCityName()}
+            </SelectValue>
+            {citiesLoading && <Loader2 className="w-4 h-4 animate-spin ml-2" />}
+          </SelectTrigger>
+          <SelectContent>
+            <div className="flex items-center px-3 pb-2">
+              <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+              <Input
+                placeholder="Search cities..."
+                value={citySearch}
+                onChange={(e) => setCitySearch(e.target.value)}
+                className="h-8 w-full border-0 p-0 focus:ring-0"
+              />
+            </div>
+            {filteredCities.map((city) => (
+              <SelectItem key={city.id} value={city.id.toString()}>
+                {city.name}
+              </SelectItem>
+            ))}
+            {filteredCities.length === 0 && citySearch && (
+              <div className="px-3 py-2 text-sm text-gray-500">No cities found</div>
+            )}
+          </SelectContent>
+        </Select>
       </div>
+
+      {/* Validation Message */}
+      {required && (!value.country_id || !value.state_id || !value.city_id) && (
+        <p className="text-sm text-gray-500 mt-2">Please select your complete location (Country, State, and City)</p>
+      )}
     </div>
   )
+}
+
+// Helper function to validate location data
+export function validateLocation(location: LocationFormState, required = false): boolean {
+  if (!required) return true
+  return !!(location.country_id && location.state_id && location.city_id)
 }

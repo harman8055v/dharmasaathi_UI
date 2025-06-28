@@ -122,6 +122,80 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
     setError(null) // Clear any previous errors
   }
 
+  // Submit user profile using upsert to avoid duplicate key errors
+  async function submitUserProfile(profileData: Partial<OnboardingData>) {
+    if (!user?.id) {
+      throw new Error("User ID is required for profile submission")
+    }
+
+    try {
+      console.log("Submitting user profile for user ID:", user.id)
+      console.log("Profile data to submit:", profileData)
+
+      // Prepare the complete profile data for upsert
+      const completeProfileData = {
+        id: user.id, // Always include the user ID for upsert
+        ...profileData,
+        updated_at: new Date().toISOString(),
+      }
+
+      // Use upsert to either create or update the user profile
+      const { data, error: upsertError } = await supabase
+        .from("users")
+        .upsert(completeProfileData, {
+          onConflict: "id", // Specify the conflict column
+          ignoreDuplicates: false, // We want to update if exists
+        })
+        .select()
+        .single()
+
+      if (upsertError) {
+        console.error("Upsert error details:", {
+          message: upsertError.message,
+          details: upsertError.details,
+          hint: upsertError.hint,
+          code: upsertError.code,
+        })
+        throw new Error(`Failed to save profile: ${upsertError.message}`)
+      }
+
+      console.log("Profile upserted successfully:", data)
+      return data
+    } catch (error) {
+      console.error("Error in submitUserProfile:", error)
+      throw error
+    }
+  }
+
+  // Fetch current user profile using user ID
+  async function fetchUserProfile() {
+    if (!user?.id) {
+      throw new Error("User ID is required to fetch profile")
+    }
+
+    try {
+      console.log("Fetching profile for user ID:", user.id)
+
+      const { data, error } = await supabase.from("users").select("*").eq("id", user.id).maybeSingle()
+
+      if (error) {
+        console.error("Error fetching user profile:", {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code,
+        })
+        throw new Error(`Failed to fetch profile: ${error.message}`)
+      }
+
+      console.log("Profile fetched successfully:", data)
+      return data
+    } catch (error) {
+      console.error("Error in fetchUserProfile:", error)
+      throw error
+    }
+  }
+
   // Save and next handler
   async function handleSaveAndNext(stagePayload: Partial<OnboardingData>) {
     setIsLoading(true)
@@ -142,23 +216,13 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
 
         // Only make the database call if we have data to save
         if (Object.keys(payload).length > 0) {
-          const { error: saveError } = await supabase
-            .from("users")
-            .update({
-              ...payload,
-              updated_at: new Date().toISOString(),
-            })
-            .eq("id", user?.id)
-
-          if (saveError) {
-            console.error("Error saving stage data:", saveError)
-            throw new Error(`Failed to save data: ${saveError.message}`)
-          }
+          // Use the new submitUserProfile function
+          const updatedProfile = await submitUserProfile(payload)
 
           debugLog("Successfully saved data")
 
-          // Update local profile state
-          setProfile((prev) => ({ ...prev, ...payload }))
+          // Update local profile state with the returned data
+          setProfile((prev) => ({ ...prev, ...updatedProfile }))
         }
       }
 
@@ -166,18 +230,13 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
       if (stage < 5) {
         setStage(stage + 1)
       } else {
-        // Mark onboarding as complete and set verification status to pending (unverified)
-        const { error: completeError } = await supabase
-          .from("users")
-          .update({
-            onboarding_completed: true,
-            verification_status: "pending",
-          })
-          .eq("id", user?.id)
-
-        if (completeError) {
-          throw new Error(`Failed to complete onboarding: ${completeError.message}`)
+        // Mark onboarding as complete and set verification status to pending
+        const completionData = {
+          onboarding_completed: true,
+          verification_status: "pending" as const,
         }
+
+        await submitUserProfile(completionData)
 
         setShowCompletion(true)
         setTimeout(() => {
@@ -288,17 +347,12 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
         setStage(stage + 1)
       } else {
         // If skipping the final stage, still mark onboarding as complete
-        const { error: completeError } = await supabase
-          .from("users")
-          .update({
-            onboarding_completed: true,
-            verification_status: "pending",
-          })
-          .eq("id", user?.id)
-
-        if (completeError) {
-          throw new Error(`Failed to complete onboarding: ${completeError.message}`)
+        const completionData = {
+          onboarding_completed: true,
+          verification_status: "pending" as const,
         }
+
+        await submitUserProfile(completionData)
 
         setShowCompletion(true)
         setTimeout(() => {

@@ -42,65 +42,84 @@ export default function OnboardingPage() {
         debugLog("Authenticated user found:", user.id)
         setUser(user)
 
-        // Fetch user profile data
+        // Fetch user profile data using user ID (not email)
         const { data: profileData, error: profileError } = await supabase
           .from("users")
           .select("*")
           .eq("id", user.id)
-          .single()
+          .maybeSingle()
 
         if (profileError) {
-          if (profileError.code === "PGRST116") {
-            // No profile found, create one with required fields
-            debugLog("No profile found, creating new profile")
-            const newProfile: Partial<OnboardingProfile> = {
-              id: user.id,
-              email: user.email!, // Email is required and comes from auth
-              first_name: user.user_metadata?.first_name || null,
-              last_name: user.user_metadata?.last_name || null,
-              mobile_number: user.user_metadata?.mobile_number || null,
-              onboarding_completed: false,
-              // Initialize all enum fields as null
-              gender: null,
-              birthdate: null,
-              city: null,
-              state: null,
-              country: null,
-              mother_tongue: null,
-              education: null,
-              profession: null,
-              annual_income: null,
-              diet: null,
-              temple_visit_freq: null,
-              vanaprastha_interest: null,
-              artha_vs_moksha: null,
-              spiritual_org: [],
-              daily_practices: [],
-              user_photos: [],
-              about_me: null,
-              partner_expectations: null,
-              email_verified: !!user.email_confirmed_at, // Set based on auth status
-              mobile_verified: !!user.phone_confirmed_at, // Set based on auth status
-            }
+          console.error("Error fetching user profile:", {
+            message: profileError.message,
+            details: profileError.details,
+            hint: profileError.hint,
+            code: profileError.code,
+          })
+          setError("Error loading profile. Please try again.")
+          setTimeout(() => router.push("/"), 3000)
+          return
+        }
 
-            const { data: insertedProfile, error: insertError } = await supabase
-              .from("users")
-              .insert(newProfile)
-              .select()
-              .single()
+        if (!profileData) {
+          // No profile found, create a minimal one with required fields
+          debugLog("No profile found, creating new profile")
+          const newProfile: Partial<OnboardingProfile> = {
+            id: user.id,
+            onboarding_completed: false,
+            // Initialize all enum fields as null
+            gender: null,
+            birthdate: null,
+            country_id: null,
+            state_id: null,
+            city_id: null,
+            mother_tongue: null,
+            education: null,
+            profession: null,
+            annual_income: null,
+            diet: null,
+            temple_visit_freq: null,
+            vanaprastha_interest: null,
+            artha_vs_moksha: null,
+            spiritual_org: [],
+            daily_practices: [],
+            user_photos: [],
+            about_me: null,
+            partner_expectations: null,
+            favorite_spiritual_quote: null,
+            email_verified: !!user.email_confirmed_at,
+            mobile_verified: !!user.phone_confirmed_at,
+            mobile_number: user.user_metadata?.mobile_number || null,
+          }
 
-            if (insertError) {
-              console.error("Error creating profile:", insertError)
-              // Use the local profile if insert fails, but ensure email is set
-              setProfile({ ...newProfile, email: user.email! } as OnboardingProfile)
-            } else {
-              setProfile(insertedProfile)
-            }
+          // Use upsert to create the profile
+          const { data: insertedProfile, error: insertError } = await supabase
+            .from("users")
+            .upsert(
+              {
+                ...newProfile,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              },
+              {
+                onConflict: "id",
+                ignoreDuplicates: false,
+              },
+            )
+            .select()
+            .single()
+
+          if (insertError) {
+            console.error("Error creating profile:", {
+              message: insertError.message,
+              details: insertError.details,
+              hint: insertError.hint,
+              code: insertError.code,
+            })
+            // Use the local profile if upsert fails
+            setProfile(newProfile as OnboardingProfile)
           } else {
-            console.error("Error fetching user profile:", profileError)
-            setError("Error loading profile. Please try again.")
-            setTimeout(() => router.push("/"), 3000)
-            return
+            setProfile(insertedProfile)
           }
         } else {
           // Profile found
@@ -113,17 +132,11 @@ export default function OnboardingPage() {
             return
           }
 
-          // Ensure email is set (it should be from the database)
-          if (!profileData.email) {
-            profileData.email = user.email!
-          }
-
-          // Ensure email_verified is set based on auth status if not already set
+          // Ensure verification status is set based on auth status if not already set
           if (profileData.email_verified === null || profileData.email_verified === undefined) {
             profileData.email_verified = !!user.email_confirmed_at
           }
 
-          // Ensure mobile_verified is set based on auth status if not already set
           if (profileData.mobile_verified === null || profileData.mobile_verified === undefined) {
             profileData.mobile_verified = !!user.phone_confirmed_at
           }

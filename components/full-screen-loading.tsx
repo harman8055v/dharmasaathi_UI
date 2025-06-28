@@ -1,143 +1,133 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Loader2 } from "lucide-react"
-import Image from "next/image"
+import { Loader2, Shield, CheckCircle } from "lucide-react"
 
 interface FullScreenLoadingProps {
   title: string
-  subtitle?: string
-  messages?: string[]
+  subtitle: string
+  messages: string[]
   duration?: number
 }
 
-export default function FullScreenLoading({
-  title,
-  subtitle,
-  messages = [
-    "Initializing your spiritual journey...",
-    "Encrypting your personal data...",
-    "Setting up your profile...",
-    "Preparing your matches...",
-    "Almost ready...",
-  ],
-  duration = 5000,
-}: FullScreenLoadingProps) {
+export default function FullScreenLoading({ title, subtitle, messages, duration = 4000 }: FullScreenLoadingProps) {
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0)
   const [progress, setProgress] = useState(0)
 
   useEffect(() => {
+    const messageInterval = duration / messages.length
+    const progressInterval = 50 // Update progress every 50ms for smooth animation
+
     // Progress animation
-    const progressInterval = setInterval(() => {
+    const progressTimer = setInterval(() => {
       setProgress((prev) => {
-        if (prev >= 100) return 100
-        return prev + 100 / (duration / 100)
+        if (prev >= 100) {
+          clearInterval(progressTimer)
+          return 100
+        }
+        return prev + 100 / (duration / progressInterval)
       })
-    }, 100)
+    }, progressInterval)
 
     // Message rotation
-    const messageInterval = setInterval(() => {
-      setCurrentMessageIndex((prev) => (prev + 1) % messages.length)
-    }, duration / messages.length)
+    const messageTimer = setInterval(() => {
+      setCurrentMessageIndex((prev) => {
+        if (prev >= messages.length - 1) {
+          clearInterval(messageTimer)
+          return prev
+        }
+        return prev + 1
+      })
+    }, messageInterval)
 
     return () => {
-      clearInterval(progressInterval)
-      clearInterval(messageInterval)
+      clearInterval(progressTimer)
+      clearInterval(messageTimer)
     }
-  }, [duration, messages.length])
+  }, [messages.length, duration])
+
+  const currentMessage = messages[currentMessageIndex]
+  const isEncrypting = currentMessage?.toLowerCase().includes("encrypt")
+  const isComplete = progress >= 100
 
   return (
-    <>
-      {/* Full screen overlay with highest z-index */}
-      <div className="fixed inset-0 z-[99999] bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 flex items-center justify-center overflow-hidden">
-        {/* Background pattern */}
-        <div className="absolute inset-0 opacity-5">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(251,146,60,0.3),transparent_50%)]" />
+    <div className="fixed inset-0 z-[99999] bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 flex items-center justify-center">
+      {/* Backdrop overlay to prevent any background interactions */}
+      <div className="absolute inset-0 z-[99998] bg-black/10 backdrop-blur-sm" />
+
+      {/* Main content */}
+      <div className="relative z-[99999] text-center p-8 max-w-md mx-auto">
+        {/* Main icon/animation */}
+        <div className="mb-8">
+          {isComplete ? (
+            <div className="w-20 h-20 mx-auto mb-4 text-green-500 animate-bounce">
+              <CheckCircle className="w-full h-full" />
+            </div>
+          ) : (
+            <div className="relative w-20 h-20 mx-auto mb-4">
+              <Loader2 className="w-full h-full text-orange-500 animate-spin" />
+              {isEncrypting && <Shield className="absolute inset-2 w-12 h-12 text-green-600 animate-pulse" />}
+            </div>
+          )}
         </div>
 
-        {/* Main content container */}
-        <div className="relative z-10 text-center space-y-8 max-w-md mx-auto px-6 py-8">
-          {/* Logo */}
-          <div className="flex justify-center mb-8">
-            <Image src="/logo.png" alt="DharmaSaathi" width={140} height={48} className="animate-pulse" priority />
-          </div>
+        {/* Title */}
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">{title}</h1>
 
-          {/* Animated lotus/spinner */}
-          <div className="relative flex justify-center mb-8">
-            <div className="relative">
-              {/* Outer ring */}
-              <div className="w-20 h-20 rounded-full border-4 border-orange-200 animate-spin">
-                <div className="absolute top-0 left-1/2 w-2 h-2 bg-orange-500 rounded-full transform -translate-x-1/2 -translate-y-1" />
-              </div>
-              {/* Inner spinner */}
-              <div className="absolute inset-2">
-                <Loader2
-                  className="w-full h-full text-orange-500 animate-spin"
-                  style={{ animationDirection: "reverse" }}
-                />
-              </div>
-              {/* Center dot */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-3 h-3 bg-gradient-to-r from-orange-500 to-pink-500 rounded-full animate-pulse" />
-              </div>
-            </div>
-          </div>
+        {/* Subtitle */}
+        <p className="text-lg text-gray-600 mb-8">{subtitle}</p>
 
-          {/* Title and subtitle */}
-          <div className="space-y-3 mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">{title}</h1>
-            {subtitle && <p className="text-lg text-gray-600 font-medium">{subtitle}</p>}
-          </div>
+        {/* Progress bar */}
+        <div className="w-full bg-gray-200 rounded-full h-2 mb-6 overflow-hidden">
+          <div
+            className="bg-gradient-to-r from-orange-500 to-amber-500 h-2 rounded-full transition-all duration-300 ease-out"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
 
-          {/* Progress bar */}
-          <div className="w-full bg-gray-200 rounded-full h-2 mb-6 overflow-hidden">
+        {/* Progress percentage */}
+        <div className="text-sm text-gray-500 mb-4">{Math.round(progress)}% Complete</div>
+
+        {/* Current message */}
+        <div className="min-h-[60px] flex items-center justify-center">
+          <p
+            className={`text-base transition-all duration-500 ${
+              isEncrypting
+                ? "text-green-700 font-semibold bg-green-50 px-4 py-2 rounded-lg border border-green-200"
+                : "text-gray-700"
+            }`}
+          >
+            {isEncrypting && <Shield className="inline w-4 h-4 mr-2 text-green-600" />}
+            {currentMessage}
+          </p>
+        </div>
+
+        {/* Additional loading indicators */}
+        <div className="flex justify-center space-x-2 mt-6">
+          {[0, 1, 2].map((i) => (
             <div
-              className="bg-gradient-to-r from-orange-500 via-amber-500 to-pink-500 h-2 rounded-full transition-all duration-300 ease-out relative"
-              style={{ width: `${progress}%` }}
-            >
-              {/* Shimmer effect */}
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse" />
-            </div>
-          </div>
-
-          {/* Current message with encryption emphasis */}
-          <div className="min-h-[3rem] flex items-center justify-center mb-8">
-            <div className="text-center">
-              <p className="text-gray-700 font-medium text-lg animate-fade-in transition-all duration-500">
-                {messages[currentMessageIndex]}
-              </p>
-              {messages[currentMessageIndex]?.includes("Encrypting") && (
-                <div className="flex items-center justify-center mt-2 space-x-1">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                  <span className="text-sm text-green-600 font-medium">Secure & Private</span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Bottom status */}
-          <div className="text-center space-y-3 pb-8">
-            <div className="flex items-center justify-center space-x-2">
-              <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" />
-              <p className="text-sm text-gray-600 font-medium">Setting up your spiritual journey...</p>
-            </div>
-            <p className="text-xs text-gray-500">This process is secure and may take a few moments</p>
-
-            {/* Progress percentage */}
-            <div className="mt-4">
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                {Math.round(progress)}% Complete
-              </span>
-            </div>
-          </div>
+              key={i}
+              className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                i <= currentMessageIndex ? "bg-orange-500" : "bg-gray-300"
+              }`}
+              style={{
+                animationDelay: `${i * 0.2}s`,
+                animation: i <= currentMessageIndex ? "pulse 1.5s infinite" : "none",
+              }}
+            />
+          ))}
         </div>
 
-        {/* Prevent any background interactions */}
-        <div className="absolute inset-0 bg-white/10 backdrop-blur-[1px]" />
+        {/* Security notice for encryption */}
+        {isEncrypting && (
+          <div className="mt-6 p-3 bg-green-50 border border-green-200 rounded-lg">
+            <p className="text-xs text-green-700 flex items-center justify-center">
+              <Shield className="w-3 h-3 mr-1" />
+              Your data is being securely encrypted
+            </p>
+          </div>
+        )}
       </div>
-
-      {/* Additional overlay to block any alerts/notifications */}
-      <div className="fixed inset-0 z-[99998] pointer-events-none" />
-    </>
+    </div>
   )
 }
