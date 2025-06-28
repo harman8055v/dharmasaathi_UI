@@ -1,5 +1,5 @@
 "use client"
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
@@ -40,11 +40,15 @@ export default function LocationSelector({
   const [stateSearch, setStateSearch] = useState("")
   const [citySearch, setCitySearch] = useState("")
 
+  // Track if we've already set India as default to prevent infinite loops
+  const [hasSetDefault, setHasSetDefault] = useState(false)
+
   // Set India as default country on mount if no country is selected
   useEffect(() => {
-    if (defaultToIndia && !value.country_id && countries.length > 0) {
+    if (defaultToIndia && !value.country_id && countries.length > 0 && !hasSetDefault) {
       const india = countries.find((country) => country.name === "India")
       if (india) {
+        setHasSetDefault(true)
         onChange({
           country_id: india.id,
           state_id: null,
@@ -52,7 +56,7 @@ export default function LocationSelector({
         })
       }
     }
-  }, [countries, value.country_id, defaultToIndia, onChange])
+  }, [countries, value.country_id, defaultToIndia, onChange, hasSetDefault])
 
   // Filtered options based on search
   const filteredCountries = useMemo(() => {
@@ -67,31 +71,40 @@ export default function LocationSelector({
     return cities.filter((city) => city.name.toLowerCase().includes(citySearch.toLowerCase()))
   }, [cities, citySearch])
 
-  const handleCountryChange = (countryId: string) => {
-    setCountrySearch("")
-    onChange({
-      country_id: Number.parseInt(countryId),
-      state_id: null,
-      city_id: null,
-    })
-  }
+  const handleCountryChange = useCallback(
+    (countryId: string) => {
+      setCountrySearch("")
+      onChange({
+        country_id: Number.parseInt(countryId),
+        state_id: null,
+        city_id: null,
+      })
+    },
+    [onChange],
+  )
 
-  const handleStateChange = (stateId: string) => {
-    setStateSearch("")
-    onChange({
-      ...value,
-      state_id: Number.parseInt(stateId),
-      city_id: null,
-    })
-  }
+  const handleStateChange = useCallback(
+    (stateId: string) => {
+      setStateSearch("")
+      onChange({
+        ...value,
+        state_id: Number.parseInt(stateId),
+        city_id: null,
+      })
+    },
+    [onChange, value],
+  )
 
-  const handleCityChange = (cityId: string) => {
-    setCitySearch("")
-    onChange({
-      ...value,
-      city_id: Number.parseInt(cityId),
-    })
-  }
+  const handleCityChange = useCallback(
+    (cityId: string) => {
+      setCitySearch("")
+      onChange({
+        ...value,
+        city_id: Number.parseInt(cityId),
+      })
+    },
+    [onChange, value],
+  )
 
   const getSelectedCountryName = () => {
     const country = countries.find((c) => c.id === value.country_id)

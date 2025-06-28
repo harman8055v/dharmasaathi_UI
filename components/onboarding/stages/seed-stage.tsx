@@ -1,125 +1,96 @@
 "use client"
 
-import type React from "react"
 import { useState, useEffect } from "react"
-import { Loader2, CheckCircle, Phone, MessageSquareText, AlertCircle } from "lucide-react"
+import { Loader2, Phone, CheckCircle } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp"
 import { supabase } from "@/lib/supabase"
-import { formatMobileNumber, validateMobileNumber } from "@/lib/types/onboarding"
-
-interface OnboardingData {
-  mobile_number?: string | null
-  mobile_verified?: boolean
-}
+import type { User } from "@supabase/supabase-js"
+import type { OnboardingData } from "@/lib/types/onboarding"
 
 interface SeedStageProps {
-  formData: any
-  onChange: (updates: any) => void
+  formData: OnboardingData
+  onChange: (updates: Partial<OnboardingData>) => void
   onNext: (updates: Partial<OnboardingData>) => void
   isLoading: boolean
-  user?: any // This 'user' is the userProfile from the 'users' table
+  user: User | null
   error?: string | null
 }
 
 export default function SeedStage({ formData, onChange, onNext, isLoading, user, error }: SeedStageProps) {
-  // Initialize mobileNumber from formData.mobile_number (which comes from the user profile)
-  const [mobileNumber, setMobileNumber] = useState(formData?.mobile_number || "")
+  const [mobileNumber, setMobileNumber] = useState(formData.mobile_number || "")
   const [otp, setOtp] = useState("")
+  const [step, setStep] = useState<"phone" | "otp">("phone")
   const [otpSent, setOtpSent] = useState(false)
-  const [isVerifying, setIsVerifying] = useState(false)
+  const [countdown, setCountdown] = useState(0)
   const [localError, setLocalError] = useState<string | null>(null)
-  const [isMobileVerified, setIsMobileVerified] = useState(formData?.mobile_verified || false)
-  const [resendTimer, setResendTimer] = useState(0)
-  const [isUserEditing, setIsUserEditing] = useState(false)
+  const [sendingOtp, setSendingOtp] = useState(false)
+  const [verifyingOtp, setVerifyingOtp] = useState(false)
 
+  // Check if mobile is already verified
   useEffect(() => {
-    // If mobile is already verified, immediately proceed
-    if (isMobileVerified) {
-      onNext({ mobile_verified: true })
+    if (user?.phone_confirmed_at || formData.mobile_verified) {
+      // Mobile already verified, proceed to next stage
+      onNext({ mobile_verified: true, mobile_number: formData.mobile_number })
     }
-  }, [isMobileVerified, onNext])
+  }, [user, formData.mobile_verified, formData.mobile_number, onNext])
 
-  // Update local state if formData props change (but not when user is actively editing)
+  // Countdown timer for resend OTP
   useEffect(() => {
-    if (!isUserEditing) {
-      if (formData?.mobile_number && formData.mobile_number !== mobileNumber) {
-        setMobileNumber(formData.mobile_number)
-      }
+    if (countdown > 0) {
+      const timer = setTimeout(() => setCountdown(countdown - 1), 1000)
+      return () => clearTimeout(timer)
     }
-    if (formData?.mobile_verified !== isMobileVerified) {
-      setIsMobileVerified(formData?.mobile_verified || false)
-    }
-  }, [formData?.mobile_number, formData?.mobile_verified, mobileNumber, isMobileVerified, isUserEditing])
-
-  const handleMobileNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatMobileNumber(e.target.value)
-    setMobileNumber(formatted)
-    setIsUserEditing(true)
-    setLocalError(null)
-  }
+  }, [countdown])
 
   const handleSendOtp = async () => {
-    setLocalError(null)
-    if (!validateMobileNumber(mobileNumber)) {
-      setLocalError("Please enter a valid mobile number (e.g., +919876543210)")
+    if (!mobileNumber || mobileNumber.length < 10) {
+      setLocalError("Please enter a valid mobile number")
       return
     }
 
-    setIsVerifying(true)
-    try {
-      console.log("Sending OTP to:", mobileNumber)
+    setSendingOtp(true)
+    setLocalError(null)
 
-      // Send login OTP to the provided phone number
-      const { error } = await supabase.auth.signInWithOtp({ phone: mobileNumber })
+    try {
+      // Format mobile number for India (+91)
+      const formattedNumber = mobileNumber.startsWith("+91") ? mobileNumber : `+91${mobileNumber.replace(/^0+/, "")}`
+
+      const { error } = await supabase.auth.signInWithOtp({
+        phone: formattedNumber,
+      })
 
       if (error) {
-        console.error("Error sending OTP:", error)
         throw error
       }
 
-      // Mark OTP as sent and start the resend timer
       setOtpSent(true)
-      setIsUserEditing(false)
-      setResendTimer(60)
-
-      // Start countdown timer
-      const timer = setInterval(() => {
-        setResendTimer((prev) => {
-          if (prev <= 1) {
-            clearInterval(timer)
-            return 0
-          }
-          return prev - 1
-        })
-      }, 1000)
-
-      setLocalError(null)
+      setStep("otp")
+      setCountdown(60) // 60 second countdown
+      onChange({ mobile_number: formattedNumber })
     } catch (err: any) {
       console.error("Error sending OTP:", err)
       setLocalError(err.message || "Failed to send OTP. Please try again.")
     } finally {
-      setIsVerifying(false)
+      setSendingOtp(false)
     }
   }
 
   const handleVerifyOtp = async () => {
+    if (!otp || otp.length !== 6) {
+      setLocalError("Please enter the complete 6-digit OTP")
+      return
+    }
+
+    setVerifyingOtp(true)
     setLocalError(null)
-    if (!otp) {
-      setLocalError("Please enter the OTP.")
-      return
-    }
 
-    if (otp.length !== 6) {
-      setLocalError("OTP must be 6 digits.")
-      return
-    }
-
-    setIsVerifying(true)
     try {
-      console.log("Verifying OTP:", otp, "for phone:", mobileNumber)
+      const formattedNumber = mobileNumber.startsWith("+91") ? mobileNumber : `+91${mobileNumber.replace(/^0+/, "")}`
 
-      // Verify the OTP using the login-OTP flow
-      const { data, error } = await supabase.auth.verifyOtp({
-        phone: mobileNumber,
+      const { error } = await supabase.auth.verifyOtp({
+        phone: formattedNumber,
         token: otp,
         type: "sms",
       })
@@ -128,277 +99,170 @@ export default function SeedStage({ formData, onChange, onNext, isLoading, user,
         throw error
       }
 
-      if (data.user) {
-        console.log("OTP verification successful:", data.user.id)
-
-        // Update the mobile_verified status in your 'users' table
-        const { error: updateError } = await supabase
-          .from("users")
-          .update({
-            mobile_number: mobileNumber,
-            mobile_verified: true,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", data.user.id)
-
-        if (updateError) {
-          console.error("Error updating mobile_verified status:", updateError)
-          setLocalError("OTP verified, but failed to update profile. Please contact support.")
-          return
-        }
-
-        setIsMobileVerified(true)
-        onChange({ mobile_number: mobileNumber, mobile_verified: true })
-        onNext({ mobile_verified: true })
+      // OTP verified successfully
+      const dataToSave = {
+        mobile_verified: true,
+        mobile_number: formattedNumber,
       }
+
+      onChange(dataToSave)
+      onNext(dataToSave)
     } catch (err: any) {
       console.error("Error verifying OTP:", err)
-
-      // More specific error messages
-      if (err.message?.includes("Invalid token") || err.message?.includes("invalid")) {
-        setLocalError("Invalid OTP. Please check the 6-digit code and try again.")
-      } else if (err.message?.includes("expired") || err.message?.includes("Token has expired")) {
-        setLocalError("OTP has expired. Please request a new one.")
-      } else if (err.message?.includes("too many requests")) {
-        setLocalError("Too many attempts. Please wait a few minutes before trying again.")
-      } else if (err.message?.includes("Phone number not confirmed")) {
-        setLocalError("Phone number verification failed. Please try sending a new OTP.")
-      } else {
-        setLocalError(`Verification failed: ${err.message || "Please try again or request a new OTP."}`)
-      }
+      setLocalError(err.message || "Invalid OTP. Please try again.")
     } finally {
-      setIsVerifying(false)
+      setVerifyingOtp(false)
     }
   }
 
-  const handleResendOtp = async () => {
-    if (resendTimer > 0) return
-
-    setIsVerifying(true)
-    setLocalError(null)
-
-    try {
-      console.log("Resending OTP to:", mobileNumber)
-
-      const { error } = await supabase.auth.updateUser({
-        phone: mobileNumber,
-      })
-
-      if (error) {
-        console.error("Resend OTP error:", error)
-        throw error
-      }
-
-      console.log("OTP resent successfully")
-      setResendTimer(60)
-      const timer = setInterval(() => {
-        setResendTimer((prev) => {
-          if (prev <= 1) {
-            clearInterval(timer)
-            return 0
-          }
-          return prev - 1
-        })
-      }, 1000)
-
-      setLocalError(null)
-    } catch (error: any) {
-      console.error("Resend OTP error:", error)
-      setLocalError("Failed to resend OTP. Please try again.")
-    } finally {
-      setIsVerifying(false)
+  const handleResendOtp = () => {
+    if (countdown === 0) {
+      setOtp("")
+      handleSendOtp()
     }
+  }
+
+  const handleSkip = () => {
+    const dataToSave = {
+      mobile_verified: false,
+      mobile_number: null,
+    }
+    onChange(dataToSave)
+    onNext(dataToSave)
   }
 
   return (
     <div className="space-y-6">
-      <div className="text-center mb-8">
-        <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4">
-          <Phone className="w-10 h-10 text-white" />
-        </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Verify Your Mobile Number</h2>
-        <p className="text-gray-600">A crucial step to secure your spiritual journey on DharmaSaathi</p>
+      <div className="text-center mb-6">
+        <div className="text-4xl mb-4">🌱</div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Plant your seed</h2>
+        <p className="text-gray-600">Verify your mobile number to secure your spiritual journey</p>
       </div>
 
-      <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-        {localError && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
-            <AlertCircle className="h-5 w-5 text-red-600" />
-            <p className="text-red-700 text-sm">{localError}</p>
-          </div>
-        )}
-
-        {isMobileVerified ? (
-          <div className="text-center space-y-4">
-            <div className="flex items-center justify-center text-green-600 gap-2 bg-green-50 p-4 rounded-lg">
-              <CheckCircle className="h-6 w-6" />
-              <span className="font-semibold">Mobile number verified successfully! 🌱</span>
+      {step === "phone" && (
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <label htmlFor="mobile" className="block text-sm font-semibold text-gray-700">
+              Mobile Number *
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Phone className="h-5 w-5 text-gray-400" />
+              </div>
+              <Input
+                id="mobile"
+                type="tel"
+                value={mobileNumber}
+                onChange={(e) => setMobileNumber(e.target.value)}
+                placeholder="Enter your mobile number"
+                className="pl-10 py-3 text-lg"
+                maxLength={10}
+              />
             </div>
-            <p className="text-gray-600 text-sm">Your sacred seed has been planted. Ready to grow your profile?</p>
-            <button
-              onClick={() => onNext({ mobile_verified: true })}
-              disabled={isLoading}
-              className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+            <p className="text-xs text-gray-500">We'll send you a verification code via SMS</p>
+          </div>
+
+          {(localError || error) && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-700 text-sm">{localError || error}</p>
+            </div>
+          )}
+
+          <div className="flex gap-4">
+            <Button
+              onClick={handleSendOtp}
+              disabled={sendingOtp || !mobileNumber}
+              className="flex-1 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold py-4 px-6 rounded-lg"
             >
-              {isLoading ? (
+              {sendingOtp ? (
                 <span className="flex items-center justify-center gap-2">
                   <Loader2 className="h-5 w-5 animate-spin" />
-                  Growing your profile...
+                  Sending OTP...
                 </span>
               ) : (
-                "Continue to Stem Stage 🌱"
+                "Send OTP"
               )}
+            </Button>
+
+            <Button
+              type="button"
+              onClick={handleSkip}
+              variant="ghost"
+              className="px-6 py-4 text-gray-600 hover:text-gray-800 font-medium"
+            >
+              Skip
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {step === "otp" && (
+        <div className="space-y-6">
+          <div className="text-center">
+            <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">OTP Sent Successfully</h3>
+            <p className="text-gray-600">We've sent a 6-digit code to {mobileNumber}</p>
+          </div>
+
+          <div className="space-y-4">
+            <label className="block text-sm font-semibold text-gray-700 text-center">Enter Verification Code</label>
+            <div className="flex justify-center">
+              <InputOTP maxLength={6} value={otp} onChange={(value) => setOtp(value)}>
+                <InputOTPGroup>
+                  <InputOTPSlot index={0} />
+                  <InputOTPSlot index={1} />
+                  <InputOTPSlot index={2} />
+                  <InputOTPSlot index={3} />
+                  <InputOTPSlot index={4} />
+                  <InputOTPSlot index={5} />
+                </InputOTPGroup>
+              </InputOTP>
+            </div>
+          </div>
+
+          {(localError || error) && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-700 text-sm">{localError || error}</p>
+            </div>
+          )}
+
+          <div className="text-center">
+            <button
+              onClick={handleResendOtp}
+              disabled={countdown > 0}
+              className="text-sm text-orange-600 hover:text-orange-700 disabled:text-gray-400 disabled:cursor-not-allowed"
+            >
+              {countdown > 0 ? `Resend OTP in ${countdown}s` : "Resend OTP"}
             </button>
           </div>
-        ) : (
-          <div className="space-y-4">
-            {!otpSent ? (
-              <>
-                <div className="space-y-2">
-                  <label htmlFor="mobileNumber" className="block text-sm font-medium text-foreground">
-                    Mobile Number *
-                  </label>
-                  <div className="relative mt-1">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Phone className="h-4 w-4 text-gray-400" />
-                    </div>
-                    <input
-                      id="mobileNumber"
-                      type="tel"
-                      value={mobileNumber}
-                      onChange={handleMobileNumberChange}
-                      className={`w-full pl-10 pr-3 py-2 border border-input rounded-md focus:outline-none focus:ring-1 focus:ring-primary ${
-                        localError ? "border-red-500" : ""
-                      }`}
-                      placeholder="+91 98765 43210"
-                      disabled={isVerifying}
-                    />
-                  </div>
-                  <p className="mt-1 text-xs text-gray-500">Include country code (e.g., +91 for India)</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleSendOtp}
-                  disabled={isVerifying || !mobileNumber}
-                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-                >
-                  {isVerifying ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                      Sending OTP...
-                    </span>
-                  ) : (
-                    "Send OTP"
-                  )}
-                </button>
-              </>
-            ) : (
-              <>
-                <div className="text-center mb-6">
-                  <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <MessageSquareText className="w-6 h-6 text-green-600" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Enter Verification Code</h3>
-                  <p className="text-gray-600 text-sm">We've sent a 6-digit code to:</p>
-                  <p className="font-semibold text-gray-900">{mobileNumber}</p>
-                </div>
 
-                <div className="space-y-2 mb-4">
-                  <label htmlFor="mobileNumberEdit" className="block text-sm font-medium text-foreground">
-                    Mobile Number *
-                  </label>
-                  <div className="relative mt-1">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Phone className="h-4 w-4 text-gray-400" />
-                    </div>
-                    <input
-                      id="mobileNumberEdit"
-                      type="tel"
-                      value={mobileNumber}
-                      onChange={handleMobileNumberChange}
-                      className={`w-full pl-10 pr-3 py-2 border border-input rounded-md focus:outline-none focus:ring-1 focus:ring-primary ${
-                        localError ? "border-red-500" : ""
-                      }`}
-                      placeholder="+91 98765 43210"
-                      disabled={isVerifying}
-                    />
-                  </div>
-                  <p className="mt-1 text-xs text-gray-500">You can edit your mobile number if needed</p>
-                </div>
+          <div className="flex gap-4">
+            <Button
+              onClick={handleVerifyOtp}
+              disabled={verifyingOtp || otp.length !== 6}
+              className="flex-1 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold py-4 px-6 rounded-lg"
+            >
+              {verifyingOtp ? (
+                <span className="flex items-center justify-center gap-2">
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  Verifying...
+                </span>
+              ) : (
+                "Verify & Continue"
+              )}
+            </Button>
 
-                <div className="space-y-2">
-                  <label htmlFor="otp" className="block text-sm font-medium text-foreground">
-                    Enter OTP *
-                  </label>
-                  <div className="relative mt-1">
-                    <input
-                      id="otp"
-                      type="text"
-                      inputMode="numeric"
-                      pattern="[0-9]*"
-                      maxLength={6}
-                      value={otp}
-                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-                      className={`w-full px-3 py-3 border border-input rounded-md focus:outline-none focus:ring-1 focus:ring-primary text-center text-lg tracking-widest ${
-                        localError ? "border-red-500" : ""
-                      }`}
-                      placeholder="000000"
-                      disabled={isVerifying}
-                      autoFocus
-                    />
-                  </div>
-                  <p className="mt-1 text-xs text-gray-500">Enter the 6-digit code sent to your phone</p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleVerifyOtp}
-                  disabled={isVerifying || otp.length !== 6}
-                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-                >
-                  {isVerifying ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                      Verifying OTP...
-                    </span>
-                  ) : (
-                    "Verify & Continue"
-                  )}
-                </button>
-
-                <div className="text-center space-y-2">
-                  <button
-                    type="button"
-                    onClick={handleResendOtp}
-                    disabled={resendTimer > 0 || isVerifying}
-                    className="text-sm text-orange-600 hover:text-orange-700 font-medium disabled:text-gray-400 disabled:cursor-not-allowed"
-                  >
-                    {resendTimer > 0 ? `Resend OTP in ${resendTimer}s` : "Resend OTP"}
-                  </button>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setOtpSent(false)
-                    setOtp("")
-                    setLocalError(null)
-                  }}
-                  className="w-full text-sm text-blue-600 hover:text-blue-700 underline mt-2"
-                >
-                  Change mobile number
-                </button>
-              </>
-            )}
+            <Button
+              type="button"
+              onClick={() => setStep("phone")}
+              variant="ghost"
+              className="px-6 py-4 text-gray-600 hover:text-gray-800 font-medium"
+            >
+              Back
+            </Button>
           </div>
-        )}
-      </div>
-
-      <div className="text-center">
-        <p className="text-xs text-gray-500">
-          Having trouble? Ensure your mobile number is correct and your network is active.
-        </p>
-      </div>
+        </div>
+      )}
     </div>
   )
 }

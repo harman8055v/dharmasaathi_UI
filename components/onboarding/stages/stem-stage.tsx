@@ -1,8 +1,7 @@
 "use client"
 
 import type React from "react"
-
-import { useState, useEffect } from "react"
+import { useState, useCallback } from "react"
 import { Loader2 } from "lucide-react"
 import type { OnboardingData } from "@/lib/types/onboarding"
 import { VALID_VALUES } from "@/lib/types/onboarding"
@@ -35,38 +34,45 @@ export default function StemStage({ formData, onChange, onNext, isLoading, error
 
   const [errors, setErrors] = useState<Record<string, string>>({})
 
-  // Update parent form data whenever local state changes
-  useEffect(() => {
-    onChange({
-      ...localFormData,
-      country_id: locationState.country_id,
-      state_id: locationState.state_id,
-      city_id: locationState.city_id,
-    })
-  }, [localFormData, locationState, onChange])
-
   const validGenderOptions = VALID_VALUES.gender.filter((g) => g !== null) as Array<"Male" | "Female" | "Other">
 
-  const handleInputChange = (field: string, value: any) => {
-    setLocalFormData((prev) => ({
-      ...prev,
-      [field]: value || null,
-    }))
+  const handleInputChange = useCallback(
+    (field: string, value: any) => {
+      const newValue = value || null
+      setLocalFormData((prev) => ({
+        ...prev,
+        [field]: newValue,
+      }))
 
-    // Clear error when user starts typing
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: "" }))
-    }
-  }
+      // Update parent immediately
+      onChange({ [field]: newValue })
 
-  const handleLocationChange = (newLocation: LocationFormState) => {
-    setLocationState(newLocation)
+      // Clear error when user starts typing
+      if (errors[field]) {
+        setErrors((prev) => ({ ...prev, [field]: "" }))
+      }
+    },
+    [onChange, errors],
+  )
 
-    // Clear location error when user makes a selection
-    if (errors.location) {
-      setErrors((prev) => ({ ...prev, location: "" }))
-    }
-  }
+  const handleLocationChange = useCallback(
+    (newLocation: LocationFormState) => {
+      setLocationState(newLocation)
+
+      // Update parent immediately
+      onChange({
+        country_id: newLocation.country_id,
+        state_id: newLocation.state_id,
+        city_id: newLocation.city_id,
+      })
+
+      // Clear location error when user makes a selection
+      if (errors.location) {
+        setErrors((prev) => ({ ...prev, location: "" }))
+      }
+    },
+    [onChange, errors.location],
+  )
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {}

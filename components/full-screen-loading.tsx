@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react"
 import { Loader2 } from "lucide-react"
-import Image from "next/image"
 
 interface FullScreenLoadingProps {
   title: string
@@ -11,79 +10,63 @@ interface FullScreenLoadingProps {
   duration?: number
 }
 
-export default function FullScreenLoading({
-  title,
-  subtitle,
-  messages = ["Loading..."],
-  duration = 3000,
-}: FullScreenLoadingProps) {
+export default function FullScreenLoading({ title, subtitle, messages = [], duration = 3000 }: FullScreenLoadingProps) {
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0)
-  const [progress, setProgress] = useState(0)
 
   useEffect(() => {
-    // Progress animation
-    const progressInterval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) return 100
-        return prev + 100 / (duration / 100)
-      })
-    }, 100)
+    if (messages.length === 0) return
 
-    // Message rotation
-    const messageInterval = setInterval(() => {
+    const interval = setInterval(() => {
       setCurrentMessageIndex((prev) => (prev + 1) % messages.length)
     }, duration / messages.length)
 
-    return () => {
-      clearInterval(progressInterval)
-      clearInterval(messageInterval)
-    }
-  }, [duration, messages.length])
+    return () => clearInterval(interval)
+  }, [messages, duration])
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 flex items-center justify-center z-[9999] overflow-hidden">
-      {/* Ensure this is above any alerts or notifications */}
-      <div className="text-center space-y-8 max-w-md mx-auto px-6 relative z-[10000]">
-        {/* Logo */}
-        <div className="flex justify-center">
-          <Image src="/logo.png" alt="DharmaSaathi" width={120} height={40} className="animate-pulse" priority />
-        </div>
+    <div className="fixed inset-0 z-[9999] bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 flex items-center justify-center">
+      {/* Backdrop overlay */}
+      <div className="absolute inset-0 bg-white/80 backdrop-blur-sm" />
 
-        {/* Spinner */}
-        <div className="flex justify-center">
-          <Loader2 className="w-12 h-12 text-orange-500 animate-spin" />
+      {/* Content */}
+      <div className="relative z-10 text-center px-6 py-8 max-w-md mx-auto">
+        {/* Animated lotus/loading icon */}
+        <div className="mb-8">
+          <div className="relative">
+            <div className="w-20 h-20 mx-auto mb-4">
+              <Loader2 className="w-full h-full text-orange-500 animate-spin" />
+            </div>
+            <div className="absolute inset-0 w-20 h-20 mx-auto">
+              <div className="w-full h-full rounded-full border-4 border-orange-200 animate-pulse" />
+            </div>
+          </div>
         </div>
 
         {/* Title */}
-        <div className="space-y-2">
-          <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
-          {subtitle && <p className="text-gray-600">{subtitle}</p>}
-        </div>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">{title}</h1>
 
-        {/* Progress Bar */}
-        <div className="w-full bg-gray-200 rounded-full h-2">
-          <div
-            className="bg-gradient-to-r from-orange-500 to-amber-500 h-2 rounded-full transition-all duration-300 ease-out"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
+        {/* Subtitle */}
+        {subtitle && <p className="text-gray-600 mb-6">{subtitle}</p>}
 
-        {/* Current Message */}
-        <div className="min-h-[24px] flex items-center justify-center">
-          <p className="text-gray-700 animate-fade-in transition-opacity duration-500">
-            {messages[currentMessageIndex]}
-          </p>
-        </div>
+        {/* Rotating messages */}
+        {messages.length > 0 && (
+          <div className="min-h-[2rem] flex items-center justify-center">
+            <p className="text-sm text-gray-500 animate-fade-in">{messages[currentMessageIndex]}</p>
+          </div>
+        )}
 
-        {/* Bottom Text */}
-        <div className="text-center space-y-2 pb-8">
-          <p className="text-sm text-gray-500">Please wait while we prepare your experience</p>
-          <p className="text-xs text-gray-400">This may take a few moments...</p>
+        {/* Progress indicator */}
+        <div className="mt-8">
+          <div className="w-full bg-gray-200 rounded-full h-1">
+            <div
+              className="bg-gradient-to-r from-orange-500 to-amber-500 h-1 rounded-full transition-all duration-300 ease-out"
+              style={{
+                width: `${((currentMessageIndex + 1) / Math.max(messages.length, 1)) * 100}%`,
+              }}
+            />
+          </div>
         </div>
       </div>
-
-      {/* Overlay to prevent any background interactions */}
-      <div className="absolute inset-0 bg-white/20 backdrop-blur-sm" />
     </div>
   )
 }
