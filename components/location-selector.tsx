@@ -3,17 +3,16 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Loader2, MapPin } from "lucide-react"
 import { useCountries, useStates, useCities } from "@/lib/hooks/useLocationData"
-import { supabase } from "@/lib/supabase" // Declare the supabase variable
 
-export interface LocationData {
+export interface LocationFormState {
   country_id: number | null
   state_id: number | null
   city_id: number | null
 }
 
 interface LocationSelectorProps {
-  value: LocationData
-  onChange: (location: LocationData) => void
+  value: LocationFormState
+  onChange: (location: LocationFormState) => void
   disabled?: boolean
   required?: boolean
   showLabels?: boolean
@@ -78,7 +77,7 @@ export default function LocationSelector({
           disabled={disabled || countriesLoading}
         >
           <SelectTrigger className="w-full">
-            <SelectValue placeholder={countriesLoading ? "Loading countries..." : "Select a country"} />
+            <SelectValue placeholder={countriesLoading ? "Loading countries..." : "Select Country"} />
           </SelectTrigger>
           <SelectContent>
             {countries.map((country) => (
@@ -93,7 +92,7 @@ export default function LocationSelector({
       {/* State Selection */}
       <div className="space-y-2">
         <Label htmlFor="state" className="text-gray-700 font-medium">
-          State/Province {required && <span className="text-red-500">*</span>}
+          State {required && <span className="text-red-500">*</span>}
         </Label>
         <Select
           value={value.state_id?.toString() || ""}
@@ -103,7 +102,7 @@ export default function LocationSelector({
           <SelectTrigger className="w-full">
             <SelectValue
               placeholder={
-                !value.country_id ? "Select a country first" : statesLoading ? "Loading states..." : "Select a state"
+                !value.country_id ? "Select Country first" : statesLoading ? "Loading states..." : "Select State"
               }
             />
             {statesLoading && <Loader2 className="w-4 h-4 animate-spin ml-2" />}
@@ -130,9 +129,7 @@ export default function LocationSelector({
         >
           <SelectTrigger className="w-full">
             <SelectValue
-              placeholder={
-                !value.state_id ? "Select a state first" : citiesLoading ? "Loading cities..." : "Select a city"
-              }
+              placeholder={!value.state_id ? "Select State first" : citiesLoading ? "Loading cities..." : "Select City"}
             />
             {citiesLoading && <Loader2 className="w-4 h-4 animate-spin ml-2" />}
           </SelectTrigger>
@@ -155,33 +152,7 @@ export default function LocationSelector({
 }
 
 // Helper function to validate location data
-export function validateLocation(location: LocationData, required = false): boolean {
+export function validateLocation(location: LocationFormState, required = false): boolean {
   if (!required) return true
   return !!(location.country_id && location.state_id && location.city_id)
-}
-
-// Helper function to get location names for display
-export async function getLocationNames(location: LocationData) {
-  const names = { country: "", state: "", city: "" }
-
-  try {
-    if (location.country_id) {
-      const { data: country } = await supabase.from("countries").select("name").eq("id", location.country_id).single()
-      names.country = country?.name || ""
-    }
-
-    if (location.state_id) {
-      const { data: state } = await supabase.from("states").select("name").eq("id", location.state_id).single()
-      names.state = state?.name || ""
-    }
-
-    if (location.city_id) {
-      const { data: city } = await supabase.from("cities").select("name").eq("id", location.city_id).single()
-      names.city = city?.name || ""
-    }
-  } catch (error) {
-    console.error("Error fetching location names:", error)
-  }
-
-  return names
 }

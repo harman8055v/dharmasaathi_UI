@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import MobileNav from "@/components/dashboard/mobile-nav"
 import { cn } from "@/lib/utils"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import LocationSelector, { type LocationData } from "@/components/location-selector"
+import LocationSelector, { type LocationFormState } from "@/components/location-selector"
 
 const SPIRITUAL_ORGANIZATIONS = [
   "ISKCON",
@@ -178,7 +178,8 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false)
   const router = useRouter()
 
-  const [location, setLocation] = useState<LocationData>({
+  // Location state
+  const [locationState, setLocationState] = useState<LocationFormState>({
     country_id: null,
     state_id: null,
     city_id: null,
@@ -195,6 +196,7 @@ export default function SettingsPage() {
           return
         }
 
+        // Fetch from users table using session user id
         const { data: profileData, error } = await supabase.from("users").select("*").eq("id", user.id).single()
 
         if (error) {
@@ -204,8 +206,8 @@ export default function SettingsPage() {
 
         setProfile(profileData)
 
-        // Set location data from profile
-        setLocation({
+        // Set location state from profile data
+        setLocationState({
           country_id: profileData.country_id || null,
           state_id: profileData.state_id || null,
           city_id: profileData.city_id || null,
@@ -226,14 +228,21 @@ export default function SettingsPage() {
 
     setSaving(true)
     try {
-      const updateData = {
-        ...profile,
-        country_id: location.country_id,
-        state_id: location.state_id,
-        city_id: location.city_id,
-      }
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      if (!user) return
 
-      const { error } = await supabase.from("users").update(updateData).eq("id", profile.id)
+      // Update users table with location IDs
+      const { error } = await supabase
+        .from("users")
+        .update({
+          ...profile,
+          country_id: locationState.country_id,
+          state_id: locationState.state_id,
+          city_id: locationState.city_id,
+        })
+        .eq("id", user.id)
 
       if (error) {
         console.error("Error updating profile:", error)
@@ -254,8 +263,8 @@ export default function SettingsPage() {
     setProfile((prev: any) => ({ ...prev, [field]: value }))
   }
 
-  const handleLocationChange = (newLocation: LocationData) => {
-    setLocation(newLocation)
+  const handleLocationChange = (newLocation: LocationFormState) => {
+    setLocationState(newLocation)
   }
 
   if (loading) {
@@ -377,7 +386,12 @@ export default function SettingsPage() {
 
                   {/* Location Section */}
                   <div className="pt-4 border-t">
-                    <LocationSelector value={location} onChange={handleLocationChange} required={false} />
+                    <LocationSelector
+                      value={locationState}
+                      onChange={handleLocationChange}
+                      required={false}
+                      showLabels={true}
+                    />
                   </div>
 
                   {/* Family & Background */}

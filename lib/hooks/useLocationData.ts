@@ -63,7 +63,7 @@ export function useStates(countryId: number | null) {
         setLoading(true)
         const { data, error } = await supabase
           .from("states")
-          .select("id, name, country_id")
+          .select("id, name")
           .eq("country_id", countryId)
           .order("name")
 
@@ -97,11 +97,7 @@ export function useCities(stateId: number | null) {
     async function fetchCities() {
       try {
         setLoading(true)
-        const { data, error } = await supabase
-          .from("cities")
-          .select("id, name, state_id")
-          .eq("state_id", stateId)
-          .order("name")
+        const { data, error } = await supabase.from("cities").select("id, name").eq("state_id", stateId).order("name")
 
         if (error) throw error
         setCities(data || [])

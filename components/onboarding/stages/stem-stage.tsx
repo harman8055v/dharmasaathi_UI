@@ -1,135 +1,277 @@
 "use client"
 
+import type React from "react"
 import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { User, Calendar, Ruler } from "lucide-react"
-import LocationSelector, { type LocationData, validateLocation } from "@/components/location-selector"
+import { Loader2 } from "lucide-react"
+import type { OnboardingData } from "@/lib/types/onboarding"
+import { VALID_VALUES } from "@/lib/types/onboarding"
+import { MOTHER_TONGUES } from "@/lib/constants/mother-tongues"
+import LocationSelector, { type LocationFormState, validateLocation } from "@/components/location-selector"
 
 interface StemStageProps {
-  data: {
-    gender?: string
-    birthdate?: string
-    height?: string
-    country_id?: number | null
-    state_id?: number | null
-    city_id?: number | null
-  }
-  onUpdate: (data: any) => void
-  onNext: () => void
-  onPrev: () => void
+  formData: OnboardingData
+  onChange: (updates: Partial<OnboardingData>) => void
+  onNext: (updates: Partial<OnboardingData>) => void
+  isLoading: boolean
+  error?: string | null
 }
 
-export default function StemStage({ data, onUpdate, onNext, onPrev }: StemStageProps) {
-  const [location, setLocation] = useState<LocationData>({
-    country_id: data.country_id || null,
-    state_id: data.state_id || null,
-    city_id: data.city_id || null,
+export default function StemStage({ formData, onChange, onNext, isLoading, error }: StemStageProps) {
+  // Destructure with null defaults, but set India as default for country
+  const {
+    gender = null,
+    birthdate = null,
+    height = null,
+    country_id = null,
+    state_id = null,
+    city_id = null,
+    mother_tongue = null,
+  } = formData
+
+  const [errors, setErrors] = useState<Record<string, string>>({})
+
+  // Location state
+  const [locationState, setLocationState] = useState<LocationFormState>({
+    country_id: country_id,
+    state_id: state_id,
+    city_id: city_id,
   })
 
-  const handleLocationChange = (newLocation: LocationData) => {
-    setLocation(newLocation)
-    onUpdate({
+  const validGenderOptions = VALID_VALUES.gender.filter((g) => g !== null) as Array<"Male" | "Female" | "Other">
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target
+
+    // Special handling for gender to ensure it matches valid values
+    if (name === "gender") {
+      const genderValue = value as OnboardingData["gender"]
+      onChange({ ...formData, [name]: genderValue || null })
+    } else {
+      onChange({ ...formData, [name]: value || null })
+    }
+
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: "" }))
+    }
+  }
+
+  const handleLocationChange = (newLocation: LocationFormState) => {
+    setLocationState(newLocation)
+    onChange({
       country_id: newLocation.country_id,
       state_id: newLocation.state_id,
       city_id: newLocation.city_id,
     })
   }
 
-  const handleNext = () => {
-    // Validate required fields
-    if (!data.gender || !data.birthdate || !validateLocation(location, true)) {
-      alert("Please fill in all required fields including your complete location.")
-      return
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {}
+
+    if (!gender) {
+      newErrors.gender = "Please select your gender"
     }
-    onNext()
+
+    if (!birthdate) {
+      newErrors.birthdate = "Please enter your birthdate"
+    } else {
+      const birthDate = new Date(birthdate)
+      const today = new Date()
+      const age = today.getFullYear() - birthDate.getFullYear()
+      if (age < 18) {
+        newErrors.birthdate = "You must be at least 18 years old"
+      }
+      if (age > 100) {
+        newErrors.birthdate = "Please enter a valid birthdate"
+      }
+    }
+
+    if (!height) {
+      newErrors.height = "Please enter your height"
+    }
+
+    if (!validateLocation(locationState, true)) {
+      newErrors.location = "Please select your complete location (Country, State, and City)"
+    }
+
+    if (!mother_tongue?.trim()) {
+      newErrors.mother_tongue = "Please enter your mother tongue"
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (validateForm()) {
+      const dataToSave: Partial<OnboardingData> = {
+        gender,
+        birthdate,
+        height,
+        country_id: locationState.country_id,
+        state_id: locationState.state_id,
+        city_id: locationState.city_id,
+        mother_tongue,
+      }
+      onNext(dataToSave) // Pass data to parent for saving and next stage
+    }
+  }
+
+  const handleSkip = () => {
+    const dataToSave: Partial<OnboardingData> = {
+      gender: null,
+      birthdate: null,
+      height: null,
+      country_id: null,
+      state_id: null,
+      city_id: null,
+      mother_tongue: null,
+    }
+    onChange(dataToSave) // Update local form data
+    onNext(dataToSave) // Trigger save and next stage
   }
 
   return (
     <div className="space-y-6">
-      <div className="text-center mb-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Basic Information</h2>
-        <p className="text-gray-600">Tell us a bit about yourself</p>
+      <div className="text-center mb-6">
+        <div className="text-4xl mb-4">🌱</div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Let's sprout your profile</h2>
+        <p className="text-gray-600">Tell us about yourself to help us find your perfect match</p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="w-5 h-5" />
-            Personal Details
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Gender */}
-          <div className="space-y-2">
-            <Label htmlFor="gender" className="text-gray-700 font-medium">
-              Gender <span className="text-red-500">*</span>
-            </Label>
-            <Select value={data.gender || ""} onValueChange={(value) => onUpdate({ gender: value })}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select your gender" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Male">Male</SelectItem>
-                <SelectItem value="Female">Female</SelectItem>
-                <SelectItem value="Other">Other</SelectItem>
-              </SelectContent>
-            </Select>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Gender Selection */}
+        <div className="space-y-3">
+          <label className="block text-sm font-semibold text-gray-700">Gender *</label>
+          <div className="grid grid-cols-3 gap-3">
+            {validGenderOptions.map((option) => (
+              <label
+                key={option}
+                className={`flex items-center justify-center p-3 border-2 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors ${
+                  gender === option ? "border-orange-500 bg-orange-50" : "border-gray-200"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="gender"
+                  value={option}
+                  checked={gender === option}
+                  onChange={handleChange}
+                  className="sr-only"
+                />
+                <span className={`text-sm font-medium ${gender === option ? "text-orange-600" : "text-gray-700"}`}>
+                  {option}
+                </span>
+                {gender === option && <div className="ml-2 w-2 h-2 bg-orange-600 rounded-full"></div>}
+              </label>
+            ))}
           </div>
+          {errors.gender && <p className="text-red-500 text-sm">{errors.gender}</p>}
+        </div>
 
-          {/* Date of Birth */}
-          <div className="space-y-2">
-            <Label htmlFor="birthdate" className="text-gray-700 font-medium flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
-              Date of Birth <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id="birthdate"
-              type="date"
-              value={data.birthdate || ""}
-              onChange={(e) => onUpdate({ birthdate: e.target.value })}
-              max={new Date(Date.now() - 18 * 365 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]}
-            />
+        {/* Birthdate */}
+        <div className="space-y-2">
+          <label htmlFor="birthdate" className="block text-sm font-semibold text-gray-700">
+            Date of Birth *
+          </label>
+          <input
+            type="date"
+            id="birthdate"
+            name="birthdate"
+            value={birthdate || ""}
+            onChange={handleChange}
+            max={new Date(new Date().setFullYear(new Date().getFullYear() - 18)).toISOString().split("T")[0]}
+            className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors ${
+              errors.birthdate ? "border-red-300" : "border-gray-200"
+            }`}
+          />
+          {errors.birthdate && <p className="text-red-500 text-sm">{errors.birthdate}</p>}
+        </div>
+
+        {/* Height */}
+        <div className="space-y-2">
+          <label htmlFor="height" className="block text-sm font-semibold text-gray-700">
+            Height (cm) *
+          </label>
+          <input
+            type="number"
+            id="height"
+            name="height"
+            value={height || ""}
+            onChange={handleChange}
+            placeholder="Enter your height"
+            className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors ${
+              errors.height ? "border-red-300" : "border-gray-200"
+            }`}
+          />
+          {errors.height && <p className="text-red-500 text-sm">{errors.height}</p>}
+        </div>
+
+        {/* Location Selector */}
+        <div className="space-y-2">
+          <LocationSelector value={locationState} onChange={handleLocationChange} required={true} showLabels={true} />
+          {errors.location && <p className="text-red-500 text-sm">{errors.location}</p>}
+        </div>
+
+        {/* Mother Tongue */}
+        <div className="space-y-2">
+          <label htmlFor="mother_tongue" className="block text-sm font-semibold text-gray-700">
+            Mother Tongue *
+          </label>
+          <input
+            type="text"
+            id="mother_tongue"
+            name="mother_tongue"
+            value={mother_tongue || ""}
+            onChange={handleChange}
+            placeholder="Select mother tongue"
+            list="mother-tongue-list"
+            className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors ${
+              errors.mother_tongue ? "border-red-300" : "border-gray-200"
+            }`}
+          />
+          <datalist id="mother-tongue-list">
+            {MOTHER_TONGUES.map((lang) => (
+              <option key={lang} value={lang} />
+            ))}
+          </datalist>
+          {errors.mother_tongue && <p className="text-red-500 text-sm">{errors.mother_tongue}</p>}
+        </div>
+
+        {/* Display any server errors */}
+        {error && (
+          <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-700 text-sm">{error}</p>
           </div>
+        )}
 
-          {/* Height */}
-          <div className="space-y-2">
-            <Label htmlFor="height" className="text-gray-700 font-medium flex items-center gap-2">
-              <Ruler className="w-4 h-4" />
-              Height
-            </Label>
-            <Input
-              id="height"
-              placeholder="e.g., 5'8&quot; or 173 cm"
-              value={data.height || ""}
-              onChange={(e) => onUpdate({ height: e.target.value })}
-            />
-          </div>
-        </CardContent>
-      </Card>
+        <div className="flex gap-4">
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="flex-1 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold py-4 px-6 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl"
+          >
+            {isLoading ? (
+              <span className="flex items-center justify-center gap-2">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                Saving...
+              </span>
+            ) : (
+              "Continue to Next Stage"
+            )}
+          </button>
 
-      {/* Location Selection */}
-      <Card>
-        <CardContent className="pt-6">
-          <LocationSelector value={location} onChange={handleLocationChange} required={true} showLabels={true} />
-        </CardContent>
-      </Card>
-
-      {/* Navigation Buttons */}
-      <div className="flex justify-between pt-6">
-        <Button variant="outline" onClick={onPrev}>
-          Previous
-        </Button>
-        <Button
-          onClick={handleNext}
-          className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600"
-        >
-          Continue
-        </Button>
-      </div>
+          <button
+            type="button"
+            onClick={handleSkip}
+            disabled={isLoading}
+            className="px-6 py-4 text-gray-600 hover:text-gray-800 font-medium transition-colors"
+          >
+            Skip
+          </button>
+        </div>
+      </form>
     </div>
   )
 }
