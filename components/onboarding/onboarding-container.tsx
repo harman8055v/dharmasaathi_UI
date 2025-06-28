@@ -2,22 +2,22 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 import { debugLog } from "@/lib/logger"
+import { Toaster, toast } from "sonner"
 import type { User } from "@supabase/supabase-js"
-import type { OnboardingData, OnboardingProfile } from "@/lib/types/onboarding"
-import ProgressBar from "./progress-bar"
-import NavigationButtons from "./navigation-buttons"
-import FullScreenLoading from "@/components/full-screen-loading"
+import type { OnboardingProfile } from "@/lib/types/onboarding"
+
+import StageIndicator from "./stage-indicator"
 import SeedStage from "./stages/seed-stage"
 import StemStage from "./stages/stem-stage"
 import LeavesStage from "./stages/leaves-stage"
 import PetalsStage from "./stages/petals-stage"
 import FullBloomStage from "./stages/full-bloom-stage"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { AlertCircle } from "lucide-react"
+import CompletionOverlay from "./completion-overlay"
+import FullScreenLoading from "../full-screen-loading"
 
 interface OnboardingContainerProps {
   user: User
@@ -25,157 +25,110 @@ interface OnboardingContainerProps {
   setProfile: (profile: OnboardingProfile) => void
 }
 
+const STAGES = ["seed", "stem", "leaves", "petals", "full-bloom"]
+
 export default function OnboardingContainer({ user, profile, setProfile }: OnboardingContainerProps) {
-  const [stage, setStage] = useState(1)
-  const [isLoading, setIsLoading] = useState(false)
+  const [currentStageIndex, setCurrentStageIndex] = useState(0)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submissionError, setSubmissionError] = useState<string | null>(null)
   const [showCompletion, setShowCompletion] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const router = useRouter()
 
-  const [formData, setFormData] = useState<OnboardingData>(() => ({
-    ...profile,
-    email_verified: !!user?.email_confirmed_at || profile.email_verified || false,
-    mobile_verified: !!user?.phone_confirmed_at || profile.mobile_verified || false,
-  }))
-
-  useEffect(() => {
-    // Determine starting stage based on profile completeness
-    if (!formData.mobile_verified) setStage(1)
-    else if (!formData.gender || !formData.birthdate || !formData.height) setStage(2)
-    else if (!formData.education || !formData.profession) setStage(3)
-    else if (!formData.diet) setStage(4)
-    else if (!formData.about_me || (formData.user_photos || []).length === 0) setStage(5)
-    else setStage(5) // Default to last stage if everything else is filled
-  }, [formData])
-
-  const handleFormChange = (updates: Partial<OnboardingData>) => {
-    setFormData((prev) => ({ ...prev, ...updates }))
-    setError(null)
-  }
-
-  // This is the definitive, RLS-safe upsert function.
-  async function submitUserProfile(profileData: Partial<OnboardingData>) {
-    // Always use the user ID from the authenticated session.
-    if (!user?.id) {
-      throw new Error("Authentication session expired. Please log in again.")
-    }
-
-    // Prepare the data for upsert. The `id` is crucial for RLS.
-    const dataToUpsert = {
-      ...profileData,
-      id: user.id, // This ensures the RLS policy `auth.uid() = id` passes.
-      updated_at: new Date().toISOString(),
-    }
-
-    debugLog("Upserting data to 'users' table:", dataToUpsert)
-
-    const { data, error: upsertError } = await supabase.from("users").upsert(dataToUpsert).select().single()
-
-    if (upsertError) {
-      console.error("FATAL: Supabase upsert error:", upsertError)
-      // Provide a clear, user-friendly error for RLS violations.
-      if (upsertError.code === "42501") {
-        throw new Error(
-          "Security policy violation. You do not have permission to edit this profile. Please re-authenticate and try again.",
-        )
-      }
-      // Provide a generic but helpful error for other database issues.
-      throw new Error(`A database error occurred: ${upsertError.message}. Please try again.`)
-    }
-
-    debugLog("Upsert successful:", data)
-    return data as OnboardingProfile
-  }
-
-  const handleSaveAndNext = async (stagePayload: Partial<OnboardingData>) => {
-    setIsLoading(true)
-    setError(null)
-
-    try {
-      // Submit the data from the current stage.
-      const updatedProfile = await submitUserProfile(stagePayload)
-      // Update the local profile state with the confirmed data from the database.
-      setProfile(updatedProfile)
-      setFormData(updatedProfile)
-
-      if (stage < 5) {
-        setStage(stage + 1)
-      } else {
-        // Final submission on the last stage.
-        await submitUserProfile({ onboarding_completed: true, verification_status: "pending" })
-        setShowCompletion(true)
-        setTimeout(() => router.push("/dashboard"), 4000)
-      }
-    } catch (err: any) {
-      setError(err.message)
-    } finally {
-      setIsLoading(false)
+  const handleNext = () => {
+    if (currentStageIndex < STAGES.length - 1) {
+      setCurrentStageIndex(currentStageIndex + 1)
     }
   }
 
   const handleBack = () => {
-    if (stage > 1) setStage(stage - 1)
+    if (currentStageIndex > 0) {
+      setCurrentStageIndex(currentStageIndex - 1)
+    }
   }
 
-  const stageComponents: { [key: number]: React.ComponentType<any> } = {
-    1: SeedStage,
-    2: StemStage,
-    3: LeavesStage,
-    4: PetalsStage,
-    5: FullBloomStage,
+  const updateProfile = (data: Partial<OnboardingProfile>) => {
+    setProfile({ ...profile, ...data })
   }
-  const CurrentStageComponent = stageComponents[stage]
 
-  if (showCompletion) {
-    return (
-      <FullScreenLoading
-        title="Profile Complete!"
-        subtitle="Your spiritual journey is ready to begin."
-        messages={[
-          "Finalizing your sacred profile...",
-          "Encrypting your personal data...",
-          "Preparing your spiritual matches...",
-          "Welcome to your dharma journey!",
-        ]}
+  const submitUserProfile = async () => {
+    setIsSubmitting(true)
+    setSubmissionError(null)
+    debugLog("Starting final profile submission...")
+
+    const finalProfileData = {
+      ...profile,
+      id: user.id, // Ensure user ID is always present for RLS
+      onboarding_completed: true,
+      updated_at: new Date().toISOString(),
+    }
+
+    debugLog("Final profile data for upsert:", finalProfileData)
+
+    try {
+      const { error } = await supabase
+        .from("users")
+        .upsert(finalProfileData, {
+          onConflict: "id",
+        })
+        .select()
+        .single()
+
+      if (error) {
+        console.error("Supabase upsert error:", error)
+        if (error.code === "42501") {
+          // RLS violation
+          throw new Error("You don't have permission to update this profile. Please sign in again.")
+        }
+        throw new Error(`An error occurred while saving your profile: ${error.message}`)
+      }
+
+      debugLog("Profile submitted successfully!")
+      setShowCompletion(true)
+      setTimeout(() => {
+        router.push("/dashboard")
+      }, 3000)
+    } catch (err: any) {
+      console.error("Submission failed:", err)
+      const errorMessage = err.message || "An unexpected error occurred."
+      setSubmissionError(errorMessage)
+      toast.error(errorMessage)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const currentStage = STAGES[currentStageIndex]
+  const progress = ((currentStageIndex + 1) / STAGES.length) * 100
+
+  const stageComponents: { [key: string]: React.ReactNode } = {
+    seed: <SeedStage profile={profile} updateProfile={updateProfile} onNext={handleNext} user={user} />,
+    stem: <StemStage profile={profile} updateProfile={updateProfile} onNext={handleNext} onBack={handleBack} />,
+    leaves: <LeavesStage profile={profile} updateProfile={updateProfile} onNext={handleNext} onBack={handleBack} />,
+    petals: <PetalsStage profile={profile} updateProfile={updateProfile} onNext={handleNext} onBack={handleBack} />,
+    "full-bloom": (
+      <FullBloomStage
+        profile={profile}
+        updateProfile={updateProfile}
+        onBack={handleBack}
+        onSubmit={submitUserProfile}
+        isSubmitting={isSubmitting}
       />
-    )
+    ),
   }
 
   return (
-    <div className="min-h-screen bg-orange-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl">
-        <ProgressBar currentStage={stage} totalStages={5} />
-
-        {error && (
-          <Alert variant="destructive" className="my-4">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Error</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-
-        <div className="bg-white rounded-2xl shadow-lg p-8 mt-4">
-          <CurrentStageComponent
-            formData={formData}
-            onChange={handleFormChange}
-            onNext={handleSaveAndNext}
-            isLoading={isLoading}
-            user={user}
-            error={error}
-          />
-        </div>
-
-        <NavigationButtons
-          currentStage={stage}
-          totalStages={5}
-          onBack={handleBack}
-          // The 'onNext' for the button is a no-op because each stage's primary button now triggers its own submission.
-          // This is a placeholder to satisfy the component's prop requirements.
-          onNext={() => {}}
-          isLoading={isLoading}
-          canProceed={true} // Logic for this can be handled within each stage if needed.
-        />
+    <>
+      <Toaster richColors position="top-center" />
+      {isSubmitting && <FullScreenLoading message="Finalizing your profile..." />}
+      {showCompletion && <CompletionOverlay />}
+      <div className="flex flex-col min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50">
+        <header className="p-4">
+          <StageIndicator stages={STAGES} currentStageIndex={currentStageIndex} progress={progress} />
+        </header>
+        <main className="flex-grow flex items-center justify-center p-4">
+          <div className="w-full max-w-2xl">{stageComponents[currentStage]}</div>
+        </main>
       </div>
-    </div>
+    </>
   )
 }

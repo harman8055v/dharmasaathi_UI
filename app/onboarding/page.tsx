@@ -6,8 +6,8 @@ import { supabase } from "@/lib/supabase"
 import { debugLog } from "@/lib/logger"
 import OnboardingContainer from "@/components/onboarding/onboarding-container"
 import LoadingScreen from "@/components/onboarding/loading-screen"
-import AlertCircle from "@/components/icons/alert-circle" // Import AlertCircle
-import Button from "@/components/ui/button" // Import Button
+import { AlertCircle } from "lucide-react" // CORRECTED IMPORT
+import { Button } from "@/components/ui/button"
 import type { User } from "@supabase/supabase-js"
 import type { OnboardingProfile } from "@/lib/types/onboarding"
 import "./onboarding.css"
@@ -97,7 +97,7 @@ export default function OnboardingPage() {
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-red-50">
-        <div className="text-center p-8 max-w-md">
+        <div className="text-center p-8 max-w-md mx-auto">
           <AlertCircle className="mx-auto h-12 w-12 text-red-400" />
           <h1 className="mt-4 text-2xl font-bold text-gray-900">An Error Occurred</h1>
           <p className="mt-2 text-gray-600">{error}</p>
