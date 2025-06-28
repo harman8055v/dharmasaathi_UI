@@ -41,11 +41,12 @@ export default function FullScreenLoading({
   }, [duration, messages.length])
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 flex items-center justify-center z-50">
-      <div className="text-center space-y-8 max-w-md mx-auto px-6">
+    <div className="fixed inset-0 bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 flex items-center justify-center z-[9999] overflow-hidden">
+      {/* Ensure this is above any alerts or notifications */}
+      <div className="text-center space-y-8 max-w-md mx-auto px-6 relative z-[10000]">
         {/* Logo */}
         <div className="flex justify-center">
-          <Image src="/logo.png" alt="DharmaSaathi" width={120} height={40} className="animate-pulse" />
+          <Image src="/logo.png" alt="DharmaSaathi" width={120} height={40} className="animate-pulse" priority />
         </div>
 
         {/* Spinner */}
@@ -69,15 +70,20 @@ export default function FullScreenLoading({
 
         {/* Current Message */}
         <div className="min-h-[24px] flex items-center justify-center">
-          <p className="text-gray-700 animate-fade-in">{messages[currentMessageIndex]}</p>
+          <p className="text-gray-700 animate-fade-in transition-opacity duration-500">
+            {messages[currentMessageIndex]}
+          </p>
         </div>
 
         {/* Bottom Text */}
-        <div className="text-center space-y-2">
+        <div className="text-center space-y-2 pb-8">
           <p className="text-sm text-gray-500">Please wait while we prepare your experience</p>
           <p className="text-xs text-gray-400">This may take a few moments...</p>
         </div>
       </div>
+
+      {/* Overlay to prevent any background interactions */}
+      <div className="absolute inset-0 bg-white/20 backdrop-blur-sm" />
     </div>
   )
 }

@@ -54,9 +54,9 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
     gender: null,
     birthdate: null,
     height: null,
-    city: null,
-    state: null,
-    country: "India", // Default to India
+    country_id: null,
+    state_id: null,
+    city_id: null,
     mother_tongue: null,
     education: null,
     profession: null,
@@ -83,9 +83,9 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
         gender: profile.gender || null,
         birthdate: profile.birthdate || null,
         height: profile.height || null,
-        city: profile.city || null,
-        state: profile.state || null,
-        country: profile.country || "India", // Default to India if not set
+        country_id: profile.country_id || null,
+        state_id: profile.state_id || null,
+        city_id: profile.city_id || null,
         mother_tongue: profile.mother_tongue || null,
         education: profile.education || null,
         profession: profile.profession || null,
@@ -103,7 +103,6 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
       })
 
       // Determine current stage based on completed data
-      // First stage is now mobile verification
       if (!user?.phone_confirmed_at && !profile.mobile_verified) {
         setStage(1)
       } else if (!profile.gender || !profile.birthdate || !profile.height) {
@@ -129,7 +128,7 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
     setError(null)
 
     try {
-      const stageData = stagePayload // Use the payload passed directly from the stage
+      const stageData = stagePayload
 
       // Validate stage data before saving
       if (Object.keys(stageData).length > 0) {
@@ -143,9 +142,6 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
 
         // Only make the database call if we have data to save
         if (Object.keys(payload).length > 0) {
-          // Update the existing profile row. The profile is created when the
-          // onboarding page loads if it doesn't already exist, so an upsert is
-          // unnecessary here and can trigger RLS insert checks.
           const { error: saveError } = await supabase
             .from("users")
             .update({
@@ -175,7 +171,7 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
           .from("users")
           .update({
             onboarding_completed: true,
-            verification_status: "pending", // Default to unverified
+            verification_status: "pending",
           })
           .eq("id", user?.id)
 
@@ -186,7 +182,7 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
         setShowCompletion(true)
         setTimeout(() => {
           router.push("/dashboard")
-        }, 5000) // Increased duration for better UX
+        }, 5000)
       }
     } catch (err) {
       console.error("Error saving stage data:", err)
@@ -215,7 +211,13 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
         if (!stageData.gender) {
           throw new Error("Please select your gender before proceeding.")
         }
-        if (!stageData.birthdate || !stageData.height || !stageData.city || !stageData.state || !stageData.country) {
+        if (
+          !stageData.birthdate ||
+          !stageData.height ||
+          !stageData.country_id ||
+          !stageData.state_id ||
+          !stageData.city_id
+        ) {
           throw new Error("Please fill in all required fields before proceeding.")
         }
         break
@@ -290,7 +292,7 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
           .from("users")
           .update({
             onboarding_completed: true,
-            verification_status: "pending", // Default to unverified
+            verification_status: "pending",
           })
           .eq("id", user?.id)
 
@@ -420,11 +422,10 @@ export default function OnboardingContainer({ user, profile, setProfile }: Onboa
             <CardContent className="flex flex-col items-center justify-center p-6 text-center">
               <Image src="/logo.png" alt="DharmaSaathi Logo" width={120} height={40} className="mb-4" />
               <p className="text-sm text-gray-600">
-                {
-                  "Your data is safe with DharmaSaathi. We are committed to protecting your privacy and ensuring a secure experience."
-                }
+                Your data is safe with DharmaSaathi. We are committed to protecting your privacy and ensuring a secure
+                experience.
               </p>
-              <p className="text-xs text-gray-500 mt-2">{"Learn more about our privacy policy."}</p>
+              <p className="text-xs text-gray-500 mt-2">Learn more about our privacy policy.</p>
             </CardContent>
           </Card>
         </div>

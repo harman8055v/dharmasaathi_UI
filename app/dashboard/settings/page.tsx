@@ -391,6 +391,7 @@ export default function SettingsPage() {
                       onChange={handleLocationChange}
                       required={false}
                       showLabels={true}
+                      defaultToIndia={false}
                     />
                   </div>
 

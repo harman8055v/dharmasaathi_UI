@@ -1,7 +1,9 @@
 "use client"
+import { useState, useEffect, useMemo } from "react"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Loader2, MapPin } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Loader2, MapPin, Search } from "lucide-react"
 import { useCountries, useStates, useCities } from "@/lib/hooks/useLocationData"
 
 export interface LocationFormState {
@@ -17,6 +19,7 @@ interface LocationSelectorProps {
   required?: boolean
   showLabels?: boolean
   className?: string
+  defaultToIndia?: boolean
 }
 
 export default function LocationSelector({
@@ -26,13 +29,46 @@ export default function LocationSelector({
   required = false,
   showLabels = true,
   className = "",
+  defaultToIndia = true,
 }: LocationSelectorProps) {
   const { countries, loading: countriesLoading } = useCountries()
   const { states, loading: statesLoading } = useStates(value.country_id)
   const { cities, loading: citiesLoading } = useCities(value.state_id)
 
+  // Search states
+  const [countrySearch, setCountrySearch] = useState("")
+  const [stateSearch, setStateSearch] = useState("")
+  const [citySearch, setCitySearch] = useState("")
+
+  // Set India as default country on mount if no country is selected
+  useEffect(() => {
+    if (defaultToIndia && !value.country_id && countries.length > 0) {
+      const india = countries.find((country) => country.name === "India")
+      if (india) {
+        onChange({
+          country_id: india.id,
+          state_id: null,
+          city_id: null,
+        })
+      }
+    }
+  }, [countries, value.country_id, defaultToIndia, onChange])
+
+  // Filtered options based on search
+  const filteredCountries = useMemo(() => {
+    return countries.filter((country) => country.name.toLowerCase().includes(countrySearch.toLowerCase()))
+  }, [countries, countrySearch])
+
+  const filteredStates = useMemo(() => {
+    return states.filter((state) => state.name.toLowerCase().includes(stateSearch.toLowerCase()))
+  }, [states, stateSearch])
+
+  const filteredCities = useMemo(() => {
+    return cities.filter((city) => city.name.toLowerCase().includes(citySearch.toLowerCase()))
+  }, [cities, citySearch])
+
   const handleCountryChange = (countryId: string) => {
-    // Reset dependent dropdowns when country changes
+    setCountrySearch("")
     onChange({
       country_id: Number.parseInt(countryId),
       state_id: null,
@@ -41,7 +77,7 @@ export default function LocationSelector({
   }
 
   const handleStateChange = (stateId: string) => {
-    // Reset city when state changes
+    setStateSearch("")
     onChange({
       ...value,
       state_id: Number.parseInt(stateId),
@@ -50,10 +86,26 @@ export default function LocationSelector({
   }
 
   const handleCityChange = (cityId: string) => {
+    setCitySearch("")
     onChange({
       ...value,
       city_id: Number.parseInt(cityId),
     })
+  }
+
+  const getSelectedCountryName = () => {
+    const country = countries.find((c) => c.id === value.country_id)
+    return country?.name || ""
+  }
+
+  const getSelectedStateName = () => {
+    const state = states.find((s) => s.id === value.state_id)
+    return state?.name || ""
+  }
+
+  const getSelectedCityName = () => {
+    const city = cities.find((c) => c.id === value.city_id)
+    return city?.name || ""
   }
 
   return (
@@ -77,14 +129,28 @@ export default function LocationSelector({
           disabled={disabled || countriesLoading}
         >
           <SelectTrigger className="w-full">
-            <SelectValue placeholder={countriesLoading ? "Loading countries..." : "Select Country"} />
+            <SelectValue placeholder={countriesLoading ? "Loading countries..." : "Select Country"}>
+              {getSelectedCountryName()}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
-            {countries.map((country) => (
+            <div className="flex items-center px-3 pb-2">
+              <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+              <Input
+                placeholder="Search countries..."
+                value={countrySearch}
+                onChange={(e) => setCountrySearch(e.target.value)}
+                className="h-8 w-full border-0 p-0 focus:ring-0"
+              />
+            </div>
+            {filteredCountries.map((country) => (
               <SelectItem key={country.id} value={country.id.toString()}>
                 {country.name}
               </SelectItem>
             ))}
+            {filteredCountries.length === 0 && countrySearch && (
+              <div className="px-3 py-2 text-sm text-gray-500">No countries found</div>
+            )}
           </SelectContent>
         </Select>
       </div>
@@ -104,15 +170,29 @@ export default function LocationSelector({
               placeholder={
                 !value.country_id ? "Select Country first" : statesLoading ? "Loading states..." : "Select State"
               }
-            />
+            >
+              {getSelectedStateName()}
+            </SelectValue>
             {statesLoading && <Loader2 className="w-4 h-4 animate-spin ml-2" />}
           </SelectTrigger>
           <SelectContent>
-            {states.map((state) => (
+            <div className="flex items-center px-3 pb-2">
+              <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+              <Input
+                placeholder="Search states..."
+                value={stateSearch}
+                onChange={(e) => setStateSearch(e.target.value)}
+                className="h-8 w-full border-0 p-0 focus:ring-0"
+              />
+            </div>
+            {filteredStates.map((state) => (
               <SelectItem key={state.id} value={state.id.toString()}>
                 {state.name}
               </SelectItem>
             ))}
+            {filteredStates.length === 0 && stateSearch && (
+              <div className="px-3 py-2 text-sm text-gray-500">No states found</div>
+            )}
           </SelectContent>
         </Select>
       </div>
@@ -130,15 +210,29 @@ export default function LocationSelector({
           <SelectTrigger className="w-full">
             <SelectValue
               placeholder={!value.state_id ? "Select State first" : citiesLoading ? "Loading cities..." : "Select City"}
-            />
+            >
+              {getSelectedCityName()}
+            </SelectValue>
             {citiesLoading && <Loader2 className="w-4 h-4 animate-spin ml-2" />}
           </SelectTrigger>
           <SelectContent>
-            {cities.map((city) => (
+            <div className="flex items-center px-3 pb-2">
+              <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+              <Input
+                placeholder="Search cities..."
+                value={citySearch}
+                onChange={(e) => setCitySearch(e.target.value)}
+                className="h-8 w-full border-0 p-0 focus:ring-0"
+              />
+            </div>
+            {filteredCities.map((city) => (
               <SelectItem key={city.id} value={city.id.toString()}>
                 {city.name}
               </SelectItem>
             ))}
+            {filteredCities.length === 0 && citySearch && (
+              <div className="px-3 py-2 text-sm text-gray-500">No cities found</div>
+            )}
           </SelectContent>
         </Select>
       </div>

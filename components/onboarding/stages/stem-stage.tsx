@@ -1,7 +1,8 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+
+import { useState, useEffect } from "react"
 import { Loader2 } from "lucide-react"
 import type { OnboardingData } from "@/lib/types/onboarding"
 import { VALID_VALUES } from "@/lib/types/onboarding"
@@ -17,67 +18,77 @@ interface StemStageProps {
 }
 
 export default function StemStage({ formData, onChange, onNext, isLoading, error }: StemStageProps) {
-  // Destructure with null defaults, but set India as default for country
-  const {
-    gender = null,
-    birthdate = null,
-    height = null,
-    country_id = null,
-    state_id = null,
-    city_id = null,
-    mother_tongue = null,
-  } = formData
+  // Initialize form state with current data
+  const [localFormData, setLocalFormData] = useState({
+    gender: formData.gender || null,
+    birthdate: formData.birthdate || null,
+    height: formData.height || null,
+    mother_tongue: formData.mother_tongue || null,
+  })
+
+  // Location state - initialize with existing data or defaults
+  const [locationState, setLocationState] = useState<LocationFormState>({
+    country_id: formData.country_id || null,
+    state_id: formData.state_id || null,
+    city_id: formData.city_id || null,
+  })
 
   const [errors, setErrors] = useState<Record<string, string>>({})
 
-  // Location state
-  const [locationState, setLocationState] = useState<LocationFormState>({
-    country_id: country_id,
-    state_id: state_id,
-    city_id: city_id,
-  })
+  // Update parent form data whenever local state changes
+  useEffect(() => {
+    onChange({
+      ...localFormData,
+      country_id: locationState.country_id,
+      state_id: locationState.state_id,
+      city_id: locationState.city_id,
+    })
+  }, [localFormData, locationState, onChange])
 
   const validGenderOptions = VALID_VALUES.gender.filter((g) => g !== null) as Array<"Male" | "Female" | "Other">
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target
-
-    // Special handling for gender to ensure it matches valid values
-    if (name === "gender") {
-      const genderValue = value as OnboardingData["gender"]
-      onChange({ ...formData, [name]: genderValue || null })
-    } else {
-      onChange({ ...formData, [name]: value || null })
-    }
+  const handleInputChange = (field: string, value: any) => {
+    setLocalFormData((prev) => ({
+      ...prev,
+      [field]: value || null,
+    }))
 
     // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }))
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: "" }))
     }
   }
 
   const handleLocationChange = (newLocation: LocationFormState) => {
     setLocationState(newLocation)
-    onChange({
-      country_id: newLocation.country_id,
-      state_id: newLocation.state_id,
-      city_id: newLocation.city_id,
-    })
+
+    // Clear location error when user makes a selection
+    if (errors.location) {
+      setErrors((prev) => ({ ...prev, location: "" }))
+    }
   }
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
 
-    if (!gender) {
+    // Gender validation
+    if (!localFormData.gender) {
       newErrors.gender = "Please select your gender"
     }
 
-    if (!birthdate) {
+    // Birthdate validation
+    if (!localFormData.birthdate) {
       newErrors.birthdate = "Please enter your birthdate"
     } else {
-      const birthDate = new Date(birthdate)
+      const birthDate = new Date(localFormData.birthdate)
       const today = new Date()
       const age = today.getFullYear() - birthDate.getFullYear()
+      const monthDiff = today.getMonth() - birthDate.getMonth()
+
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        // Adjust age if birthday hasn't occurred this year
+      }
+
       if (age < 18) {
         newErrors.birthdate = "You must be at least 18 years old"
       }
@@ -86,15 +97,18 @@ export default function StemStage({ formData, onChange, onNext, isLoading, error
       }
     }
 
-    if (!height) {
+    // Height validation
+    if (!localFormData.height) {
       newErrors.height = "Please enter your height"
     }
 
+    // Location validation
     if (!validateLocation(locationState, true)) {
       newErrors.location = "Please select your complete location (Country, State, and City)"
     }
 
-    if (!mother_tongue?.trim()) {
+    // Mother tongue validation
+    if (!localFormData.mother_tongue?.trim()) {
       newErrors.mother_tongue = "Please enter your mother tongue"
     }
 
@@ -104,17 +118,18 @@ export default function StemStage({ formData, onChange, onNext, isLoading, error
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+
     if (validateForm()) {
       const dataToSave: Partial<OnboardingData> = {
-        gender,
-        birthdate,
-        height,
+        gender: localFormData.gender,
+        birthdate: localFormData.birthdate,
+        height: localFormData.height,
         country_id: locationState.country_id,
         state_id: locationState.state_id,
         city_id: locationState.city_id,
-        mother_tongue,
+        mother_tongue: localFormData.mother_tongue,
       }
-      onNext(dataToSave) // Pass data to parent for saving and next stage
+      onNext(dataToSave)
     }
   }
 
@@ -128,8 +143,7 @@ export default function StemStage({ formData, onChange, onNext, isLoading, error
       city_id: null,
       mother_tongue: null,
     }
-    onChange(dataToSave) // Update local form data
-    onNext(dataToSave) // Trigger save and next stage
+    onNext(dataToSave)
   }
 
   return (
@@ -149,21 +163,23 @@ export default function StemStage({ formData, onChange, onNext, isLoading, error
               <label
                 key={option}
                 className={`flex items-center justify-center p-3 border-2 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors ${
-                  gender === option ? "border-orange-500 bg-orange-50" : "border-gray-200"
+                  localFormData.gender === option ? "border-orange-500 bg-orange-50" : "border-gray-200"
                 }`}
               >
                 <input
                   type="radio"
                   name="gender"
                   value={option}
-                  checked={gender === option}
-                  onChange={handleChange}
+                  checked={localFormData.gender === option}
+                  onChange={(e) => handleInputChange("gender", e.target.value)}
                   className="sr-only"
                 />
-                <span className={`text-sm font-medium ${gender === option ? "text-orange-600" : "text-gray-700"}`}>
+                <span
+                  className={`text-sm font-medium ${localFormData.gender === option ? "text-orange-600" : "text-gray-700"}`}
+                >
                   {option}
                 </span>
-                {gender === option && <div className="ml-2 w-2 h-2 bg-orange-600 rounded-full"></div>}
+                {localFormData.gender === option && <div className="ml-2 w-2 h-2 bg-orange-600 rounded-full"></div>}
               </label>
             ))}
           </div>
@@ -179,8 +195,8 @@ export default function StemStage({ formData, onChange, onNext, isLoading, error
             type="date"
             id="birthdate"
             name="birthdate"
-            value={birthdate || ""}
-            onChange={handleChange}
+            value={localFormData.birthdate || ""}
+            onChange={(e) => handleInputChange("birthdate", e.target.value)}
             max={new Date(new Date().setFullYear(new Date().getFullYear() - 18)).toISOString().split("T")[0]}
             className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors ${
               errors.birthdate ? "border-red-300" : "border-gray-200"
@@ -192,15 +208,15 @@ export default function StemStage({ formData, onChange, onNext, isLoading, error
         {/* Height */}
         <div className="space-y-2">
           <label htmlFor="height" className="block text-sm font-semibold text-gray-700">
-            Height (cm) *
+            Height *
           </label>
           <input
-            type="number"
+            type="text"
             id="height"
             name="height"
-            value={height || ""}
-            onChange={handleChange}
-            placeholder="Enter your height"
+            value={localFormData.height || ""}
+            onChange={(e) => handleInputChange("height", e.target.value)}
+            placeholder="e.g., 5'8&quot; or 173 cm"
             className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors ${
               errors.height ? "border-red-300" : "border-gray-200"
             }`}
@@ -210,7 +226,13 @@ export default function StemStage({ formData, onChange, onNext, isLoading, error
 
         {/* Location Selector */}
         <div className="space-y-2">
-          <LocationSelector value={locationState} onChange={handleLocationChange} required={true} showLabels={true} />
+          <LocationSelector
+            value={locationState}
+            onChange={handleLocationChange}
+            required={true}
+            showLabels={true}
+            defaultToIndia={true}
+          />
           {errors.location && <p className="text-red-500 text-sm">{errors.location}</p>}
         </div>
 
@@ -223,8 +245,8 @@ export default function StemStage({ formData, onChange, onNext, isLoading, error
             type="text"
             id="mother_tongue"
             name="mother_tongue"
-            value={mother_tongue || ""}
-            onChange={handleChange}
+            value={localFormData.mother_tongue || ""}
+            onChange={(e) => handleInputChange("mother_tongue", e.target.value)}
             placeholder="Select mother tongue"
             list="mother-tongue-list"
             className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors ${
