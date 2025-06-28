@@ -1,91 +1,33 @@
-// Updated interface to match your specifications
-export interface OnboardingData {
-  // Email verification
-  email_verified: boolean
-  // Mobile verification
-  mobile_verified: boolean
-  mobile_number?: string | null // Add this line
-
-  // Personal info
-  gender: "Male" | "Female" | "Other" | null
-  birthdate: string | null
-  height: string | null
-  city: string | null
-  state: string | null
-  country: string | null
-  mother_tongue: string | null
-
-  // Professional info
-  education: string | null
-  profession: string | null
-  annual_income: string | null
-
-  // Spiritual preferences (updated enum values)
-  diet: "Vegetarian" | "Vegan" | "Eggetarian" | "Non-Vegetarian" | null
-  temple_visit_freq: "Daily" | "Weekly" | "Monthly" | "Rarely" | "Never" | null
-  vanaprastha_interest: "yes" | "no" | "open" | null
-  artha_vs_moksha: "Artha-focused" | "Moksha-focused" | "Balance" | null
-
-  // Array fields
-  spiritual_org: string[]
-  daily_practices: string[]
-  user_photos: string[]
-
-  // Text fields
-  about_me: string | null
-  partner_expectations: string | null
-  favorite_spiritual_quote: string | null // Add this new field
-}
-
-export interface OnboardingProfile extends OnboardingData {
+export interface OnboardingProfile {
   id: string
-  email: string
-  first_name?: string
-  last_name?: string
-  mobile_number?: string
-  verification_status?: "pending" | "verified" | "rejected"
-  onboarding_completed?: boolean
+  email?: string
+  created_at?: string
   updated_at?: string
+  onboarding_completed?: boolean
+  verification_status?: "pending" | "verified" | "rejected"
+  gender?: string | null
+  birthdate?: string | null
+  height?: number | null
+  country_id?: number | null
+  state_id?: number | null
+  city_id?: number | null
+  mother_tongue?: string | null
+  education?: string | null
+  profession?: string | null
+  annual_income?: string | null
+  diet?: string | null
+  temple_visit_freq?: string | null
+  vanaprastha_interest?: string | null
+  artha_vs_moksha?: string | null
+  spiritual_org?: string[] | null
+  daily_practices?: string[] | null
+  user_photos?: string[] | null
+  about_me?: string | null
+  partner_expectations?: string | null
+  favorite_spiritual_quote?: string | null
+  mobile_number?: string | null
+  mobile_verified?: boolean
+  email_verified?: boolean
 }
 
-// Updated validation constants
-export const VALID_VALUES = {
-  gender: [null, "Male", "Female", "Other"] as const,
-  diet: [null, "Vegetarian", "Vegan", "Eggetarian", "Non-Vegetarian"] as const,
-  temple_visit_freq: [null, "Daily", "Weekly", "Monthly", "Rarely", "Never"] as const,
-  vanaprastha_interest: [null, "yes", "no", "open"] as const,
-  artha_vs_moksha: [null, "Artha-focused", "Moksha-focused", "Balance"] as const,
-} as const
-
-// Helper function to validate enum fields
-export function validateEnumField<T extends keyof typeof VALID_VALUES>(
-  field: T,
-  value: any,
-): value is (typeof VALID_VALUES)[T][number] {
-  return VALID_VALUES[field].includes(value as any)
-}
-
-// Helper function to validate mobile number
-export function validateMobileNumber(mobile: string): boolean {
-  if (!mobile) return false
-
-  // Remove all non-digit characters except +
-  const cleanMobile = mobile.replace(/[^\d+]/g, "")
-
-  // Should start with + or digit, be 10-15 characters long
-  const mobileRegex = /^[+]?[1-9]\d{9,14}$/
-  return mobileRegex.test(cleanMobile)
-}
-
-// Helper function to format mobile number
-export function formatMobileNumber(mobile: string): string {
-  // Remove all non-digit characters except +
-  let cleaned = mobile.replace(/[^\d+]/g, "")
-
-  // If it doesn't start with +, and it's an Indian number (10 digits), add +91
-  if (!cleaned.startsWith("+") && cleaned.length === 10 && cleaned.match(/^[6-9]/)) {
-    cleaned = "+91" + cleaned
-  }
-
-  return cleaned
-}
+export type OnboardingData = Partial<OnboardingProfile>

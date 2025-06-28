@@ -1,56 +1,39 @@
 "use client"
 
+import { Button } from "@/components/ui/button"
+import { Loader2 } from "lucide-react"
+
 interface NavigationButtonsProps {
   currentStage: number
   totalStages: number
-  isLoading: boolean
-  onBack: () => void
+  onPrevious: () => void
   onNext: () => void
-  onSkip: () => void
+  isLoading: boolean
   canProceed: boolean
 }
 
 export default function NavigationButtons({
   currentStage,
   totalStages,
-  isLoading,
-  onBack,
+  onPrevious,
   onNext,
-  onSkip,
+  isLoading,
   canProceed,
 }: NavigationButtonsProps) {
-  // Don't show navigation for the first stage (email verification)
-  if (currentStage === 1) return null
-
-  const showSkip = currentStage > 2 // Allow skipping from stage 3 onwards (professional info and spiritual preferences)
-
   return (
-    <div className="flex justify-between items-center px-4 py-4 mt-6">
-      <button
-        type="button"
-        onClick={onBack}
-        disabled={isLoading}
-        className="text-amber-600 hover:text-amber-800 disabled:opacity-50 font-medium px-4 py-2 rounded-lg transition-colors"
-      >
-        ← Back
-      </button>
-
-      <div className="flex items-center gap-3">
-        {showSkip && (
-          <button
-            type="button"
-            onClick={onSkip}
-            disabled={isLoading}
-            className="text-gray-500 hover:text-gray-700 disabled:opacity-50 font-medium px-4 py-2 rounded-lg transition-colors"
-          >
-            Skip for now
-          </button>
+    <div className="flex justify-between mt-8">
+      <Button variant="outline" onClick={onPrevious} disabled={currentStage === 0 || isLoading}>
+        Back
+      </Button>
+      <Button onClick={onNext} disabled={isLoading || !canProceed}>
+        {isLoading ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : currentStage === totalStages - 1 ? (
+          "Finish"
+        ) : (
+          "Next"
         )}
-
-        <div className="text-sm text-gray-500">
-          {currentStage} of {totalStages}
-        </div>
-      </div>
+      </Button>
     </div>
   )
 }

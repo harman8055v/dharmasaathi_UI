@@ -36,7 +36,6 @@ export default function OnboardingPage() {
         debugLog("Authenticated user found:", user.id)
         setUser(user)
 
-        // Attempt to fetch the user's profile.
         const { data: existingProfile, error: profileError } = await supabase
           .from("users")
           .select("*")
@@ -57,22 +56,16 @@ export default function OnboardingPage() {
           debugLog("Existing profile found.", existingProfile)
           setProfile(existingProfile)
         } else {
-          // Create initial profile
-          debugLog("No profile found. Creating a new one.")
+          debugLog("No profile found. Creating a new one to prevent errors.")
           const newProfileData = {
             id: user.id,
             email: user.email,
-            onboarding_completed: false,
-            email_verified: !!user.email_confirmed_at,
-            mobile_verified: !!user.phone_confirmed_at,
-            mobile_number: user.phone || null,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           }
-
           const { data: newProfile, error: createError } = await supabase
             .from("users")
-            .upsert(newProfileData, { onConflict: "id" })
+            .upsert(newProfileData)
             .select()
             .single()
 
